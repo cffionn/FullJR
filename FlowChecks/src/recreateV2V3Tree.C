@@ -14,6 +14,8 @@
 
 #include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/vectorStringUtility.h"
 
 int recreateV2V3Tree(const std::string inFileName)
 {
@@ -21,7 +23,7 @@ int recreateV2V3Tree(const std::string inFileName)
   const Int_t centBinsCorrLow[nCentBinsCorr] = {0, 5, 10, 30, 50};
   const Int_t centBinsCorrHi[nCentBinsCorr] = {5, 10, 30, 50, 100};
 
-  TFile* corrFile_p = new TFile("inputs/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
+  TFile* corrFile_p = new TFile("tables/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
   TH1F* corrHists_p[nCentBinsCorr];
   for(Int_t cI = 0; cI < nCentBinsCorr; ++cI){
     corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsCorrLow[cI]) + "_" + std::to_string(centBinsCorrHi[cI])).c_str());
@@ -45,6 +47,10 @@ int recreateV2V3Tree(const std::string inFileName)
   std::vector<float>* pfPhiOut_p=NULL;
   std::vector<float>* pfWeightOut_p=NULL;
 
+  std::vector<float>* trkPtOut_p=NULL;
+  std::vector<float>* trkPhiOut_p=NULL;
+  std::vector<float>* trkWeightOut_p=NULL;
+
   v2V3Tree_p->Branch("hiBin", &hiBinOut_, "hiBin/I");
   v2V3Tree_p->Branch("hiEvt2Plane", &hiEvt2Plane_, "hiEvt2Plane/F");
   v2V3Tree_p->Branch("hiEvt3Plane", &hiEvt3Plane_, "hiEvt3Plane/F");
@@ -54,13 +60,22 @@ int recreateV2V3Tree(const std::string inFileName)
   v2V3Tree_p->Branch("pfPt", &pfPtOut_p);
   v2V3Tree_p->Branch("pfPhi", &pfPhiOut_p);
   v2V3Tree_p->Branch("pfWeight", &pfWeightOut_p);
+  v2V3Tree_p->Branch("trkPt", &trkPtOut_p);
+  v2V3Tree_p->Branch("trkPhi", &trkPhiOut_p);
+  v2V3Tree_p->Branch("trkWeight", &trkWeightOut_p);
   
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
+  std::vector<std::string> ttreeList = returnRootFileContentsList(inFile_p, "TTree");
+  removeVectorDuplicates(&ttreeList);
+  bool hasTrackTree = vectorContainsString(&ttreeList, "track");
+
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
   TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
   TTree* skimTree_p = (TTree*)inFile_p->Get("skimanalysis/HltTree");
   TTree* rhoFlowAnalyzer_p = (TTree*)inFile_p->Get("hiFlowAnalyzerHFPlane/t");
+  TTree* trackTree_p = NULL;
+  if(hasTrackTree) trackTree_p = (TTree*)inFile_p->Get("anaTrack/trackTree");
 
   std::vector<float>* pfPt_p = NULL;
   std::vector<float>* pfEta_p = NULL;
@@ -120,6 +135,52 @@ int recreateV2V3Tree(const std::string inFileName)
 
   rhoFlowAnalyzer_p->SetBranchAddress("rhoFlowFitParams", &rhoFlowFitParams_p);
 
+  const Int_t nMaxTrk = 40000;
+  Int_t nTrk_;
+  Float_t trkPt_[nMaxTrk];
+  Float_t trkPhi_[nMaxTrk];
+  Float_t trkEta_[nMaxTrk];
+  UChar_t trkNHit_[nMaxTrk];
+  Bool_t highPurity_[nMaxTrk];
+  Float_t trkPtError_[nMaxTrk];
+  Float_t trkDzOverDzError_[nMaxTrk];
+  Float_t trkDxyOverDxyError_[nMaxTrk];
+  UChar_t trkNlayer_[nMaxTrk];
+  Float_t trkChi2_[nMaxTrk];
+  UChar_t trkNdof_[nMaxTrk];
+  UChar_t trkAlgo_[nMaxTrk];
+
+  if(hasTrackTree){
+    trackTree_p->SetBranchStatus("*", 0);
+    trackTree_p->SetBranchStatus("nTrk", 1);
+    trackTree_p->SetBranchStatus("trkPt", 1);
+    trackTree_p->SetBranchStatus("trkPhi", 1);
+    trackTree_p->SetBranchStatus("trkEta", 1);
+    trackTree_p->SetBranchStatus("trkNHit", 1);
+    trackTree_p->SetBranchStatus("highPurity", 1);
+    trackTree_p->SetBranchStatus("trkPtError", 1);
+    trackTree_p->SetBranchStatus("trkDzOverDzError", 1);
+    trackTree_p->SetBranchStatus("trkDxyOverDxyError", 1);
+    trackTree_p->SetBranchStatus("trkNlayer", 1);
+    trackTree_p->SetBranchStatus("trkChi2", 1);
+    trackTree_p->SetBranchStatus("trkNdof", 1);
+    trackTree_p->SetBranchStatus("trkAlgo", 1);
+
+    trackTree_p->SetBranchAddress("nTrk", &nTrk_);
+    trackTree_p->SetBranchAddress("trkPt", trkPt_);
+    trackTree_p->SetBranchAddress("trkPhi", trkPhi_);
+    trackTree_p->SetBranchAddress("trkEta", trkEta_);
+    trackTree_p->SetBranchAddress("trkNHit", trkNHit_);
+    trackTree_p->SetBranchAddress("highPurity", highPurity_);
+    trackTree_p->SetBranchAddress("trkPtError", trkPtError_);
+    trackTree_p->SetBranchAddress("trkDzOverDzError", trkDzOverDzError_);
+    trackTree_p->SetBranchAddress("trkDxyOverDxyError", trkDxyOverDxyError_);
+    trackTree_p->SetBranchAddress("trkNlayer", trkNlayer_);
+    trackTree_p->SetBranchAddress("trkChi2", trkChi2_);
+    trackTree_p->SetBranchAddress("trkNdof", trkNdof_);
+    trackTree_p->SetBranchAddress("trkAlgo", trkAlgo_);
+  }
+
   const Int_t nEntries = TMath::Min((Int_t)pfTree_p->GetEntries(), (Int_t)100000000);
   goodGlobalSelection sel;
   sel.setIsPbPb(true);
@@ -130,6 +191,7 @@ int recreateV2V3Tree(const std::string inFileName)
     hiTree_p->GetEntry(entry);
     skimTree_p->GetEntry(entry);
     rhoFlowAnalyzer_p->GetEntry(entry);
+    if(hasTrackTree) trackTree_p->GetEntry(entry);
 
     sel.setVz(vz_);
     sel.setHiHF(hiHF_);
@@ -161,7 +223,7 @@ int recreateV2V3Tree(const std::string inFileName)
     pfPhiOut_p->clear();
     pfWeightOut_p->clear();
 
-    for(unsigned pfI = 0; pfI < pfPt_p->size(); pfI++){
+    for(unsigned int pfI = 0; pfI < pfPt_p->size(); pfI++){
       if(pfEta_p->at(pfI) < -1.0) continue;
       if(pfEta_p->at(pfI) > 1.0) continue;
       if(pfPt_p->at(pfI) < .3) continue;
@@ -173,6 +235,38 @@ int recreateV2V3Tree(const std::string inFileName)
       pfPtOut_p->push_back(pfPt_p->at(pfI));
       pfPhiOut_p->push_back(pfPhi_p->at(pfI));
       pfWeightOut_p->push_back(tempWeight);
+    }
+
+
+    trkPtOut_p->clear();
+    trkPhiOut_p->clear();
+    trkWeightOut_p->clear();
+
+    for(Int_t tI = 0; tI < nTrk_; tI++){
+      if(trkEta_[tI] < -1.0) continue;
+      if(trkEta_[tI] > 1.0) continue;
+      if(trkPt_[tI] < .3) continue;
+      if(trkPt_[tI] > 3.) continue;
+      if(!highPurity_[tI]) continue;
+
+      if(trkNHit_[tI] >= 3 && trkNHit_[tI] <= 6 && trkPt_[tI] < 2.4){
+	if(TMath::Abs(trkDzOverDzError_[tI]) >= 8) continue;
+	if(trkChi2_[tI]/(trkNdof_[tI]*trkNlayer_[tI]) >= 12) continue;
+      }
+      else if(trkPt_[tI] > 2.4 && trkAlgo_[tI] >= 4 && trkAlgo_[tI] <= 7){
+	if(TMath::Abs(trkDzOverDzError_[tI]) >= 3) continue;
+	if(TMath::Abs(trkDxyOverDxyError_[tI]) >= 3) continue;
+	if(trkPtError_[tI]/trkPt_[tI] > .1) continue;
+	if(trkNHit_[tI] <= 11) continue;
+	if(trkChi2_[tI]/(trkNdof_[tI]*trkNlayer_[tI]) >= .15) continue;
+      }
+      else continue;
+
+      double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEta_[tI], trkPt_[tI]));
+
+      trkPtOut_p->push_back(trkPt_[tI]);
+      trkPhiOut_p->push_back(trkPhi_[tI]);
+      trkWeightOut_p->push_back(tempWeight);
     }
 
     v2V3Tree_p->Fill();
