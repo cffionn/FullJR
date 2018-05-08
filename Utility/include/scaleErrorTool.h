@@ -13,9 +13,9 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 
-#include "include/doGlobalDebug.h"
-#include "include/checkMakeDir.h"
-#include "include/plotUtilities.h"
+#include "Utility/include/doGlobalDebug.h"
+#include "Utility/include/checkMakeDir.h"
+#include "Utility/include/plotUtilities.h"
 
 class scaleErrorTool{
  public:

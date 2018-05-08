@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <cstdlib>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -23,7 +24,8 @@ int recreateV2V3Tree(const std::string inFileName)
   const Int_t centBinsCorrLow[nCentBinsCorr] = {0, 5, 10, 30, 50};
   const Int_t centBinsCorrHi[nCentBinsCorr] = {5, 10, 30, 50, 100};
 
-  TFile* corrFile_p = new TFile("tables/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
+  const std::string fullPath = std::getenv("FULLJRDIR");
+  TFile* corrFile_p = new TFile((fullPath + "/FlowChecks/tables/EffCorrectionsPixel_TT_pt_0_10_v2.root").c_str(), "READ");
   TH1F* corrHists_p[nCentBinsCorr];
   for(Int_t cI = 0; cI < nCentBinsCorr; ++cI){
     corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsCorrLow[cI]) + "_" + std::to_string(centBinsCorrHi[cI])).c_str());
@@ -60,15 +62,17 @@ int recreateV2V3Tree(const std::string inFileName)
   v2V3Tree_p->Branch("pfPt", &pfPtOut_p);
   v2V3Tree_p->Branch("pfPhi", &pfPhiOut_p);
   v2V3Tree_p->Branch("pfWeight", &pfWeightOut_p);
-  v2V3Tree_p->Branch("trkPt", &trkPtOut_p);
-  v2V3Tree_p->Branch("trkPhi", &trkPhiOut_p);
-  v2V3Tree_p->Branch("trkWeight", &trkWeightOut_p);
   
-
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   std::vector<std::string> ttreeList = returnRootFileContentsList(inFile_p, "TTree");
   removeVectorDuplicates(&ttreeList);
   bool hasTrackTree = vectorContainsString(&ttreeList, "track");
+
+  if(hasTrackTree){
+    v2V3Tree_p->Branch("trkPt", &trkPtOut_p);
+    v2V3Tree_p->Branch("trkPhi", &trkPhiOut_p);
+    v2V3Tree_p->Branch("trkWeight", &trkWeightOut_p);   
+  }
 
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
   TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
@@ -143,8 +147,10 @@ int recreateV2V3Tree(const std::string inFileName)
   UChar_t trkNHit_[nMaxTrk];
   Bool_t highPurity_[nMaxTrk];
   Float_t trkPtError_[nMaxTrk];
-  Float_t trkDzOverDzError_[nMaxTrk];
-  Float_t trkDxyOverDxyError_[nMaxTrk];
+  Float_t trkDz1_[nMaxTrk];
+  Float_t trkDzError1_[nMaxTrk];
+  Float_t trkDxy1_[nMaxTrk];
+  Float_t trkDxyError1_[nMaxTrk];
   UChar_t trkNlayer_[nMaxTrk];
   Float_t trkChi2_[nMaxTrk];
   UChar_t trkNdof_[nMaxTrk];
@@ -159,8 +165,10 @@ int recreateV2V3Tree(const std::string inFileName)
     trackTree_p->SetBranchStatus("trkNHit", 1);
     trackTree_p->SetBranchStatus("highPurity", 1);
     trackTree_p->SetBranchStatus("trkPtError", 1);
-    trackTree_p->SetBranchStatus("trkDzOverDzError", 1);
-    trackTree_p->SetBranchStatus("trkDxyOverDxyError", 1);
+    trackTree_p->SetBranchStatus("trkDz1", 1);
+    trackTree_p->SetBranchStatus("trkDzError1", 1);
+    trackTree_p->SetBranchStatus("trkDxy1", 1);
+    trackTree_p->SetBranchStatus("trkDxyError1", 1);
     trackTree_p->SetBranchStatus("trkNlayer", 1);
     trackTree_p->SetBranchStatus("trkChi2", 1);
     trackTree_p->SetBranchStatus("trkNdof", 1);
@@ -173,8 +181,10 @@ int recreateV2V3Tree(const std::string inFileName)
     trackTree_p->SetBranchAddress("trkNHit", trkNHit_);
     trackTree_p->SetBranchAddress("highPurity", highPurity_);
     trackTree_p->SetBranchAddress("trkPtError", trkPtError_);
-    trackTree_p->SetBranchAddress("trkDzOverDzError", trkDzOverDzError_);
-    trackTree_p->SetBranchAddress("trkDxyOverDxyError", trkDxyOverDxyError_);
+    trackTree_p->SetBranchAddress("trkDz1", trkDz1_);
+    trackTree_p->SetBranchAddress("trkDzError1", trkDzError1_);
+    trackTree_p->SetBranchAddress("trkDxy1", trkDxy1_);
+    trackTree_p->SetBranchAddress("trkDxyError1", trkDxyError1_);
     trackTree_p->SetBranchAddress("trkNlayer", trkNlayer_);
     trackTree_p->SetBranchAddress("trkChi2", trkChi2_);
     trackTree_p->SetBranchAddress("trkNdof", trkNdof_);
@@ -250,15 +260,15 @@ int recreateV2V3Tree(const std::string inFileName)
       if(!highPurity_[tI]) continue;
 
       if(trkNHit_[tI] >= 3 && trkNHit_[tI] <= 6 && trkPt_[tI] < 2.4){
-	if(TMath::Abs(trkDzOverDzError_[tI]) >= 8) continue;
-	if(trkChi2_[tI]/(trkNdof_[tI]*trkNlayer_[tI]) >= 12) continue;
-      }
+	if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 8.) continue;
+	if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= 12.) continue;
+      }      
       else if(trkPt_[tI] > 2.4 && trkAlgo_[tI] >= 4 && trkAlgo_[tI] <= 7){
-	if(TMath::Abs(trkDzOverDzError_[tI]) >= 3) continue;
-	if(TMath::Abs(trkDxyOverDxyError_[tI]) >= 3) continue;
-	if(trkPtError_[tI]/trkPt_[tI] > .1) continue;
-	if(trkNHit_[tI] <= 11) continue;
-	if(trkChi2_[tI]/(trkNdof_[tI]*trkNlayer_[tI]) >= .15) continue;
+	if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 3.) continue;
+	if(TMath::Abs(trkDxy1_[tI]/trkDxyError1_[tI]) >= 3.) continue;
+	if(TMath::Abs(trkPtError_[tI]/trkPt_[tI]) > .1) continue;
+	if(trkNHit_[tI] < 11) continue;
+	if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= .15) continue;
       }
       else continue;
 
