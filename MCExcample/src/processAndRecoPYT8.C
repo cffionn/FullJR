@@ -57,6 +57,7 @@ int processAndRecoPYT8(const std::string inFileName)
   const Int_t nPartMax = 2000;
   Int_t nJt_[nRVals];
   Float_t genJtPt_[nRVals][nPartMax];
+  Float_t genJtPtLogLoss_[nRVals][nPartMax];
   Float_t genJtPhi_[nRVals][nPartMax];
   Float_t genJtEta_[nRVals][nPartMax];
   Float_t recoJtPt_[nRVals][nPartMax];
@@ -72,6 +73,7 @@ int processAndRecoPYT8(const std::string inFileName)
     outTree_p[rI]->Branch("pthatWeight", &(pthatWeightOut_[rI]), "pthatWeight/F");
     outTree_p[rI]->Branch("nJt", &(nJt_[rI]), "nJt/I");
     outTree_p[rI]->Branch("genJtPt", genJtPt_[rI], "genJtPt[nJt]/F");
+    outTree_p[rI]->Branch("genJtPtLogLoss", genJtPtLogLoss_[rI], "genJtPtLogLoss[nJt]/F");
     outTree_p[rI]->Branch("genJtPhi", genJtPhi_[rI], "genJtPhi[nJt]/F");
     outTree_p[rI]->Branch("genJtEta", genJtEta_[rI], "genJtEta[nJt]/F");
     outTree_p[rI]->Branch("recoJtPt", recoJtPt_[rI], "recoJtPt[nJt]/F");
@@ -127,6 +129,8 @@ int processAndRecoPYT8(const std::string inFileName)
 	if(TMath::Abs(jets.at(jI).eta()) > 2.) continue;
 
 	genJtPt_[rI][nJt_[rI]] = jets.at(jI).pt();
+	genJtPtLogLoss_[rI][nJt_[rI]] = jets.at(jI).pt() - TMath::Log(jets.at(jI).pt());
+	if(genJtPtLogLoss_[rI][nJt_[rI]] < 0.) genJtPtLogLoss_[rI][nJt_[rI]] = 0.;
 	genJtPhi_[rI][nJt_[rI]] = jets.at(jI).phi();
 	genJtEta_[rI][nJt_[rI]] = jets.at(jI).eta();
 

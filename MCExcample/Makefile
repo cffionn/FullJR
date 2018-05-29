@@ -19,7 +19,7 @@ CHECK_FASTJETINSTALLPATH=printf "\nFASTJETINSTALLPATH is set to: \'$(FASTJETINST
 
 CHECK_ROOUNFPATH=printf "\nROOUNFPATH is set to: \'$(ROOUNFPATH)\'\n   !!!IF ROOUNFPATH IS EMPTY THE BUILD WILL FAIL!!!\n   Run 'source setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir checkFastJetInstallPath checkRooUnfPath bin/processAndRecoPYT8.exe bin/makeRawRAASpectra.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir checkFastJetInstallPath checkRooUnfPath bin/processAndRecoPYT8.exe bin/makeRawRAASpectra.exe bin/makeResErrorPlot.exe bin/makeJetRRatio.exe bin/makePartonRRatio.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -44,6 +44,15 @@ bin/processAndRecoPYT8.exe: src/processAndRecoPYT8.C
 
 bin/makeRawRAASpectra.exe: src/makeRawRAASpectra.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(FASTJET) $(INCLUDE) -I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold -o bin/makeRawRAASpectra.exe src/makeRawRAASpectra.C
+
+bin/makeResErrorPlot.exe: src/makeResErrorPlot.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(FASTJET) $(INCLUDE) -o bin/makeResErrorPlot.exe src/makeResErrorPlot.C
+
+bin/makeJetRRatio.exe: src/makeJetRRatio.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeJetRRatio.exe src/makeJetRRatio.C
+
+bin/makePartonRRatio.exe: src/makePartonRRatio.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makePartonRRatio.exe src/makePartonRRatio.C
 
 clean:
 	rm -f ./*~
