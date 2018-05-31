@@ -1,3 +1,4 @@
+ISPP=0
 PTHAT=30,80,170,280,370,540
 PTHATWEIGHTS=1, 0.00871405, 0.00019752, .0000115856, .00000542881, .000000450323
 /mnt/hadoop/cms/store/user/cmcginn/Pythia6_Dijet170_pp502_Hydjet_Cymbal_MB/PbPb_MCDijet170_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma/180521_151332/merged/HiForestAOD_PbPb_MCDijet170_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_180521_151332_MERGED.root
