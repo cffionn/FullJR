@@ -196,9 +196,9 @@ int validateJetResponse(const std::string inFileName)
 	
 	TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
 	canv_p->SetTopMargin(0.01);
-	canv_p->SetBottomMargin(0.1);
-	canv_p->SetLeftMargin(0.1);
-	canv_p->SetRightMargin(0.1);
+	canv_p->SetBottomMargin(0.14);
+	canv_p->SetLeftMargin(0.14);
+	canv_p->SetRightMargin(0.14);
 	
 	gStyle->SetOptStat(0);
 	

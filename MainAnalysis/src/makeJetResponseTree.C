@@ -19,13 +19,14 @@
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/getLinBins.h"
+#include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
-int makeJetResponseTree(const std::string inName)
+int makeJetResponseTree(const std::string inName, bool isPP = false)
 {
   TRandom3* randGen_p = new TRandom3(0);
 
@@ -33,7 +34,11 @@ int makeJetResponseTree(const std::string inName)
   std::vector<double> pthats;
   std::vector<double> pthatWeights;
 
-  if(inName.find(".root") != std::string::npos) fileList.push_back(inName);
+  if(inName.find(".root") != std::string::npos){
+    fileList.push_back(inName);
+    pthats.push_back(1.);
+    pthatWeights.push_back(1.);
+  }
   else if(inName.find(".txt") != std::string::npos){
     std::ifstream file(inName.c_str());
     std::string tempStr;
@@ -57,7 +62,11 @@ int makeJetResponseTree(const std::string inName)
 	    pthatWeights.push_back(std::stod(tempStr.substr(0, tempStr.find(","))));
 	    tempStr.replace(0, tempStr.find(",")+1, "");
 	  }
-	  if(tempStr.size() != 0) pthatWeights.push_back(std::stod(tempStr));
+	  if(tempStr.size() != 0) pthatWeights.push_back(std::stod(tempStr));	
+	}
+	else if(tempStr.substr(0, std::string("ISPP=").size()).find("ISPP=") != std::string::npos){
+	  tempStr.replace(0,tempStr.find("=")+1, "");
+	  isPP = std::stoi(tempStr);
 	}
 	else std::cout << "WARNING: Line in \'" << inName << "\', \'" << tempStr << "\' is invalid. check input" << std::endl;
       }     
@@ -87,6 +96,8 @@ int makeJetResponseTree(const std::string inName)
   for(unsigned int pI = 0; pI < pthats.size(); ++pI){
     std::cout << " " << pI << "/" << pthats.size() << ": " << pthats.at(pI) << ", " << pthatWeights.at(pI) << std::endl;
   }
+
+  std::cout << "IsPP: " << isPP << std::endl;
 
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
@@ -141,7 +152,6 @@ int makeJetResponseTree(const std::string inName)
   const Int_t nResponseBins = 300;
   Double_t responseBins[nResponseBins+1];
   getLinBins(0., 9., nResponseBins, responseBins);
-
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   TDirectory* generalDir_p = (TDirectory*)outFile_p->mkdir("generalHistDir");
@@ -223,6 +233,8 @@ int makeJetResponseTree(const std::string inName)
   }
 
   const Int_t nMaxJet = 500;
+  goodGlobalSelection globalSel;
+  globalSel.setIsPbPb(!isPP);
 
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
@@ -286,33 +298,79 @@ int makeJetResponseTree(const std::string inName)
     jetTrees_p[0]->SetBranchStatus("pthat", 1);
     jetTrees_p[0]->SetBranchAddress("pthat", &pthat_);
 
+    Float_t vz_;
+    Float_t hiHF_;
     Int_t hiBin_;
     unsigned int run_, lumi_;
     unsigned long long evt_;
+
+    Int_t HBHENoiseFilterResultRun2Loose_ = -1;
+    Int_t pprimaryVertexFilter_ = -1;
+    Int_t pBeamScrapingFilter_ = -1;
+    Int_t phfCoincFilter3_ = -1;
+    Int_t pclusterCompatibilityFilter_ = -1;
 
     TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
 
     hiTree_p->SetBranchStatus("*", 0);
     hiTree_p->SetBranchStatus("hiBin", 1);
+    hiTree_p->SetBranchStatus("vz", 1);
+    hiTree_p->SetBranchStatus("hiHF", 1);
     hiTree_p->SetBranchStatus("run", 1);
     hiTree_p->SetBranchStatus("lumi", 1);
     hiTree_p->SetBranchStatus("evt", 1);
 
     hiTree_p->SetBranchAddress("hiBin", &hiBin_);
+    hiTree_p->SetBranchAddress("vz", &vz_);
+    hiTree_p->SetBranchAddress("hiHF", &hiHF_);
     hiTree_p->SetBranchAddress("run", &run_);
     hiTree_p->SetBranchAddress("lumi", &lumi_);
     hiTree_p->SetBranchAddress("evt", &evt_);
 
+    TTree* skimTree_p = (TTree*)inFile_p->Get("skimanalysis/HltTree");
+
+    skimTree_p->SetBranchStatus("*", 0);
+    skimTree_p->SetBranchStatus("HBHENoiseFilterResultRun2Loose", 1);
+    skimTree_p->SetBranchAddress("HBHENoiseFilterResultRun2Loose", &HBHENoiseFilterResultRun2Loose_);
+
+    if(!isPP){
+      skimTree_p->SetBranchStatus("pprimaryVertexFilter", 1);
+      skimTree_p->SetBranchStatus("phfCoincFilter3", 1);
+      skimTree_p->SetBranchStatus("pclusterCompatibilityFilter", 1);
+
+      skimTree_p->SetBranchAddress("pprimaryVertexFilter", &pprimaryVertexFilter_);
+      skimTree_p->SetBranchAddress("phfCoincFilter3", &phfCoincFilter3_);
+      skimTree_p->SetBranchAddress("pclusterCompatibilityFilter", &pclusterCompatibilityFilter_);
+    }
+    else{
+      skimTree_p->SetBranchStatus("pBeamScrapingFilter", 1);
+      skimTree_p->SetBranchStatus("pPAprimaryVertexFilter", 1);
+
+      skimTree_p->SetBranchAddress("pBeamScrapingFilter", &pBeamScrapingFilter_);
+      skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
+    }
+
     const Int_t nEntries = jetTrees_p[0]->GetEntries();
     const Int_t printInterval = TMath::Max(1, nEntries/20);
-
 
     for(Int_t entry = 0; entry < nEntries; ++entry){
       if(nEntries >= 50000 && entry%printInterval == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
 
       hiTree_p->GetEntry(entry);
-      for(Int_t tI = 0; tI < nTrees; ++tI){jetTrees_p[tI]->GetEntry(entry);}
+      skimTree_p->GetEntry(entry);
 
+      globalSel.setVz(vz_);
+      globalSel.setHiHF(hiHF_);
+      globalSel.setPprimaryVertexFilter(pprimaryVertexFilter_);
+      globalSel.setPBeamScrapingFilter(pBeamScrapingFilter_);
+      globalSel.setPhfCoincFilter3(phfCoincFilter3_);
+      globalSel.setHBHENoiseFilterResultRun2Loose(HBHENoiseFilterResultRun2Loose_);
+      globalSel.setPclusterCompatibilityFilter(pclusterCompatibilityFilter_);
+
+      if(!globalSel.isGood()) continue;
+
+      for(Int_t tI = 0; tI < nTrees; ++tI){jetTrees_p[tI]->GetEntry(entry);}
+    
       Int_t centPos = -1;
       for(Int_t cI = 0; cI < nCentBins; ++cI){
 	if(centBinsLow[cI]*2 <= hiBin_ && hiBin_ < centBinsHi[cI]*2){
@@ -585,12 +643,13 @@ int makeJetResponseTree(const std::string inName)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2){
-    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName>" << std::endl;
+  if(argc != 2 && argc != 3){
+    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt>" << std::endl;
     return 1;
   }
   
   int retVal = 0;
-  retVal += makeJetResponseTree(argv[1]);
+  if(argc == 2) retVal += makeJetResponseTree(argv[1]);
+  else if(argc == 3) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]));
   return retVal;
 }

@@ -14,9 +14,9 @@ MKDIR_PDF=mkdir -p $(PWD)/pdfDir
 CHECK_FULLJRDIR=printf "\nFULLJRDIR is set to: \'$(FULLJRDIR)\'\n   !!!IF FULLJRDIR IS EMPTY THE BUILD WILL FAIL!!!\n   Run 'source \
 setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
-ROOUNF=-I $(ROOUNFOLDPATH) -L $(ROOUNFOLDPATH) -lRooUnfold
+ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -41,6 +41,9 @@ bin/validateJetResponse.exe: src/validateJetResponse.C
 
 bin/plotJetResponse.exe: src/plotJetResponse.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotJetResponse.exe src/plotJetResponse.C
+
+bin/makeMuonFakeCheck.exe: src/makeMuonFakeCheck.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeMuonFakeCheck.exe src/makeMuonFakeCheck.C
 
 clean:
 	rm -f ./*~
