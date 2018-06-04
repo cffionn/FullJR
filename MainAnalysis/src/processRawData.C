@@ -119,10 +119,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::cout << std::endl;
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
-  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins+1];
-  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins+1];
+  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
+  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
   std::cout << "nJtAbsEtaBins: ";
-  for(Int_t jI = 0; jI < nJtAbsEtaBins+1; ++jI){
+  for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
     jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
     jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
     std::cout << " " << jtAbsEtaBinsLow[jI] << "-" << jtAbsEtaBinsHi[jI] << ",";
@@ -203,14 +203,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   const Int_t nDataJet = dataTreeList.size();
 
   std::string outFileName = inDataFileName;
+  while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
 
-  outFileName = outFileName + "_" + inResponseName;
-  if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
-  else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
+  std::string outFileName2 = inResponseName;
+  while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
+  if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
+  else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
-  outFileName = "output/" + outFileName + "_ProcessRawData_" + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   TDirectory* dir_p[nDataJet];
