@@ -9,6 +9,7 @@
 #include "TDatime.h"
 
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
 int processRawData(const std::string inDataFileName, const std::string inResponseName, bool isDataPP = false)
@@ -30,8 +31,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<Int_t> centBinsLow;
   std::vector<Int_t> centBinsHi;
 
+  Float_t jtAbsEtaMaxTemp = -99.;
+
   Int_t nJtPtBinsTemp = -1;
   std::vector<Double_t> jtPtBinsTemp;
+
+  Int_t nJtAbsEtaBinsTemp = -1;
+  std::vector<Double_t> jtAbsEtaBinsLowTemp;
+  std::vector<Double_t> jtAbsEtaBinsHiTemp;
 
   bool isResponsePP = false;
 
@@ -59,7 +66,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
       if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
     }
+    else if(tempStr.find("jtAbsEtaMax") != std::string::npos && tempStr.size() == std::string("jtAbsEtaMax").size()) jtAbsEtaMaxTemp = std::stof(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtPtBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isResponsePP = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
       std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
@@ -69,24 +78,36 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
       if(tempStr2.size() != 0) jtPtBinsTemp.push_back(std::stod(tempStr2));
     }
+    else if(tempStr.find("jtAbsEtaBinsLow") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsLow").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtAbsEtaBinsHi") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsHi").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2));
+    }
   }
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(jtAbsEtaMaxTemp < -98) std::cout << "jtAbsEtaMaxTemp less than -98. please check input file. return 1" << std::endl;
 
-
-  if(nCentBins < 0 || nJtPtBinsTemp < 0){
+  if(nCentBins < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98){
     responseFile_p->Close();
     delete responseFile_p;
     return 1;
   }
 
-  if(nJtPtBinsTemp < 0){
-    responseFile_p->Close();
-    delete responseFile_p;
-    return 1;
-  }
-
+  const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
 
   const Int_t nJtPtBins = nJtPtBinsTemp;
   Double_t jtPtBins[nJtPtBins+1];
@@ -94,6 +115,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
     jtPtBins[jI] = jtPtBinsTemp.at(jI);
     std::cout << " " << jtPtBins[jI] << ",";
+  }
+  std::cout << std::endl;
+
+  const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
+  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins+1];
+  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins+1];
+  std::cout << "nJtAbsEtaBins: ";
+  for(Int_t jI = 0; jI < nJtAbsEtaBins+1; ++jI){
+    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
+    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
+    std::cout << " " << jtAbsEtaBinsLow[jI] << "-" << jtAbsEtaBinsHi[jI] << ",";
   }
   std::cout << std::endl;
 
@@ -182,7 +214,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   TDirectory* dir_p[nDataJet];
-  TH1D* jtPtRaw_h[nDataJet][nCentBins];
+  TH1D* jtPtRaw_h[nDataJet][nCentBins][nJtAbsEtaBins];
+  TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nJtAbsEtaBins];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
@@ -192,7 +225,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 
-      jtPtRaw_h[jI][cI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+        const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	jtPtRaw_h[jI][cI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	jtPtRaw_RecoTrunc_h[jI][cI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+      }
     }
   }
 
@@ -308,11 +345,43 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
       if(!globalSel.isGood()) continue;
 
+      Int_t centPos = -1;
+      for(Int_t cI = 0; cI < nCentBins; ++cI){
+	if(hiBin_/2 >= centBinsLow[cI] && hiBin_/2 < centBinsHi[cI]){
+	  centPos = cI;
+	  break;
+	}
+      }
+
+      if(centPos == -1) continue;
+
       for(Int_t tI = 0; tI < nDataJet; ++tI){jetTrees_p[tI]->GetEntry(entry);}
-
       
-    }
 
+      for(Int_t tI = 0; tI < nDataJet; ++tI){
+
+	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
+	  
+	  std::vector<int> jtAbsEtaPoses;
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
+	      jtAbsEtaPoses.push_back(aI);
+	    }
+	  }
+
+	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+	    bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]);
+	    bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[1] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
+
+	    if(goodReco){
+	      jtPtRaw_h[tI][centPos][aI]->Fill(jtpt_[tI][jI]);
+	      if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][aI]->Fill(jtpt_[tI][jI]);
+	    }
+	  }
+	}
+      }
+    }
 
     inDataFile_p->Close();
     delete inDataFile_p;
@@ -326,8 +395,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     dir_p[jI]->cd();
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      jtPtRaw_h[jI][cI]->Write("", TObject::kOverwrite);
-      delete jtPtRaw_h[jI][cI];
+
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	jtPtRaw_h[jI][cI][aI]->Write("", TObject::kOverwrite);
+	delete jtPtRaw_h[jI][cI][aI];
+
+	jtPtRaw_RecoTrunc_h[jI][cI][aI]->Write("", TObject::kOverwrite);
+	delete jtPtRaw_RecoTrunc_h[jI][cI][aI];
+      }
     }
   }
 

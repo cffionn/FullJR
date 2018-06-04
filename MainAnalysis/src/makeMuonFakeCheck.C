@@ -244,7 +244,7 @@ int makeMuonFakeCheck(const std::string inName, bool isPP = false)
       globalSel.setPclusterCompatibilityFilter(pclusterCompatibilityFilter_);
 
       if(!globalSel.isGood()) continue;
-      if(hiBin_ > 20) continue;
+      if(hiBin_ > 60) continue;
 
       Double_t pthatWeight_ = -1;
       for(unsigned int pI = 0; pI < pthats.size()-1; ++pI){
@@ -270,8 +270,8 @@ int makeMuonFakeCheck(const std::string inName, bool isPP = false)
 	recoJtPt_Raw_h->Fill(jtpt_[jI], fullWeight_);
 	if(refpt_[jI] >= 150.) recoJtPt_RawWithRef_h->Fill(jtpt_[jI], fullWeight_);
 	else if(jtpt_[jI] > 600.){
-	  std::cout << " Bad jetpt, phi, eta: " << jtpt_[jI] << ", " << jtphi_[jI] << ", " << jteta_[jI] << std::endl;
-	  std::cout << "  run, lumi, evt, entry: " << run_ << ", " << lumi_ << ", " << evt_ << ", " << entry << std::endl;
+	  std::cout << " Bad jetpt, refpt, phi, eta: " << jtpt_[jI] << ", " << refpt_[jI] << ", " << jtphi_[jI] << ", " << jteta_[jI] << std::endl;
+	  std::cout << "  run, lumi, evt, entry, hiBin: " << run_ << ", " << lumi_ << ", " << evt_ << ", " << entry << ", " << hiBin_ << std::endl;
 	  std::cout << " check if cut by loose, tight, lepveto..." << std::endl;
 	}
 

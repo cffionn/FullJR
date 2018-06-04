@@ -110,6 +110,10 @@ int validateJetResponse(const std::string inFileName)
   Int_t nJtPtBinsTemp = -1;
   std::vector<Double_t> jtPtBinsTemp;
 
+  Int_t nJtAbsEtaBinsTemp = -1;
+  std::vector<Double_t> jtAbsEtaBinsLowTemp;
+  std::vector<Double_t> jtAbsEtaBinsHiTemp;
+
   std::cout << "Using cuts: " << std::endl;
   for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
     std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
@@ -135,6 +139,7 @@ int validateJetResponse(const std::string inFileName)
       if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
     }
     else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBinsTemp = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBinsTemp = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
       std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
       while(tempStr2.find(",") != std::string::npos){
@@ -143,19 +148,29 @@ int validateJetResponse(const std::string inFileName)
       }
       if(tempStr2.size() != 0) jtPtBinsTemp.push_back(std::stod(tempStr2));
     }
+    else if(tempStr.find("jtAbsEtaBinsLow") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+	jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+	tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtAbsEtaBinsHi") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+	jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+	tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2));
+    }
   }
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
 
-
-  if(nCentBins < 0 || nJtPtBinsTemp < 0){
-    inFile_p->Close();
-    delete inFile_p;
-    return 1;
-  }
-
-  if(nJtPtBinsTemp < 0){
+  if(nCentBins < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0){
     inFile_p->Close();
     delete inFile_p;
     return 1;
@@ -165,6 +180,14 @@ int validateJetResponse(const std::string inFileName)
   Double_t jtPtBins[nJtPtBins+1];
   for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
     jtPtBins[jI] = jtPtBinsTemp.at(jI);
+  }
+
+  const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
+  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins+1];
+  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins+1];
+  for(Int_t jI = 0; jI < nJtAbsEtaBins+1; ++jI){
+    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
+    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
   }
 
   std::cout << "nCentBins: " << nCentBins << std::endl;
@@ -191,112 +214,117 @@ int validateJetResponse(const std::string inFileName)
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 
-      for(Int_t mI = 0; mI < nManip; ++mI){
-	TH2D* response_h = (TH2D*)inFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + recoTruncStr[mI] + "_h").c_str());
-	
-	TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
-	canv_p->SetTopMargin(0.01);
-	canv_p->SetBottomMargin(0.14);
-	canv_p->SetLeftMargin(0.14);
-	canv_p->SetRightMargin(0.14);
-	
-	gStyle->SetOptStat(0);
-	
-	if(renormX[mI]){
-	  for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-	    Double_t xSum = 0.;
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+        const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);	
 
-	    for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-	      xSum += response_h->GetBinContent(bIX+1, bIY+1);
-	    }
-
-	    if(xSum <= 0) continue;
-
-	    for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-	      response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/xSum);
-	      response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/xSum);
-	    }
-	  }	
-	}
-	else{
-	  for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-	    Double_t ySum = 0.;
-
+	for(Int_t mI = 0; mI < nManip; ++mI){
+	  TH2D* response_h = (TH2D*)inFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
+	  
+	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+	  canv_p->SetTopMargin(0.01);
+	  canv_p->SetBottomMargin(0.14);
+	  canv_p->SetLeftMargin(0.14);
+	  canv_p->SetRightMargin(0.14);
+	  
+	  gStyle->SetOptStat(0);
+	  
+	  if(renormX[mI]){
 	    for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-	      ySum += response_h->GetBinContent(bIX+1, bIY+1);
-	    }
-
-	    if(ySum <= 0) continue;
-
-	    for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-	      response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/ySum);
-	      response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/ySum);
-	    }
+	      Double_t xSum = 0.;
+	      
+	      for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+		xSum += response_h->GetBinContent(bIX+1, bIY+1);
+	      }
+	      
+	      if(xSum <= 0) continue;
+	      
+	      for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+		response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/xSum);
+		response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/xSum);
+	      }
+	    }	
+	  }
+	  else{
+	    for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+	      Double_t ySum = 0.;
+	      
+	      for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
+		ySum += response_h->GetBinContent(bIX+1, bIY+1);
+	      }
+	      
+	      if(ySum <= 0) continue;
+	      
+	      for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
+		response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/ySum);
+		response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/ySum);
+	      }
+	    }	
 	  }	
+
+	  response_h->DrawCopy("COLZ TEXT");
+	  gStyle->SetPaintTextFormat("1.3f");
+	  gPad->SetLogz();
+	  
+	  std::string renormStr = "renormX";
+	  if(!renormX[mI]) renormStr = "renormY";
+	  
+	  canv_p->SaveAs(("pdfDir/response_" + dirName + "_" + centStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
+	  delete canv_p;
 	}
-
-	response_h->DrawCopy("COLZ TEXT");
-	gStyle->SetPaintTextFormat("1.3f");
-	gPad->SetLogz();
-
-	std::string renormStr = "renormX";
-	if(!renormX[mI]) renormStr = "renormY";
 	
-	canv_p->SaveAs(("pdfDir/response_" + dirName + "_" + centStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
-	delete canv_p;
+	
+	Int_t nPadX = -1;
+	Int_t nPadY = -1;
+	getPadsXY(nJtPtBins, &nPadX, &nPadY);
+	
+	TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
+	recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
+	recoJtPtPerGenPtBin_p->SetBottomMargin(0.01);
+	recoJtPtPerGenPtBin_p->SetLeftMargin(0.01);
+	recoJtPtPerGenPtBin_p->SetRightMargin(0.01);
+	
+	recoJtPtPerGenPtBin_p->Divide(nPadX, nPadY);
+	
+	for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+	  const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	  
+	  recoJtPtPerGenPtBin_p->cd();
+	  recoJtPtPerGenPtBin_p->cd(jI+1);
+	  
+	  
+	  TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + jtAbsEtaStr + "_Gen" + jtPtStr + "_h").c_str());
+	  
+	  temp_p->DrawCopy("HIST E1 P");
+	}
+	
+	recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	
+	delete recoJtPtPerGenPtBin_p;
+	
+	TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
+	recoJtPtPerGenPtBinWeighted_p->SetTopMargin(0.01);
+	recoJtPtPerGenPtBinWeighted_p->SetBottomMargin(0.01);
+	recoJtPtPerGenPtBinWeighted_p->SetLeftMargin(0.01);
+	recoJtPtPerGenPtBinWeighted_p->SetRightMargin(0.01);
+	
+	recoJtPtPerGenPtBinWeighted_p->Divide(nPadX, nPadY);
+	
+	for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+	  const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	  
+	  recoJtPtPerGenPtBinWeighted_p->cd();
+	  recoJtPtPerGenPtBinWeighted_p->cd(jI+1);
+	  
+	  
+	  TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + jtAbsEtaStr + "_Gen" + jtPtStr + "_Weighted_h").c_str());
+	  
+	  temp_p->DrawCopy("HIST E1 P");
+	}
+	
+	recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	
+	delete recoJtPtPerGenPtBinWeighted_p;
       }
-
-      Int_t nPadX = -1;
-      Int_t nPadY = -1;
-      getPadsXY(nJtPtBins, &nPadX, &nPadY);
-
-      TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
-      recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
-      recoJtPtPerGenPtBin_p->SetBottomMargin(0.01);
-      recoJtPtPerGenPtBin_p->SetLeftMargin(0.01);
-      recoJtPtPerGenPtBin_p->SetRightMargin(0.01);
-
-      recoJtPtPerGenPtBin_p->Divide(nPadX, nPadY);
-
-      for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
-	
-	recoJtPtPerGenPtBin_p->cd();
-	recoJtPtPerGenPtBin_p->cd(jI+1);
-
-	
-	TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_Gen" + jtPtStr + "_h").c_str());
-
-	temp_p->DrawCopy("HIST E1 P");
-      }
-
-      recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + dateStr + ".pdf").c_str());
-      
-      delete recoJtPtPerGenPtBin_p;
-
-      TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
-      recoJtPtPerGenPtBinWeighted_p->SetTopMargin(0.01);
-      recoJtPtPerGenPtBinWeighted_p->SetBottomMargin(0.01);
-      recoJtPtPerGenPtBinWeighted_p->SetLeftMargin(0.01);
-      recoJtPtPerGenPtBinWeighted_p->SetRightMargin(0.01);
-
-      recoJtPtPerGenPtBinWeighted_p->Divide(nPadX, nPadY);
-
-      for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
-	
-	recoJtPtPerGenPtBinWeighted_p->cd();
-	recoJtPtPerGenPtBinWeighted_p->cd(jI+1);
-
-	
-	TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_Gen" + jtPtStr + "_Weighted_h").c_str());
-
-	temp_p->DrawCopy("HIST E1 P");
-      }
-
-      recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + dateStr + ".pdf").c_str());
-      
-      delete recoJtPtPerGenPtBinWeighted_p;
     }
   }
   
