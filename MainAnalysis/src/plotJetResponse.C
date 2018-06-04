@@ -183,9 +183,9 @@ int validateJetResponse(const std::string inFileName)
   }
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
-  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins+1];
-  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins+1];
-  for(Int_t jI = 0; jI < nJtAbsEtaBins+1; ++jI){
+  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
+  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
+  for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
     jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
     jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
   }
