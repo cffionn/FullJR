@@ -35,7 +35,6 @@ int recreateV2V3Tree(const std::string inFileName)
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
 
-
   TFile* outFile_p = new TFile(("output/v2V3Tree_" + dateStr + ".root").c_str(), "RECREATE");
   TTree* v2V3Tree_p = new TTree("v2V3Tree", "");
 
@@ -53,20 +52,30 @@ int recreateV2V3Tree(const std::string inFileName)
   std::vector<float>* trkPhiOut_p=NULL;
   std::vector<float>* trkWeightOut_p=NULL;
 
+  std::vector<float>* eByEPtOut_p=NULL;
+  std::vector<float>* eByEPhiOut_p=NULL;
+  std::vector<float>* eByEWeightOut_p=NULL;
+
   v2V3Tree_p->Branch("hiBin", &hiBinOut_, "hiBin/I");
   v2V3Tree_p->Branch("hiEvt2Plane", &hiEvt2Plane_, "hiEvt2Plane/F");
   v2V3Tree_p->Branch("hiEvt3Plane", &hiEvt3Plane_, "hiEvt3Plane/F");
   v2V3Tree_p->Branch("v2FromTree", &v2FromTree_, "v2FromTree/F");
   v2V3Tree_p->Branch("chi2FromTree", &chi2FromTree_, "chi2FromTree/F");
   v2V3Tree_p->Branch("nDOFFromTree", &nDOFFromTree_, "nDOFFromTree/F");
-  v2V3Tree_p->Branch("pfPt", &pfPtOut_p);
-  v2V3Tree_p->Branch("pfPhi", &pfPhiOut_p);
-  v2V3Tree_p->Branch("pfWeight", &pfWeightOut_p);
-  
+
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   std::vector<std::string> ttreeList = returnRootFileContentsList(inFile_p, "TTree");
   removeVectorDuplicates(&ttreeList);
+  bool hasPFTree = vectorContainsString(&ttreeList, "pfcand");
   bool hasTrackTree = vectorContainsString(&ttreeList, "track");
+  bool hasEbyETree = vectorContainsString(&ttreeList, "EbyEana");
+  bool hasRhoFlow = vectorContainsString(&ttreeList, "hiFlowAnalyzerHFPlane");
+  
+  if(hasPFTree){
+    v2V3Tree_p->Branch("pfPt", &pfPtOut_p);
+    v2V3Tree_p->Branch("pfPhi", &pfPhiOut_p);
+    v2V3Tree_p->Branch("pfWeight", &pfWeightOut_p);   
+  }
 
   if(hasTrackTree){
     v2V3Tree_p->Branch("trkPt", &trkPtOut_p);
@@ -74,28 +83,41 @@ int recreateV2V3Tree(const std::string inFileName)
     v2V3Tree_p->Branch("trkWeight", &trkWeightOut_p);   
   }
 
-  TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
+  if(hasEbyETree){
+    v2V3Tree_p->Branch("eByEPt", &eByEPtOut_p);
+    v2V3Tree_p->Branch("eByEPhi", &eByEPhiOut_p);
+    v2V3Tree_p->Branch("eByEWeight", &eByEWeightOut_p);   
+  }
+
   TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
   TTree* skimTree_p = (TTree*)inFile_p->Get("skimanalysis/HltTree");
-  TTree* rhoFlowAnalyzer_p = (TTree*)inFile_p->Get("hiFlowAnalyzerHFPlane/t");
+  TTree* rhoFlowAnalyzer_p = NULL;
+  TTree* pfTree_p = NULL;
   TTree* trackTree_p = NULL;
+  TTree* ebyeTree_p = NULL;
+
+  if(hasRhoFlow) rhoFlowAnalyzer_p = (TTree*)inFile_p->Get("hiFlowAnalyzerHFPlane/t");
+  if(hasPFTree) pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
   if(hasTrackTree) trackTree_p = (TTree*)inFile_p->Get("anaTrack/trackTree");
+  if(hasEbyETree) ebyeTree_p = (TTree*)inFile_p->Get("EbyEana/tree");
 
   std::vector<float>* pfPt_p = NULL;
   std::vector<float>* pfEta_p = NULL;
   std::vector<float>* pfPhi_p = NULL;
   std::vector<int>* pfId_p = NULL;
 
-  pfTree_p->SetBranchStatus("*", 0);
-  pfTree_p->SetBranchStatus("pfPt", 1);
-  pfTree_p->SetBranchStatus("pfEta", 1);
-  pfTree_p->SetBranchStatus("pfPhi", 1);
-  pfTree_p->SetBranchStatus("pfId", 1);
-
-  pfTree_p->SetBranchAddress("pfPt", &pfPt_p);
-  pfTree_p->SetBranchAddress("pfEta", &pfEta_p);
-  pfTree_p->SetBranchAddress("pfPhi", &pfPhi_p);
-  pfTree_p->SetBranchAddress("pfId", &pfId_p);
+  if(hasPFTree){
+    pfTree_p->SetBranchStatus("*", 0);
+    pfTree_p->SetBranchStatus("pfPt", 1);
+    pfTree_p->SetBranchStatus("pfEta", 1);
+    pfTree_p->SetBranchStatus("pfPhi", 1);
+    pfTree_p->SetBranchStatus("pfId", 1);
+    
+    pfTree_p->SetBranchAddress("pfPt", &pfPt_p);
+    pfTree_p->SetBranchAddress("pfEta", &pfEta_p);
+    pfTree_p->SetBranchAddress("pfPhi", &pfPhi_p);
+    pfTree_p->SetBranchAddress("pfId", &pfId_p);
+  }
 
   Float_t hiHF_;
   Float_t vz_;
@@ -131,13 +153,15 @@ int recreateV2V3Tree(const std::string inFileName)
   skimTree_p->SetBranchAddress("HBHENoiseFilterResultRun2Loose", &HBHENoiseFilterResultRun2Loose_);
   skimTree_p->SetBranchAddress("phfCoincFilter3", &phfCoincFilter3_);
   skimTree_p->SetBranchAddress("pclusterCompatibilityFilter", &pclusterCompatibilityFilter_);
-  
+
   std::vector<double>* rhoFlowFitParams_p=NULL;
 
-  rhoFlowAnalyzer_p->SetBranchStatus("*", 0);
-  rhoFlowAnalyzer_p->SetBranchStatus("rhoFlowFitParams", 1);
-
-  rhoFlowAnalyzer_p->SetBranchAddress("rhoFlowFitParams", &rhoFlowFitParams_p);
+  if(hasRhoFlow){
+    rhoFlowAnalyzer_p->SetBranchStatus("*", 0);
+    rhoFlowAnalyzer_p->SetBranchStatus("rhoFlowFitParams", 1);
+    
+    rhoFlowAnalyzer_p->SetBranchAddress("rhoFlowFitParams", &rhoFlowFitParams_p);
+  }
 
   const Int_t nMaxTrk = 40000;
   Int_t nTrk_;
@@ -154,7 +178,7 @@ int recreateV2V3Tree(const std::string inFileName)
   UChar_t trkNlayer_[nMaxTrk];
   Float_t trkChi2_[nMaxTrk];
   UChar_t trkNdof_[nMaxTrk];
-  UChar_t trkAlgo_[nMaxTrk];
+  UChar_t trkOriginalAlgo_[nMaxTrk];
 
   if(hasTrackTree){
     trackTree_p->SetBranchStatus("*", 0);
@@ -172,7 +196,7 @@ int recreateV2V3Tree(const std::string inFileName)
     trackTree_p->SetBranchStatus("trkNlayer", 1);
     trackTree_p->SetBranchStatus("trkChi2", 1);
     trackTree_p->SetBranchStatus("trkNdof", 1);
-    trackTree_p->SetBranchStatus("trkAlgo", 1);
+    trackTree_p->SetBranchStatus("trkOriginalAlgo", 1);
 
     trackTree_p->SetBranchAddress("nTrk", &nTrk_);
     trackTree_p->SetBranchAddress("trkPt", trkPt_);
@@ -188,20 +212,39 @@ int recreateV2V3Tree(const std::string inFileName)
     trackTree_p->SetBranchAddress("trkNlayer", trkNlayer_);
     trackTree_p->SetBranchAddress("trkChi2", trkChi2_);
     trackTree_p->SetBranchAddress("trkNdof", trkNdof_);
-    trackTree_p->SetBranchAddress("trkAlgo", trkAlgo_);
+    trackTree_p->SetBranchAddress("trkOriginalAlgo", trkOriginalAlgo_);
   }
 
-  const Int_t nEntries = TMath::Min((Int_t)pfTree_p->GetEntries(), (Int_t)100000000);
+  Int_t nTrkEbyE_;
+  Float_t trkEbyEPt_[nMaxTrk];
+  Float_t trkEbyEPhi_[nMaxTrk];
+  Float_t trkEbyEEta_[nMaxTrk];
+
+  if(hasEbyETree){
+    ebyeTree_p->SetBranchStatus("*", 0);
+    ebyeTree_p->SetBranchStatus("nTrk", 1);
+    ebyeTree_p->SetBranchStatus("trkPt", 1);
+    ebyeTree_p->SetBranchStatus("trkPhi", 1);
+    ebyeTree_p->SetBranchStatus("trkEta", 1);
+
+    ebyeTree_p->SetBranchAddress("nTrk", &nTrkEbyE_);
+    ebyeTree_p->SetBranchAddress("trkPt", trkEbyEPt_);
+    ebyeTree_p->SetBranchAddress("trkPhi", trkEbyEPhi_);
+    ebyeTree_p->SetBranchAddress("trkEta", trkEbyEEta_);    
+  }
+
+  const Int_t nEntries = TMath::Min((Int_t)hiTree_p->GetEntries(), (Int_t)10000000000);
   goodGlobalSelection sel;
   sel.setIsPbPb(true);
 
   for(Int_t entry = 0; entry < nEntries; ++entry){
     if(entry%10000 == 0) std::cout << " Entry " << entry << "/" << nEntries << std::endl;
-    pfTree_p->GetEntry(entry);
     hiTree_p->GetEntry(entry);
     skimTree_p->GetEntry(entry);
-    rhoFlowAnalyzer_p->GetEntry(entry);
+    if(hasRhoFlow) rhoFlowAnalyzer_p->GetEntry(entry);
+    if(hasPFTree) pfTree_p->GetEntry(entry);
     if(hasTrackTree) trackTree_p->GetEntry(entry);
+    if(hasEbyETree) ebyeTree_p->GetEntry(entry);
 
     sel.setVz(vz_);
     sel.setHiHF(hiHF_);
@@ -217,9 +260,17 @@ int recreateV2V3Tree(const std::string inFileName)
     hiBinOut_ = hiBin_;
     hiEvt2Plane_ = hiEvtPlanes_[8];
     hiEvt3Plane_ = hiEvtPlanes_[15];
-    v2FromTree_ = rhoFlowFitParams_p->at(1);
-    chi2FromTree_ = rhoFlowFitParams_p->at(5);
-    nDOFFromTree_ = rhoFlowFitParams_p->at(6);
+    
+    if(hasRhoFlow){
+      v2FromTree_ = rhoFlowFitParams_p->at(1);
+      chi2FromTree_ = rhoFlowFitParams_p->at(5);
+      nDOFFromTree_ = rhoFlowFitParams_p->at(6);
+    }
+    else{
+      v2FromTree_ = -99;
+      chi2FromTree_ = -99;
+      nDOFFromTree_ = -99;
+    }
 
     int centCorrPos = -1;
     for(Int_t cI = 0; cI < nCentBinsCorr; ++cI){
@@ -229,54 +280,78 @@ int recreateV2V3Tree(const std::string inFileName)
       }
     }
   
-    pfPtOut_p->clear();
-    pfPhiOut_p->clear();
-    pfWeightOut_p->clear();
+    if(hasPFTree){
+      pfPtOut_p->clear();
+      pfPhiOut_p->clear();
+      pfWeightOut_p->clear();
+      
+      for(unsigned int pfI = 0; pfI < pfPt_p->size(); pfI++){
+	if(pfEta_p->at(pfI) < -1.0) continue;
+	if(pfEta_p->at(pfI) > 1.0) continue;
+	if(pfPt_p->at(pfI) < .3) continue;
+	if(pfPt_p->at(pfI) > 3.) continue;
+	if(pfId_p->at(pfI) != 1) continue;
+	
+	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI)));
+	
+	pfPtOut_p->push_back(pfPt_p->at(pfI));
+	pfPhiOut_p->push_back(pfPhi_p->at(pfI));
+	pfWeightOut_p->push_back(tempWeight);
+      }
+    }
+  
 
-    for(unsigned int pfI = 0; pfI < pfPt_p->size(); pfI++){
-      if(pfEta_p->at(pfI) < -1.0) continue;
-      if(pfEta_p->at(pfI) > 1.0) continue;
-      if(pfPt_p->at(pfI) < .3) continue;
-      if(pfPt_p->at(pfI) > 3.) continue;
-      if(pfId_p->at(pfI) != 1) continue;
-
-      double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI)));
-
-      pfPtOut_p->push_back(pfPt_p->at(pfI));
-      pfPhiOut_p->push_back(pfPhi_p->at(pfI));
-      pfWeightOut_p->push_back(tempWeight);
+    if(hasTrackTree){
+      trkPtOut_p->clear();
+      trkPhiOut_p->clear();
+      trkWeightOut_p->clear();
+      
+      for(Int_t tI = 0; tI < nTrk_; tI++){
+	if(trkEta_[tI] < -1.0) continue;
+	if(trkEta_[tI] > 1.0) continue;
+	if(trkPt_[tI] < .3) continue;
+	if(trkPt_[tI] > 3.) continue;
+	if(!highPurity_[tI]) continue;
+	
+	if(trkNHit_[tI] >= 3 && trkNHit_[tI] <= 6 && trkPt_[tI] < 2.4){
+	  if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 8.) continue;
+	  if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= 12.) continue;
+	}      
+	else{
+	  if(trkPt_[tI] > 2.4 && (trkOriginalAlgo_[tI] < 4 || trkOriginalAlgo_[tI] > 7)) continue;
+	  //	if(trkOriginalAlgo_[tI] < 4 && trkOriginalAlgo_[tI] > 7) continue;
+	  if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 3.) continue;
+	  if(TMath::Abs(trkDxy1_[tI]/trkDxyError1_[tI]) >= 3.) continue;
+	  if(TMath::Abs(trkPtError_[tI]/trkPt_[tI]) > .1) continue;
+	  if(trkNHit_[tI] < 11) continue;
+	  if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= .15) continue;
+	}
+	
+	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEta_[tI], trkPt_[tI]));
+	
+	trkPtOut_p->push_back(trkPt_[tI]);
+	trkPhiOut_p->push_back(trkPhi_[tI]);
+	trkWeightOut_p->push_back(tempWeight);
+      }
     }
 
-
-    trkPtOut_p->clear();
-    trkPhiOut_p->clear();
-    trkWeightOut_p->clear();
-
-    for(Int_t tI = 0; tI < nTrk_; tI++){
-      if(trkEta_[tI] < -1.0) continue;
-      if(trkEta_[tI] > 1.0) continue;
-      if(trkPt_[tI] < .3) continue;
-      if(trkPt_[tI] > 3.) continue;
-      if(!highPurity_[tI]) continue;
-
-      if(trkNHit_[tI] >= 3 && trkNHit_[tI] <= 6 && trkPt_[tI] < 2.4){
-	if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 8.) continue;
-	if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= 12.) continue;
-      }      
-      else if(trkPt_[tI] > 2.4 && trkAlgo_[tI] >= 4 && trkAlgo_[tI] <= 7){
-	if(TMath::Abs(trkDz1_[tI]/trkDzError1_[tI]) >= 3.) continue;
-	if(TMath::Abs(trkDxy1_[tI]/trkDxyError1_[tI]) >= 3.) continue;
-	if(TMath::Abs(trkPtError_[tI]/trkPt_[tI]) > .1) continue;
-	if(trkNHit_[tI] < 11) continue;
-	if(trkChi2_[tI]/(Double_t)(trkNdof_[tI]*trkNlayer_[tI]) >= .15) continue;
+    if(hasEbyETree){
+      eByEPtOut_p->clear();
+      eByEPhiOut_p->clear();
+      eByEWeightOut_p->clear();
+      
+      for(Int_t tI = 0; tI < nTrkEbyE_; tI++){
+	if(trkEbyEEta_[tI] < -1.0) continue;
+	if(trkEbyEEta_[tI] > 1.0) continue;
+	if(trkEbyEPt_[tI] < .3) continue;
+	if(trkEbyEPt_[tI] > 3.) continue;
+		
+	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEbyEEta_[tI], trkEbyEPt_[tI]));
+	
+	eByEPtOut_p->push_back(trkEbyEPt_[tI]);
+	eByEPhiOut_p->push_back(trkEbyEPhi_[tI]);
+	eByEWeightOut_p->push_back(tempWeight);
       }
-      else continue;
-
-      double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEta_[tI], trkPt_[tI]));
-
-      trkPtOut_p->push_back(trkPt_[tI]);
-      trkPhiOut_p->push_back(trkPhi_[tI]);
-      trkWeightOut_p->push_back(tempWeight);
     }
 
     v2V3Tree_p->Fill();
