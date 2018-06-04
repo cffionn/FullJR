@@ -14,12 +14,14 @@
 #include "src/RooUnfoldBayes.h"
 
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
 #include "MCExcample/include/atlasRAA.h"
+#include "MCExcample/include/atlasDijetXJ.h"
 
 void doUnfold(TH1D ** inUnfoldHist_p, TH1* inRawHist_p, RooUnfoldResponse* response_p, const Int_t bI, const std::string cloneStr)
 {
@@ -66,11 +68,18 @@ int makeRawRAASpectra(const std::string inFileName)
   const Int_t nBayes = 6;
 
   const Int_t nLogFactor = 100;
-  const Float_t logFactorLow = 2.;
-  const Float_t logFactorHi = 7.;
+  const Float_t logFactorLow = 5.;
+  const Float_t logFactorHi = 6.;
   Double_t logFactor[nLogFactor+1];
   getLinBins(logFactorLow, logFactorHi, nLogFactor, logFactor);
   Double_t logFactorBins[nLogFactor+2];
+
+  const Int_t nLinFactor = 100;
+  const Float_t linFactorLow = 1;
+  const Float_t linFactorHi = 15;
+  Double_t linFactor[nLinFactor+1];
+  getLinBins(linFactorLow, linFactorHi, nLinFactor, linFactor);
+  Double_t linFactorBins[nLinFactor+2];
 
   Double_t delta = (logFactor[1] - logFactor[0])/2.;
   for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
@@ -78,39 +87,84 @@ int makeRawRAASpectra(const std::string inFileName)
   }
   logFactorBins[nLogFactor+1] = logFactor[nLogFactor] + delta;
 
+  delta = (linFactor[1] - linFactor[0])/2.;
+  for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+    linFactorBins[lI] = linFactor[lI] - delta;
+  }
+  linFactorBins[nLinFactor+1] = linFactor[nLinFactor] + delta;
+
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
+  const Double_t dijetXJLeadingPtMax_ = 126.;
+  const Double_t dijetXJLeadingPtMin_ = 100.;
+  const Double_t dijetXJSubleadingPtMin_ = 25.;
+  const Double_t dijetXJDeltaPhiMin_ = TMath::Pi()*7./8.;
+
   atlasRAA raa;
+  atlasDijetXJ dijetXJ;
   TH1D* atlasRAA_R0p4_h=NULL;
+  TH1D* atlasDijetXJ_R0p4_h=NULL;
   raa.SetHistogram(&atlasRAA_R0p4_h, "atlasRAA_R0p4_h");
+  dijetXJ.SetHistogram(&atlasDijetXJ_R0p4_h, "atlasDijetXJ_R0p4_h");
   
-  const Int_t nAtlasBins = atlasRAA_R0p4_h->GetNbinsX();
-  Double_t atlasBins[nAtlasBins+1];
-  for(Int_t bI = 0; bI < nAtlasBins+1; ++bI){
-    atlasBins[bI] = atlasRAA_R0p4_h->GetBinLowEdge(bI+1);
+  const Int_t nAtlasRAABins = atlasRAA_R0p4_h->GetNbinsX();
+  Double_t atlasRAABins[nAtlasRAABins+1];
+  for(Int_t bI = 0; bI < nAtlasRAABins+1; ++bI){
+    atlasRAABins[bI] = atlasRAA_R0p4_h->GetBinLowEdge(bI+1);
   }
 
-  TH1D* genJtPt_AtlasBinnedR0p4_h = new TH1D("genJtPt_AtlasBinnedR0p4_h", ";;", nAtlasBins, atlasBins);
+  const Int_t nAtlasDijetXJBins = atlasDijetXJ_R0p4_h->GetNbinsX();
+  Double_t atlasDijetXJBins[nAtlasDijetXJBins+1];
+  for(Int_t bI = 0; bI < nAtlasDijetXJBins+1; ++bI){
+    atlasDijetXJBins[bI] = atlasDijetXJ_R0p4_h->GetBinLowEdge(bI+1);
+  }
+
+  const Double_t gColorFactor = 1.8;
+  const Double_t logReferencePt = 25.; // For units to make sense, just choose some arbitrarily low norm point
+  const Double_t linReferencePt = 25.; // For units to make sense, just choose some arbitrarily low norm point
+
+  TH1D* genJtPt_AtlasBinnedR0p4_h = new TH1D("genJtPt_AtlasBinnedR0p4_h", ";;", nAtlasRAABins, atlasRAABins);
   TH1D* genJtPt_AtlasBinnedR0p4_LogLoss_h[nLogFactor+1];
   TH1D* raa_AtlasBinnedR0p4_LogLoss_h[nLogFactor+1];
-  TH1D* atlasChi2_h = new TH1D("atlasChi2_h", ";;", nLogFactor+1, logFactorBins);
+  TH1D* genJtPt_AtlasBinnedR0p4_LinLoss_h[nLinFactor+1];
+  TH1D* raa_AtlasBinnedR0p4_LinLoss_h[nLinFactor+1];
 
-  centerTitles(genJtPt_AtlasBinnedR0p4_h);
-  setSumW2(genJtPt_AtlasBinnedR0p4_h);
+  TH1D* dijetXJ_AtlasBinnedR0p4_LogLoss_h[nLogFactor+1];
+  TH1D* dijetXJ_AtlasBinnedR0p4_LinLoss_h[nLinFactor+1];
+
+  TH1D* atlasRAAChi2_LogLoss_h = new TH1D("atlasRAAChi2_LogLoss_h", ";;", nLogFactor+1, logFactorBins);
+  TH1D* atlasRAAChi2_LinLoss_h = new TH1D("atlasRAAChi2_LinLoss_h", ";;", nLinFactor+1, linFactorBins);
+
+  centerTitles({genJtPt_AtlasBinnedR0p4_h, atlasRAAChi2_LogLoss_h, atlasRAAChi2_LinLoss_h});
+  setSumW2({genJtPt_AtlasBinnedR0p4_h, atlasRAAChi2_LogLoss_h, atlasRAAChi2_LinLoss_h});
   
   for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
-    genJtPt_AtlasBinnedR0p4_LogLoss_h[lI] = new TH1D(("genJtPt_AtlasBinnedR0p4_LogLoss" + prettyString(logFactor[lI], 2, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nAtlasBins, atlasBins);
+    genJtPt_AtlasBinnedR0p4_LogLoss_h[lI] = new TH1D(("genJtPt_AtlasBinnedR0p4_LogLoss" + prettyString(logFactor[lI], 4, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nAtlasRAABins, atlasRAABins);
 
-    raa_AtlasBinnedR0p4_LogLoss_h[lI] = new TH1D(("raa_AtlasBinnedR0p4_LogLoss" + prettyString(logFactor[lI], 2, true) + "_h").c_str(), ";Gen Jet p_{T};R_{AA}", nAtlasBins, atlasBins);
+    raa_AtlasBinnedR0p4_LogLoss_h[lI] = new TH1D(("raa_AtlasBinnedR0p4_LogLoss" + prettyString(logFactor[lI], 4, true) + "_h").c_str(), ";Gen Jet p_{T};R_{AA}", nAtlasRAABins, atlasRAABins);
 
-    centerTitles({genJtPt_AtlasBinnedR0p4_LogLoss_h[lI], raa_AtlasBinnedR0p4_LogLoss_h[lI]});
-    setSumW2({genJtPt_AtlasBinnedR0p4_LogLoss_h[lI], raa_AtlasBinnedR0p4_LogLoss_h[lI]});
+    dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI] = new TH1D(("dijetXJ_AtlasBinnedR0p4_LogLoss" + prettyString(logFactor[lI], 4, true) + "_h").c_str(), ";A_{J};#frac{1}{N_{J}} #frac{dN_{J}}{dA_{J}}", nAtlasDijetXJBins, atlasDijetXJBins);
+
+    centerTitles({genJtPt_AtlasBinnedR0p4_LogLoss_h[lI], raa_AtlasBinnedR0p4_LogLoss_h[lI], dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]});
+    setSumW2({genJtPt_AtlasBinnedR0p4_LogLoss_h[lI], raa_AtlasBinnedR0p4_LogLoss_h[lI], dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]});
+  }
+
+  for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+    genJtPt_AtlasBinnedR0p4_LinLoss_h[lI] = new TH1D(("genJtPt_AtlasBinnedR0p4_LinLoss" + prettyString(linFactor[lI], 4, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nAtlasRAABins, atlasRAABins);
+
+    raa_AtlasBinnedR0p4_LinLoss_h[lI] = new TH1D(("raa_AtlasBinnedR0p4_LinLoss" + prettyString(linFactor[lI], 4, true) + "_h").c_str(), ";Gen Jet p_{T};R_{AA}", nAtlasRAABins, atlasRAABins);
+
+    dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI] = new TH1D(("dijetXJ_AtlasBinnedR0p4_LinLoss" + prettyString(logFactor[lI], 4, true) + "_h").c_str(), ";A_{J};#frac{1}{N_{J}} #frac{dN_{J}}{dA_{J}}", nAtlasDijetXJBins, atlasDijetXJBins);
+
+    centerTitles({genJtPt_AtlasBinnedR0p4_LinLoss_h[lI], raa_AtlasBinnedR0p4_LinLoss_h[lI], dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]});
+    setSumW2({genJtPt_AtlasBinnedR0p4_LinLoss_h[lI], raa_AtlasBinnedR0p4_LinLoss_h[lI], dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]});
   }
   
 
   TH1D* genJtPt_h[nRVals];
   TH1D* genJtPt_LogLoss_h[nRVals][nLogFactor+1];
+  TH1D* genJtPt_LinLoss_h[nRVals][nLogFactor+1];
   TH1D* genJtPt_GoodRecoFull_h[nRVals];
   TH1D* recoJtPt_h[nRVals];
   TH1D* recoJtPt_RCFake_h[nRVals];
@@ -149,6 +203,7 @@ int makeRawRAASpectra(const std::string inFileName)
   TH1D* unfoldedJtPtFake_h[nRVals][nBayes];
   TH1D* unfoldedJtPtFake_Parallel_h[nRVals][nBayes];
 
+  const Double_t jtAbsEtaMax = 2.;
   const Int_t nJtPtBins = 10;
   Float_t jtPtBins[nJtPtBins+1] = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100};
 
@@ -160,8 +215,12 @@ int makeRawRAASpectra(const std::string inFileName)
   for(Int_t rI = 0; rI < nRVals; ++rI){
     genJtPt_h[rI] = new TH1D(("genJtPt_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nJtPtBins, jtPtBins);
     for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
-      genJtPt_LogLoss_h[rI][lI] = new TH1D(("genJtPt_LogLoss" + prettyString(logFactor[lI], 2, true) + "_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nJtPtBins, jtPtBins);
-    }
+      genJtPt_LogLoss_h[rI][lI] = new TH1D(("genJtPt_LogLoss" + prettyString(logFactor[lI], 4, true) + "_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nJtPtBins, jtPtBins); 
+   }
+
+    for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+      genJtPt_LinLoss_h[rI][lI] = new TH1D(("genJtPt_LinLoss" + prettyString(linFactor[lI], 4, true) + "_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nJtPtBins, jtPtBins); 
+   }
 
     genJtPt_GoodRecoFull_h[rI] = new TH1D(("genJtPt_GoodRecoFull_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Gen Jet p_{T};Counts", nJtPtBins, jtPtBins);
     recoJtPt_h[rI] = new TH1D(("recoJtPt_R" + prettyString(rVals[rI], 1, true) + "_h").c_str(), ";Reco Jet p_{T};Counts", nJtPtBins, jtPtBins);
@@ -220,8 +279,8 @@ int makeRawRAASpectra(const std::string inFileName)
     centerTitles({genJtPt_h[rI], genJtPt_GoodRecoFull_h[rI], recoJtPt_h[rI], recoJtPt_RCFake_h[rI], recoJtPt_RCFakeCheck_h[rI], recoJtPt_NoGen_h[rI], genJtPt_Parallel_h[rI], genJtPt_GoodRecoFull_Parallel_h[rI], recoJtPt_Parallel_h[rI], recoJtPt_RCFake_Parallel_h[rI], recoJtPt_RCFakeCheck_Parallel_h[rI], recoJtPt_NoGen_Parallel_h[rI]});
 
     for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
-      setSumW2(genJtPt_LogLoss_h[rI][lI]);
-      centerTitles(genJtPt_LogLoss_h[rI][lI]);
+      setSumW2({genJtPt_LogLoss_h[rI][lI], genJtPt_LinLoss_h[rI][lI]});
+      centerTitles({genJtPt_LogLoss_h[rI][lI], genJtPt_LinLoss_h[rI][lI]});
     }
 
     setSumW2({recoVsGenJtPt_h[rI], recoVsGenJtPtRes0p9_h[rI], recoVsGenJtPtRes1p1_h[rI], recoVsGenJtPtRes0p85_h[rI], recoVsGenJtPtRes1p15_h[rI]});
@@ -258,9 +317,16 @@ int makeRawRAASpectra(const std::string inFileName)
 
   const Bool_t doRecoJets = std::stoi(std::string(((TNamed*)inFile_p->Get(listOfTNamed.at(doRecoJetsPos).c_str()))->GetTitle()));
 
+
   TTree* partonTree_p = (TTree*)inFile_p->Get("partonTree");
   TTree* inTree_p[nRVals];
 
+  const Int_t nQGMax_ = 2;
+  Int_t nQG_;
+  Float_t qgPt_[nQGMax_];
+  Float_t qgPhi_[nQGMax_];
+  Float_t qgEta_[nQGMax_];
+  Int_t qgID_[nQGMax_];
   Float_t pthat_;
   Float_t pthatWeight_;
 
@@ -274,16 +340,27 @@ int makeRawRAASpectra(const std::string inFileName)
   Float_t recoJtPtRes1p1_[nRVals][nJtMax];
   Float_t recoJtPtRes0p85_[nRVals][nJtMax];
   Float_t recoJtPtRes1p15_[nRVals][nJtMax];
+
   
-  partonTree_p->SetBranchStatus("*", 0);
+  partonTree_p->SetBranchStatus("*", 0);  
+  partonTree_p->SetBranchStatus("nQG", 1);
+  partonTree_p->SetBranchStatus("qgPt", 1);
+  partonTree_p->SetBranchStatus("qgPhi", 1);
+  partonTree_p->SetBranchStatus("qgEta", 1);
+  partonTree_p->SetBranchStatus("qgID", 1);
   partonTree_p->SetBranchStatus("pthat", 1);
   partonTree_p->SetBranchStatus("pthatWeight", 1);
 
+  partonTree_p->SetBranchAddress("nQG", &nQG_);
+  partonTree_p->SetBranchAddress("qgPt", qgPt_);
+  partonTree_p->SetBranchAddress("qgPhi", qgPhi_);
+  partonTree_p->SetBranchAddress("qgEta", qgEta_);
+  partonTree_p->SetBranchAddress("qgID", qgID_);
   partonTree_p->SetBranchAddress("pthat", &pthat_);
   partonTree_p->SetBranchAddress("pthatWeight", &pthatWeight_);
 
   for(Int_t rI = 0; rI < nRVals; ++rI){
-    inTree_p[rI] = (TTree*)inFile_p->Get(("recoAndGenTreeR" + prettyString(rVals[rI], 1, true)).c_str());
+    inTree_p[rI] = (TTree*)inFile_p->Get(("recoAndGenTreeR" + prettyString(rVals[rI], 1, true) + "EScheme").c_str());
     
     inTree_p[rI]->SetBranchAddress("nJt", &(nJt_[rI]));
     inTree_p[rI]->SetBranchAddress("genJtPt", genJtPt_[rI]);
@@ -302,16 +379,30 @@ int makeRawRAASpectra(const std::string inFileName)
   const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)inTree_p[0]->GetEntries());
   Int_t fills = 0;
   Int_t paraFills = 0;
-
   std::cout << "Processing Entries: " << nEntries << "..." << std::endl;
+
   for(Int_t entry = 0; entry < nEntries; ++entry){
     if(entry%10000 == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
 
+    partonTree_p->GetEntry(entry);
+
     for(Int_t rI = 0; rI < nRVals; ++rI){
-      partonTree_p->GetEntry(entry);
       inTree_p[rI]->GetEntry(entry);
 
-      bool fillPara = randGen_p->Uniform(0.0, 1.0) >= 0.5;
+      int qgJetPos[nQGMax_] = {-1, -1};
+      for(Int_t qI = 0; qI < nQG_; ++qI){
+	for(Int_t jI = 0; jI < nJt_[rI]; ++jI){
+	  if(TMath::Abs(genJtEta_[rI][jI]) > jtAbsEtaMax) continue;
+
+	  if(getDR(qgEta_[qI], qgPhi_[qI], genJtEta_[rI][jI], genJtPhi_[rI][jI]) < 0.4){
+	    qgJetPos[qI] = jI;
+	    break;
+	  }
+	}
+      }
+
+
+      bool fillPara = randGen_p->Uniform(0.0, 1.0) >= 0.5;      
 
       if(!doRecoJets){
 	for(Int_t jI = 0; jI < nJt_[rI]; ++jI){
@@ -328,7 +419,34 @@ int makeRawRAASpectra(const std::string inFileName)
       if(fillPara) paraFills++;
       else fills++;
 
+      Double_t leadingGenJtPt_Log_[nLogFactor+1];
+      Double_t subleadingGenJtPt_Log_[nLogFactor+1];
+      Double_t leadingGenJtPhi_Log_[nLogFactor+1];
+      Double_t subleadingGenJtPhi_Log_[nLogFactor+1];
+
+      for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
+	leadingGenJtPt_Log_[lI] = -999;
+	subleadingGenJtPt_Log_[lI] = -999;
+	leadingGenJtPhi_Log_[lI] = -999;
+	subleadingGenJtPhi_Log_[lI] = -999;
+      }
+
+      Double_t leadingGenJtPt_Lin_[nLinFactor+1];
+      Double_t subleadingGenJtPt_Lin_[nLinFactor+1];
+      Double_t leadingGenJtPhi_Lin_[nLinFactor+1];
+      Double_t subleadingGenJtPhi_Lin_[nLinFactor+1];
+
+
+      for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+	leadingGenJtPt_Lin_[lI] = -999;
+	subleadingGenJtPt_Lin_[lI] = -999;
+	leadingGenJtPhi_Lin_[lI] = -999;
+	subleadingGenJtPhi_Lin_[lI] = -999;
+      }
+
       for(Int_t jI = 0; jI < nJt_[rI]; ++jI){
+	if(TMath::Abs(genJtEta_[rI][jI]) > jtAbsEtaMax) continue;
+
 	bool goodRecoFull = recoJtPt_[rI][jI] >= jtPtBins[0] && recoJtPt_[rI][jI] < jtPtBins[nJtPtBins];
 	bool goodRecoTrunc = recoJtPt_[rI][jI] >= jtPtBins[1] && recoJtPt_[rI][jI] < jtPtBins[nJtPtBins-1];
 
@@ -338,7 +456,7 @@ int makeRawRAASpectra(const std::string inFileName)
 	bool goodRecoTrunc1p15 = recoJtPtRes1p15_[rI][jI] >= jtPtBins[1] && recoJtPtRes1p15_[rI][jI] < jtPtBins[nJtPtBins-1];
 
 	bool goodGen = genJtPt_[rI][jI] >= jtPtBins[0] && genJtPt_[rI][jI] < jtPtBins[nJtPtBins];
-	bool goodGenAtlas = genJtPt_[rI][jI] >= atlasBins[0] && genJtPt_[rI][jI] < atlasBins[nAtlasBins];
+	bool goodGenAtlas = genJtPt_[rI][jI] >= atlasRAABins[0] && genJtPt_[rI][jI] < atlasRAABins[nAtlasRAABins];
 
 	if(!fillPara){
 	  if(goodGen){
@@ -347,14 +465,58 @@ int makeRawRAASpectra(const std::string inFileName)
 	  }
 
 	  if(goodGenAtlas) genJtPt_AtlasBinnedR0p4_h->Fill(genJtPt_[rI][jI], pthatWeight_);
+
+	  Double_t colorFactor = 1.;
+	  if(qgJetPos[0] == jI && TMath::Abs(qgID_[0]) == 21) colorFactor = gColorFactor;
+	  else if(qgJetPos[1] == jI && TMath::Abs(qgID_[1]) == 21) colorFactor = gColorFactor;
 	  
 	  for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
-	    Double_t genJtPt_LogLoss_ = genJtPt_[rI][jI] - logFactor[lI]*TMath::Log(genJtPt_[rI][jI]);
+	    Double_t logRatio = genJtPt_[rI][jI]/logReferencePt;
+	    if(logRatio < 1.) logRatio = 1.;
+
+
+	    Double_t genJtPt_LogLoss_ = genJtPt_[rI][jI] - colorFactor*logFactor[lI]*TMath::Log(TMath::E()*logRatio);
 	    bool goodGenLogLoss = genJtPt_LogLoss_ >= jtPtBins[0] && genJtPt_LogLoss_ < jtPtBins[nJtPtBins];
-	    bool goodGenLogLossAtlas = genJtPt_LogLoss_ >= atlasBins[0] && genJtPt_LogLoss_ < atlasBins[nAtlasBins];
+	    bool goodGenLogLossAtlas = genJtPt_LogLoss_ >= atlasRAABins[0] && genJtPt_LogLoss_ < atlasRAABins[nAtlasRAABins];
 	    if(goodGenLogLoss) genJtPt_LogLoss_h[rI][lI]->Fill(genJtPt_LogLoss_, pthatWeight_);	    
 
 	    if(goodGenLogLossAtlas) genJtPt_AtlasBinnedR0p4_LogLoss_h[lI]->Fill(genJtPt_LogLoss_, pthatWeight_);
+
+	    if(genJtPt_LogLoss_ > leadingGenJtPt_Log_[lI]){
+	      subleadingGenJtPt_Log_[lI] = leadingGenJtPt_Log_[lI];
+	      subleadingGenJtPhi_Log_[lI] = leadingGenJtPhi_Log_[lI];
+
+	      leadingGenJtPt_Log_[lI] = genJtPt_LogLoss_;
+	      leadingGenJtPhi_Log_[lI] = genJtPhi_[rI][jI];
+	    }
+	    else if(genJtPt_LogLoss_ > subleadingGenJtPt_Log_[lI]){
+	      subleadingGenJtPt_Log_[lI] = genJtPt_LogLoss_;
+	      subleadingGenJtPhi_Log_[lI] = genJtPhi_[rI][jI];
+	    }
+	  }
+
+	  for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+	    Double_t linRatio = genJtPt_[rI][jI]/linReferencePt;
+            if(linRatio < 1.) linRatio = 1.;
+
+	    Double_t genJtPt_LinLoss_ = genJtPt_[rI][jI] - colorFactor*linFactor[lI]*linRatio;
+	    bool goodGenLinLoss = genJtPt_LinLoss_ >= jtPtBins[0] && genJtPt_LinLoss_ < jtPtBins[nJtPtBins];
+	    bool goodGenLinLossAtlas = genJtPt_LinLoss_ >= atlasRAABins[0] && genJtPt_LinLoss_ < atlasRAABins[nAtlasRAABins];
+	    if(goodGenLinLoss) genJtPt_LinLoss_h[rI][lI]->Fill(genJtPt_LinLoss_, pthatWeight_);	    
+
+	    if(goodGenLinLossAtlas) genJtPt_AtlasBinnedR0p4_LinLoss_h[lI]->Fill(genJtPt_LinLoss_, pthatWeight_);
+
+	    if(genJtPt_LinLoss_ > leadingGenJtPt_Lin_[lI]){
+	      subleadingGenJtPt_Lin_[lI] = leadingGenJtPt_Lin_[lI];
+	      subleadingGenJtPhi_Lin_[lI] = leadingGenJtPhi_Lin_[lI];
+
+	      leadingGenJtPt_Lin_[lI] = genJtPt_LinLoss_;
+	      leadingGenJtPhi_Lin_[lI] = genJtPhi_[rI][jI];
+	    }
+	    else if(genJtPt_LinLoss_ > subleadingGenJtPt_Lin_[lI]){
+	      subleadingGenJtPt_Lin_[lI] = genJtPt_LinLoss_;
+	      subleadingGenJtPhi_Lin_[lI] = genJtPhi_[rI][jI];
+	    }
 	  }	  
 
 	  if(goodRecoTrunc){
@@ -417,6 +579,27 @@ int makeRawRAASpectra(const std::string inFileName)
 	}
       }
 
+      for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
+	if(leadingGenJtPt_Log_[lI] >= dijetXJLeadingPtMax_ || leadingGenJtPt_Log_[lI] < dijetXJLeadingPtMin_) continue;
+	if(subleadingGenJtPt_Log_[lI] < dijetXJSubleadingPtMin_) continue;
+
+	if(TMath::Abs(getDPHI(leadingGenJtPhi_Log_[lI], subleadingGenJtPhi_Log_[lI])) < dijetXJDeltaPhiMin_) continue;
+
+	Double_t tempXJ = subleadingGenJtPt_Log_[lI]/leadingGenJtPt_Log_[lI];
+
+	dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->Fill(tempXJ, pthatWeight_);
+      }
+
+      for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+	if(leadingGenJtPt_Lin_[lI] >= dijetXJLeadingPtMax_ || leadingGenJtPt_Lin_[lI] < dijetXJLeadingPtMin_) continue;
+	if(subleadingGenJtPt_Lin_[lI] < dijetXJSubleadingPtMin_) continue;
+	if(TMath::Abs(getDPHI(leadingGenJtPhi_Lin_[lI], subleadingGenJtPhi_Lin_[lI])) < dijetXJDeltaPhiMin_) continue;
+
+	Double_t tempXJ = subleadingGenJtPt_Lin_[lI]/leadingGenJtPt_Lin_[lI];
+
+	dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->Fill(tempXJ, pthatWeight_);
+      }
+
       for(Int_t jI = 0; jI < nRCFakes[rI]-1; ++jI){
 	Double_t fakeJtPt = randGen_p->Gaus(0, rcWidth[rI]);
         bool goodRecoTrunc = fakeJtPt >= jtPtBins[1] && fakeJtPt < jtPtBins[nJtPtBins-1];
@@ -441,8 +624,8 @@ int makeRawRAASpectra(const std::string inFileName)
 
   outFile_p->cd();
 
-  for(Int_t rI = 0; rI < nRVals; ++rI){
 
+  for(Int_t rI = 0; rI < nRVals; ++rI){
     for(Int_t bI = 0; bI < nBayes;  ++bI){
       doUnfold(&(unfoldedJtPt_h[rI][bI]), recoJtPt_h[rI], response_h[rI], bI+1, std::string("unfoldedJtPt_R" + prettyString(rVals[rI], 1, true) + "_Bayes" + std::to_string(bI+1) + "_h"));
       doUnfold(&(unfoldedJtPtFake_h[rI][bI]), recoJtPt_h[rI], responseFake_h[rI], bI+1, std::string("unfoldedJtPtFake_R" + prettyString(rVals[rI], 1, true) + "_Bayes" + std::to_string(bI+1) + "_h"));
@@ -461,6 +644,7 @@ int makeRawRAASpectra(const std::string inFileName)
   }
 
   atlasRAA_R0p4_h->Write("", TObject::kOverwrite);
+  atlasDijetXJ_R0p4_h->Write("", TObject::kOverwrite);
   genJtPt_AtlasBinnedR0p4_h->Scale(1./(Double_t)fills);
   genJtPt_AtlasBinnedR0p4_h->Write("", TObject::kOverwrite);
 
@@ -471,25 +655,65 @@ int makeRawRAASpectra(const std::string inFileName)
     raa_AtlasBinnedR0p4_LogLoss_h[lI]->Divide(genJtPt_AtlasBinnedR0p4_LogLoss_h[lI], genJtPt_AtlasBinnedR0p4_h);   
     raa_AtlasBinnedR0p4_LogLoss_h[lI]->Write("", TObject::kOverwrite);
 
-    //    atlasChi2_h->SetBinContent(lI+1, raa_AtlasBinnedR0p4_LogLoss_h[lI]->Chi2Test(atlasRAA_R0p4_h, "WW CHI2/NDF"));
+    //    atlasRAAChi2_LogLoss_h->SetBinContent(lI+1, raa_AtlasBinnedR0p4_LogLoss_h[lI]->Chi2Test(atlasRAA_R0p4_h, "WW CHI2/NDF"));
 
-    Double_t chi2 = 0.;
+    Double_t chi2LogLoss = 0.;
     for(Int_t bI = 0; bI < atlasRAA_R0p4_h->GetNbinsX(); ++bI){
-      chi2 += (atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinContent(bI+1))*(atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinContent(bI+1))/atlasRAA_R0p4_h->GetBinContent(bI+1);
+      chi2LogLoss += (atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinContent(bI+1))*(atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinContent(bI+1))/atlasRAA_R0p4_h->GetBinContent(bI+1);
     }
-    Double_t chi2NDF = chi2/(Double_t)atlasRAA_R0p4_h->GetNbinsX();
+    Double_t chi2LogLossNDF = chi2LogLoss/(Double_t)atlasRAA_R0p4_h->GetNbinsX();
 
-    atlasChi2_h->SetBinContent(lI+1, chi2NDF);
-    atlasChi2_h->SetBinError(lI+1, 0.0);
+    atlasRAAChi2_LogLoss_h->SetBinContent(lI+1, chi2LogLossNDF);
+    atlasRAAChi2_LogLoss_h->SetBinError(lI+1, 0.0);
+  
+    dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->Scale(1./dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->Integral());
+
+    for(Int_t bIX = 0; bIX < dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->GetNbinsX(); ++bIX){
+      dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->SetBinContent(bIX+1, dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinContent(bIX+1)/dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinWidth(bIX+1));
+      dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->SetBinError(bIX+1, dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinError(bIX+1)/dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->GetBinWidth(bIX+1));
+    }
+
+    dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI]->Write("", TObject::kOverwrite);
   }
 
-  atlasChi2_h->Write("", TObject::kOverwrite);
+  for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+    genJtPt_AtlasBinnedR0p4_LinLoss_h[lI]->Scale(1./(Double_t)fills);
+    genJtPt_AtlasBinnedR0p4_LinLoss_h[lI]->Write("", TObject::kOverwrite);
+
+    raa_AtlasBinnedR0p4_LinLoss_h[lI]->Divide(genJtPt_AtlasBinnedR0p4_LinLoss_h[lI], genJtPt_AtlasBinnedR0p4_h);   
+    raa_AtlasBinnedR0p4_LinLoss_h[lI]->Write("", TObject::kOverwrite);
+
+    //    atlasRAAChi2_LinLoss_h->SetBinContent(lI+1, raa_AtlasBinnedR0p4_LinLoss_h[lI]->Chi2Test(atlasRAA_R0p4_h, "WW CHI2/NDF"));
+
+    Double_t chi2LinLoss = 0.;
+    for(Int_t bI = 0; bI < atlasRAA_R0p4_h->GetNbinsX(); ++bI){
+      chi2LinLoss += (atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinContent(bI+1))*(atlasRAA_R0p4_h->GetBinContent(bI+1) - raa_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinContent(bI+1))/atlasRAA_R0p4_h->GetBinContent(bI+1);
+    }
+    Double_t chi2LinLossNDF = chi2LinLoss/(Double_t)atlasRAA_R0p4_h->GetNbinsX();
+
+    atlasRAAChi2_LinLoss_h->SetBinContent(lI+1, chi2LinLossNDF);
+    atlasRAAChi2_LinLoss_h->SetBinError(lI+1, 0.0);
+
+    dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->Scale(1./dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->Integral());
+    for(Int_t bIX = 0; bIX < dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->GetNbinsX(); ++bIX){
+      dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->SetBinContent(bIX+1, dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinContent(bIX+1)/dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinWidth(bIX+1));
+      dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->SetBinError(bIX+1, dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinError(bIX+1)/dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->GetBinWidth(bIX+1));
+    }
+    dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI]->Write("", TObject::kOverwrite);
+  }
+
+  atlasRAAChi2_LogLoss_h->Write("", TObject::kOverwrite);
+  atlasRAAChi2_LinLoss_h->Write("", TObject::kOverwrite);
 
   for(Int_t rI = 0; rI < nRVals; ++rI){
     genJtPt_h[rI]->Scale(1./(Double_t)fills);
 
     for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
       genJtPt_LogLoss_h[rI][lI]->Scale(1./(Double_t)fills);
+    }
+
+    for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+      genJtPt_LinLoss_h[rI][lI]->Scale(1./(Double_t)fills);
     }
 
     genJtPt_GoodRecoFull_h[rI]->Scale(1./(Double_t)fills);
@@ -509,6 +733,10 @@ int makeRawRAASpectra(const std::string inFileName)
 
     for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
       genJtPt_LogLoss_h[rI][lI]->Write("", TObject::kOverwrite);
+    }
+
+    for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+      genJtPt_LinLoss_h[rI][lI]->Write("", TObject::kOverwrite);
     }
 
     genJtPt_GoodRecoFull_h[rI]->Write("", TObject::kOverwrite);
@@ -599,6 +827,10 @@ int makeRawRAASpectra(const std::string inFileName)
       delete genJtPt_LogLoss_h[rI][lI];
     }
 
+    for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+      delete genJtPt_LinLoss_h[rI][lI];
+    }
+
     delete genJtPt_GoodRecoFull_h[rI];
     delete recoJtPt_h[rI];
     delete recoJtPt_RCFake_h[rI];
@@ -624,12 +856,21 @@ int makeRawRAASpectra(const std::string inFileName)
   }
 
   delete atlasRAA_R0p4_h;
-  delete atlasChi2_h;
+  delete atlasDijetXJ_R0p4_h;
+  delete atlasRAAChi2_LogLoss_h;
+  delete atlasRAAChi2_LinLoss_h;
 
   delete genJtPt_AtlasBinnedR0p4_h;
   for(Int_t lI = 0; lI < nLogFactor+1; ++lI){
     delete genJtPt_AtlasBinnedR0p4_LogLoss_h[lI];
     delete raa_AtlasBinnedR0p4_LogLoss_h[lI];
+    delete dijetXJ_AtlasBinnedR0p4_LogLoss_h[lI];
+  }
+
+  for(Int_t lI = 0; lI < nLinFactor+1; ++lI){
+    delete genJtPt_AtlasBinnedR0p4_LinLoss_h[lI];
+    delete raa_AtlasBinnedR0p4_LinLoss_h[lI];
+    delete dijetXJ_AtlasBinnedR0p4_LinLoss_h[lI];
   }
 
   outFile_p->Close();

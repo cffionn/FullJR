@@ -19,7 +19,7 @@ CHECK_FASTJETINSTALLPATH=printf "\nFASTJETINSTALLPATH is set to: \'$(FASTJETINST
 
 CHECK_ROOUNFPATH=printf "\nROOUNFPATH is set to: \'$(ROOUNFPATH)\'\n   !!!IF ROOUNFPATH IS EMPTY THE BUILD WILL FAIL!!!\n   Run 'source setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir checkFastJetInstallPath checkRooUnfPath bin/processAndRecoPYT8.exe bin/makeRawRAASpectra.exe bin/makeResErrorPlot.exe bin/makeJetRRatio.exe bin/makePartonRRatio.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir checkFastJetInstallPath checkRooUnfPath bin/processAndRecoPYT8.exe bin/makeRawRAASpectra.exe bin/makeResErrorPlot.exe bin/makeJetRRatio.exe bin/makePartonRRatio.exe bin/plotChi2.exe bin/plotRAAAndDijet.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -53,6 +53,12 @@ bin/makeJetRRatio.exe: src/makeJetRRatio.C
 
 bin/makePartonRRatio.exe: src/makePartonRRatio.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makePartonRRatio.exe src/makePartonRRatio.C
+
+bin/plotChi2.exe: src/plotChi2.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotChi2.exe src/plotChi2.C
+
+bin/plotRAAAndDijet.exe: src/plotRAAAndDijet.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotRAAAndDijet.exe src/plotRAAAndDijet.C
 
 clean:
 	rm -f ./*~
