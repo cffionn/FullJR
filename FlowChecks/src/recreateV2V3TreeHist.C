@@ -37,6 +37,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2Obs_Trk_h[nCentBins];
   TH1F* v2ObsCorr_Trk_h[nCentBins];
 
+  TH1F* v2Raw_EByE_h[nCentBins];
+  TH1F* v2RawCorr_EByE_h[nCentBins];
+  
+  TH1F* v2Obs_EByE_h[nCentBins];
+  TH1F* v2ObsCorr_EByE_h[nCentBins];
+
   TH1F* v2Raw_Mean_PF_h = new TH1F("v2Raw_Mean_PF_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
   TH1F* v2Raw_Sigma_PF_h = new TH1F("v2Raw_Sigma_PF_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
   TH1F* v2RawCorr_Mean_PF_h = new TH1F("v2RawCorr_Mean_PF_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
@@ -57,6 +63,17 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2ObsCorr_Mean_Trk_h = new TH1F("v2ObsCorr_Mean_Trk_h", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
   TH1F* v2ObsCorr_Sigma_Trk_h = new TH1F("v2ObsCorr_Sigma_Trk_h", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
 
+
+  TH1F* v2Raw_Mean_EByE_h = new TH1F("v2Raw_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
+  TH1F* v2Raw_Sigma_EByE_h = new TH1F("v2Raw_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
+  TH1F* v2RawCorr_Mean_EByE_h = new TH1F("v2RawCorr_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
+  TH1F* v2RawCorr_Sigma_EByE_h = new TH1F("v2RawCorr_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
+
+  TH1F* v2Obs_Mean_EByE_h = new TH1F("v2Obs_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
+  TH1F* v2Obs_Sigma_EByE_h = new TH1F("v2Obs_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
+  TH1F* v2ObsCorr_Mean_EByE_h = new TH1F("v2ObsCorr_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
+  TH1F* v2ObsCorr_Sigma_EByE_h = new TH1F("v2ObsCorr_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
+
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
     v2Raw_PF_h[cI] = new TH1F(("v2Raw_" + centStr + "_PF_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
@@ -68,6 +85,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2RawCorr_Trk_h[cI] = new TH1F(("v2RawCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2Obs_Trk_h[cI] = new TH1F(("v2Obs_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2ObsCorr_Trk_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+
+    v2Raw_EByE_h[cI] = new TH1F(("v2Raw_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2RawCorr_EByE_h[cI] = new TH1F(("v2RawCorr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2Obs_EByE_h[cI] = new TH1F(("v2Obs_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2ObsCorr_EByE_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
   }
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
@@ -80,9 +102,22 @@ int recreateV2V3TreeHist(const std::string inFileName)
   }
 
   bool hasTrk = false;
+  bool hasPF = false;
+  bool hasEByE = false;
+
   for(unsigned int tI = 0; tI < vectorOfBranches.size(); ++tI){
     if(vectorOfBranches.at(tI).find("trk") != std::string::npos){
       hasTrk = true;
+      break;
+    }
+
+    if(vectorOfBranches.at(tI).find("pf") != std::string::npos){
+      hasPF = true;
+      break;
+    }
+
+    if(vectorOfBranches.at(tI).find("eByE") != std::string::npos){
+      hasEByE = true;
       break;
     }
   }
@@ -96,17 +131,27 @@ int recreateV2V3TreeHist(const std::string inFileName)
   std::vector<float>* trkPt_p=NULL;
   std::vector<float>* trkPhi_p=NULL;
   std::vector<float>* trkWeight_p=NULL;  
+  std::vector<float>* eByEPt_p=NULL;
+  std::vector<float>* eByEPhi_p=NULL;
+  std::vector<float>* eByEWeight_p=NULL;  
   
   inTree_p->SetBranchAddress("hiBin", &hiBin_);
   inTree_p->SetBranchAddress("hiEvt2Plane", &hiEvt2Plane_);
   inTree_p->SetBranchAddress("hiEvt3Plane", &hiEvt3Plane_);
   inTree_p->SetBranchAddress("v2FromTree", &v2FromTree_);
-  inTree_p->SetBranchAddress("pfPhi", &pfPhi_p);
-  inTree_p->SetBranchAddress("pfWeight", &pfWeight_p);
+  if(hasPF){
+    inTree_p->SetBranchAddress("pfPhi", &pfPhi_p);
+    inTree_p->SetBranchAddress("pfWeight", &pfWeight_p);
+  }
   if(hasTrk){
     inTree_p->SetBranchAddress("trkPt", &trkPt_p);
     inTree_p->SetBranchAddress("trkPhi", &trkPhi_p);
     inTree_p->SetBranchAddress("trkWeight", &trkWeight_p);
+  }
+  if(hasEByE){
+    inTree_p->SetBranchAddress("eByEPt", &eByEPt_p);
+    inTree_p->SetBranchAddress("eByEPhi", &eByEPhi_p);
+    inTree_p->SetBranchAddress("eByEWeight", &eByEWeight_p);
   }
 
   const Int_t nEntries = TMath::Min((Int_t)inTree_p->GetEntries(), (Int_t)100000000);
@@ -122,6 +167,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
   double globalV2XRawTrkCorr[nCentBins];
   double globalV2YRawTrkCorr[nCentBins];
 
+  double globalV2XRawEByE[nCentBins];
+  double globalV2YRawEByE[nCentBins];
+  double globalV2XRawEByECorr[nCentBins];
+  double globalV2YRawEByECorr[nCentBins];
+
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     globalN[cI] = 0.;
     globalV2XRawPF[cI] = 0.;
@@ -133,6 +183,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
     globalV2YRawTrk[cI] = 0.;
     globalV2XRawTrkCorr[cI] = 0.;
     globalV2YRawTrkCorr[cI] = 0.;
+
+    globalV2XRawEByE[cI] = 0.;
+    globalV2YRawEByE[cI] = 0.;
+    globalV2XRawEByECorr[cI] = 0.;
+    globalV2YRawEByECorr[cI] = 0.;
   }
 
   for(Int_t entry = 0; entry < nEntries; ++entry){
@@ -161,20 +216,29 @@ int recreateV2V3TreeHist(const std::string inFileName)
     double v2xRawTrkCorr = 0.;
     double v2yRawTrkCorr = 0.;
 
+    double v2xRawEByE = 0.;
+    double v2yRawEByE = 0.;
+
+    double v2xRawEByECorr = 0.;
+    double v2yRawEByECorr = 0.;
+
     double weightPF = 0.;
     double weightTrk = 0.;
+    double weightEByE = 0.;
   
-    for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
-      double tempWeightPF = pfWeight_p->at(pfI);
-      double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
-
-      v2xRawPF += TMath::Cos(2*(deltaEventPhi));
-      v2yRawPF += TMath::Sin(2*(deltaEventPhi));
-
-      v2xRawPFCorr += tempWeightPF*TMath::Cos(2*(deltaEventPhi));
-      v2yRawPFCorr += tempWeightPF*TMath::Sin(2*(deltaEventPhi));
-
-      weightPF += tempWeightPF;
+    if(hasPF){
+      for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
+	double tempWeightPF = pfWeight_p->at(pfI);
+	double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+	
+	v2xRawPF += TMath::Cos(2*(deltaEventPhi));
+	v2yRawPF += TMath::Sin(2*(deltaEventPhi));
+	
+	v2xRawPFCorr += tempWeightPF*TMath::Cos(2*(deltaEventPhi));
+	v2yRawPFCorr += tempWeightPF*TMath::Sin(2*(deltaEventPhi));
+	
+	weightPF += tempWeightPF;
+      }
     }
 
     Int_t trkCounter = 0;
@@ -195,24 +259,44 @@ int recreateV2V3TreeHist(const std::string inFileName)
       }
     }
 
-    v2xRawPF /= (double)pfPhi_p->size();
-    v2yRawPF /= (double)pfPhi_p->size();
+    Int_t eByECounter = 0;
+    if(hasEByE){    
+      for(unsigned tI = 0; tI < eByEPhi_p->size(); tI++){
+	//	if(eByEPt_p->at(tI) >= 2.4) continue;
+	eByECounter++;
+	double tempWeightEByE = eByEWeight_p->at(tI);
+	//	double deltaEventPhi = eByEPhi_p->at(tI) - hiEvt2Plane_;
+	double deltaEventPhi = eByEPhi_p->at(tI);
+	
+	v2xRawEByE += TMath::Cos(2*(deltaEventPhi));
+	v2yRawEByE += TMath::Sin(2*(deltaEventPhi));
 
-    v2xRawPFCorr /= weightPF;
-    v2yRawPFCorr /= weightPF;
+	v2xRawEByECorr += tempWeightEByE*TMath::Cos(2*(deltaEventPhi));
+	v2yRawEByECorr += tempWeightEByE*TMath::Sin(2*(deltaEventPhi));
+	
+	weightEByE += tempWeightEByE;
+      }
+    }
 
-    double v2RawPF = TMath::Sqrt(v2xRawPF*v2xRawPF + v2yRawPF*v2yRawPF);
-    double v2RawPFCorr = TMath::Sqrt(v2xRawPFCorr*v2xRawPFCorr + v2yRawPFCorr*v2yRawPFCorr);
-
-    v2Raw_PF_h[centPos]->Fill(v2RawPF);
-    v2RawCorr_PF_h[centPos]->Fill(v2RawPFCorr);
-
-    globalN[centPos] += 1;
-    globalV2XRawPF[centPos] += v2xRawPF;
-    globalV2YRawPF[centPos] += v2yRawPF;
-    globalV2XRawPFCorr[centPos] += v2xRawPFCorr;
-    globalV2YRawPFCorr[centPos] += v2yRawPFCorr;
-
+    if(hasPF){
+      v2xRawPF /= (double)pfPhi_p->size();
+      v2yRawPF /= (double)pfPhi_p->size();
+      
+      v2xRawPFCorr /= weightPF;
+      v2yRawPFCorr /= weightPF;
+      
+      double v2RawPF = TMath::Sqrt(v2xRawPF*v2xRawPF + v2yRawPF*v2yRawPF);
+      double v2RawPFCorr = TMath::Sqrt(v2xRawPFCorr*v2xRawPFCorr + v2yRawPFCorr*v2yRawPFCorr);
+      
+      v2Raw_PF_h[centPos]->Fill(v2RawPF);
+      v2RawCorr_PF_h[centPos]->Fill(v2RawPFCorr);
+      
+      globalN[centPos] += 1;
+      globalV2XRawPF[centPos] += v2xRawPF;
+      globalV2YRawPF[centPos] += v2yRawPF;
+      globalV2XRawPFCorr[centPos] += v2xRawPFCorr;
+      globalV2YRawPFCorr[centPos] += v2yRawPFCorr;
+    }
 
     if(hasTrk){
       v2xRawTrk /= (double)trkCounter;
@@ -233,6 +317,26 @@ int recreateV2V3TreeHist(const std::string inFileName)
       globalV2XRawTrkCorr[centPos] += v2xRawTrkCorr;
       globalV2YRawTrkCorr[centPos] += v2yRawTrkCorr;
     }
+
+    if(hasEByE){
+      v2xRawEByE /= (double)eByECounter;
+      v2yRawEByE /= (double)eByECounter;
+      
+      v2xRawEByECorr /= weightEByE;
+      v2yRawEByECorr /= weightEByE;
+      
+      double v2RawEByE = TMath::Sqrt(v2xRawEByE*v2xRawEByE + v2yRawEByE*v2yRawEByE);
+      double v2RawEByECorr = TMath::Sqrt(v2xRawEByECorr*v2xRawEByECorr + v2yRawEByECorr*v2yRawEByECorr);
+      
+      v2Raw_EByE_h[centPos]->Fill(v2RawEByE);
+      v2RawCorr_EByE_h[centPos]->Fill(v2RawEByECorr);
+      
+      globalN[centPos] += 1;
+      globalV2XRawEByE[centPos] += v2xRawEByE;
+      globalV2YRawEByE[centPos] += v2yRawEByE;
+      globalV2XRawEByECorr[centPos] += v2xRawEByECorr;
+      globalV2YRawEByECorr[centPos] += v2yRawEByECorr;
+    }
   }
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -248,13 +352,27 @@ int recreateV2V3TreeHist(const std::string inFileName)
       globalV2YRawTrkCorr[cI] /= globalN[cI];
     }
 
-    std::cout << "Cent, N: " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%, " << globalN[cI] << std::endl;
-    std::cout << "  Global v2xRawPF, v2yRawPF, N: " << globalV2XRawPF[cI] << ", " << globalV2YRawPF[cI] << std::endl;
-    std::cout << "  Global v2xRawPFCorr, v2yRawPFCorr, N: " << globalV2XRawPFCorr[cI] << ", " << globalV2YRawPFCorr[cI] << std::endl;
+    if(hasEByE){
+      globalV2XRawEByE[cI] /= globalN[cI];
+      globalV2YRawEByE[cI] /= globalN[cI];
+      globalV2XRawEByECorr[cI] /= globalN[cI];
+      globalV2YRawEByECorr[cI] /= globalN[cI];
+    }
+
+    if(hasPF){
+      std::cout << "Cent, N: " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%, " << globalN[cI] << std::endl;
+      std::cout << "  Global v2xRawPF, v2yRawPF, N: " << globalV2XRawPF[cI] << ", " << globalV2YRawPF[cI] << std::endl;
+      std::cout << "  Global v2xRawPFCorr, v2yRawPFCorr, N: " << globalV2XRawPFCorr[cI] << ", " << globalV2YRawPFCorr[cI] << std::endl;
+    }
 
     if(hasTrk){  
       std::cout << "  Global v2xRawTrk, v2yRawTrk, N: " << globalV2XRawTrk[cI] << ", " << globalV2YRawTrk[cI] << std::endl;
       std::cout << "  Global v2xRawTrkCorr, v2yRawTrkCorr, N: " << globalV2XRawTrkCorr[cI] << ", " << globalV2YRawTrkCorr[cI] << std::endl;
+    }
+
+    if(hasEByE){  
+      std::cout << "  Global v2xRawEByE, v2yRawEByE, N: " << globalV2XRawEByE[cI] << ", " << globalV2YRawEByE[cI] << std::endl;
+      std::cout << "  Global v2xRawEByECorr, v2yRawEByECorr, N: " << globalV2XRawEByECorr[cI] << ", " << globalV2YRawEByECorr[cI] << std::endl;
     }
   }
 
@@ -281,18 +399,20 @@ int recreateV2V3TreeHist(const std::string inFileName)
     double v2yObsPFCorr = 0.;
 
     double weightPF = 0.;
-  
-    for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
-      double tempWeightPF = pfWeight_p->at(pfI);
-      double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
 
-      v2xObsPF += TMath::Cos(2*(deltaEventPhi));
-      v2yObsPF += TMath::Sin(2*(deltaEventPhi));
-
-      v2xObsPFCorr += tempWeightPF*TMath::Cos(2*(deltaEventPhi));
-      v2yObsPFCorr += tempWeightPF*TMath::Sin(2*(deltaEventPhi));
-
-      weightPF += tempWeightPF;
+    if(hasPF){
+      for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
+	double tempWeightPF = pfWeight_p->at(pfI);
+	double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+	
+	v2xObsPF += TMath::Cos(2*(deltaEventPhi));
+	v2yObsPF += TMath::Sin(2*(deltaEventPhi));
+	
+	v2xObsPFCorr += tempWeightPF*TMath::Cos(2*(deltaEventPhi));
+	v2yObsPFCorr += tempWeightPF*TMath::Sin(2*(deltaEventPhi));
+	
+	weightPF += tempWeightPF;
+      }
     }
 
 
@@ -322,24 +442,52 @@ int recreateV2V3TreeHist(const std::string inFileName)
       }
     }
 
-    v2xObsPF /= (double)pfPhi_p->size();
-    v2yObsPF /= (double)pfPhi_p->size();
+    double v2xObsEByE = 0.;
+    double v2yObsEByE = 0.;
 
-    v2xObsPFCorr /= weightPF;
-    v2yObsPFCorr /= weightPF;
+    double v2xObsEByECorr = 0.;
+    double v2yObsEByECorr = 0.;
 
-    v2xObsPF -= globalV2XRawPF[centPos];
-    v2yObsPF -= globalV2YRawPF[centPos];
+    double weightEByE = 0.;
 
-    v2xObsPFCorr -= globalV2XRawPFCorr[centPos];
-    v2yObsPFCorr -= globalV2YRawPFCorr[centPos];
+    Int_t eByECounter = 0;
+    if(hasEByE){
+      for(unsigned tI = 0; tI < eByEPhi_p->size(); tI++){
+	//	if(eByEPt_p->at(tI) >= 2.4) continue;
+	eByECounter++;
+	double tempWeightEByE = eByEWeight_p->at(tI);
+	//	double deltaEventPhi = eByEPhi_p->at(tI) - hiEvt2Plane_;
+	double deltaEventPhi = eByEPhi_p->at(tI);
+	
+	v2xObsEByE += TMath::Cos(2*(deltaEventPhi));
+	v2yObsEByE += TMath::Sin(2*(deltaEventPhi));
+	
+	v2xObsEByECorr += tempWeightEByE*TMath::Cos(2*(deltaEventPhi));
+	v2yObsEByECorr += tempWeightEByE*TMath::Sin(2*(deltaEventPhi));
+	
+	weightEByE += tempWeightEByE;
+      }
+    }
 
-    double v2ObsPF = TMath::Sqrt(v2xObsPF*v2xObsPF + v2yObsPF*v2yObsPF);
-    double v2ObsPFCorr = TMath::Sqrt(v2xObsPFCorr*v2xObsPFCorr + v2yObsPFCorr*v2yObsPFCorr);
-
-    v2Obs_PF_h[centPos]->Fill(v2ObsPF);
-    v2ObsCorr_PF_h[centPos]->Fill(v2ObsPFCorr);
-
+    if(hasPF){
+      v2xObsPF /= (double)pfPhi_p->size();
+      v2yObsPF /= (double)pfPhi_p->size();
+      
+      v2xObsPFCorr /= weightPF;
+      v2yObsPFCorr /= weightPF;
+      
+      v2xObsPF -= globalV2XRawPF[centPos];
+      v2yObsPF -= globalV2YRawPF[centPos];
+      
+      v2xObsPFCorr -= globalV2XRawPFCorr[centPos];
+      v2yObsPFCorr -= globalV2YRawPFCorr[centPos];
+      
+      double v2ObsPF = TMath::Sqrt(v2xObsPF*v2xObsPF + v2yObsPF*v2yObsPF);
+      double v2ObsPFCorr = TMath::Sqrt(v2xObsPFCorr*v2xObsPFCorr + v2yObsPFCorr*v2yObsPFCorr);
+      
+      v2Obs_PF_h[centPos]->Fill(v2ObsPF);
+      v2ObsCorr_PF_h[centPos]->Fill(v2ObsPFCorr);
+    }
 
     if(hasTrk){
       v2xObsTrk /= (double)trkCounter;
@@ -360,6 +508,26 @@ int recreateV2V3TreeHist(const std::string inFileName)
       v2Obs_Trk_h[centPos]->Fill(v2ObsTrk);
       v2ObsCorr_Trk_h[centPos]->Fill(v2ObsTrkCorr);
     }
+
+    if(hasEByE){
+      v2xObsEByE /= (double)eByECounter;
+      v2yObsEByE /= (double)eByECounter;
+      
+      v2xObsEByECorr /= weightEByE;
+      v2yObsEByECorr /= weightEByE;
+      
+      v2xObsEByE -= globalV2XRawEByE[centPos];
+      v2yObsEByE -= globalV2YRawEByE[centPos];
+      
+      v2xObsEByECorr -= globalV2XRawEByECorr[centPos];
+      v2yObsEByECorr -= globalV2YRawEByECorr[centPos];
+      
+      double v2ObsEByE = TMath::Sqrt(v2xObsEByE*v2xObsEByE + v2yObsEByE*v2yObsEByE);
+      double v2ObsEByECorr = TMath::Sqrt(v2xObsEByECorr*v2xObsEByECorr + v2yObsEByECorr*v2yObsEByECorr);
+      
+      v2Obs_EByE_h[centPos]->Fill(v2ObsEByE);
+      v2ObsCorr_EByE_h[centPos]->Fill(v2ObsEByECorr);
+    }
   }
 
 
@@ -368,61 +536,64 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
   outFile_p->cd();
 
-  for(Int_t cI = 0; cI < nCentBins; ++cI){  
-    v2Raw_PF_h[cI]->Write("", TObject::kOverwrite);
-    v2RawCorr_PF_h[cI]->Write("", TObject::kOverwrite);
+  if(hasPF){
+    for(Int_t cI = 0; cI < nCentBins; ++cI){  
+      v2Raw_PF_h[cI]->Write("", TObject::kOverwrite);
+      v2RawCorr_PF_h[cI]->Write("", TObject::kOverwrite);
+      
+      v2Obs_PF_h[cI]->Write("", TObject::kOverwrite);
+      v2ObsCorr_PF_h[cI]->Write("", TObject::kOverwrite);
+      
+      v2Raw_Mean_PF_h->SetBinContent(cI+1, v2Raw_PF_h[cI]->GetMean());
+      v2Raw_Mean_PF_h->SetBinError(cI+1, v2Raw_PF_h[cI]->GetMeanError());
+      v2Raw_Sigma_PF_h->SetBinContent(cI+1, v2Raw_PF_h[cI]->GetStdDev());
+      v2Raw_Sigma_PF_h->SetBinError(cI+1, v2Raw_PF_h[cI]->GetStdDevError());
+      
+      v2RawCorr_Mean_PF_h->SetBinContent(cI+1, v2RawCorr_PF_h[cI]->GetMean());
+      v2RawCorr_Mean_PF_h->SetBinError(cI+1, v2RawCorr_PF_h[cI]->GetMeanError());
+      v2RawCorr_Sigma_PF_h->SetBinContent(cI+1, v2RawCorr_PF_h[cI]->GetStdDev());
+      v2RawCorr_Sigma_PF_h->SetBinError(cI+1, v2RawCorr_PF_h[cI]->GetStdDevError());
+      
+      v2Obs_Mean_PF_h->SetBinContent(cI+1, v2Obs_PF_h[cI]->GetMean());
+      v2Obs_Mean_PF_h->SetBinError(cI+1, v2Obs_PF_h[cI]->GetMeanError());
+      v2Obs_Sigma_PF_h->SetBinContent(cI+1, v2Obs_PF_h[cI]->GetStdDev());
+      v2Obs_Sigma_PF_h->SetBinError(cI+1, v2Obs_PF_h[cI]->GetStdDevError());
+      
+      v2ObsCorr_Mean_PF_h->SetBinContent(cI+1, v2ObsCorr_PF_h[cI]->GetMean());
+      v2ObsCorr_Mean_PF_h->SetBinError(cI+1, v2ObsCorr_PF_h[cI]->GetMeanError());
+      v2ObsCorr_Sigma_PF_h->SetBinContent(cI+1, v2ObsCorr_PF_h[cI]->GetStdDev());
+      v2ObsCorr_Sigma_PF_h->SetBinError(cI+1, v2ObsCorr_PF_h[cI]->GetStdDevError());
+      
+      delete v2Raw_PF_h[cI];
+      delete v2RawCorr_PF_h[cI];
+      
+      delete v2Obs_PF_h[cI];
+      delete v2ObsCorr_PF_h[cI];
+    }
 
-    v2Obs_PF_h[cI]->Write("", TObject::kOverwrite);
-    v2ObsCorr_PF_h[cI]->Write("", TObject::kOverwrite);
-
-    v2Raw_Mean_PF_h->SetBinContent(cI+1, v2Raw_PF_h[cI]->GetMean());
-    v2Raw_Mean_PF_h->SetBinError(cI+1, v2Raw_PF_h[cI]->GetMeanError());
-    v2Raw_Sigma_PF_h->SetBinContent(cI+1, v2Raw_PF_h[cI]->GetStdDev());
-    v2Raw_Sigma_PF_h->SetBinError(cI+1, v2Raw_PF_h[cI]->GetStdDevError());
-
-    v2RawCorr_Mean_PF_h->SetBinContent(cI+1, v2RawCorr_PF_h[cI]->GetMean());
-    v2RawCorr_Mean_PF_h->SetBinError(cI+1, v2RawCorr_PF_h[cI]->GetMeanError());
-    v2RawCorr_Sigma_PF_h->SetBinContent(cI+1, v2RawCorr_PF_h[cI]->GetStdDev());
-    v2RawCorr_Sigma_PF_h->SetBinError(cI+1, v2RawCorr_PF_h[cI]->GetStdDevError());
-
-    v2Obs_Mean_PF_h->SetBinContent(cI+1, v2Obs_PF_h[cI]->GetMean());
-    v2Obs_Mean_PF_h->SetBinError(cI+1, v2Obs_PF_h[cI]->GetMeanError());
-    v2Obs_Sigma_PF_h->SetBinContent(cI+1, v2Obs_PF_h[cI]->GetStdDev());
-    v2Obs_Sigma_PF_h->SetBinError(cI+1, v2Obs_PF_h[cI]->GetStdDevError());
-
-    v2ObsCorr_Mean_PF_h->SetBinContent(cI+1, v2ObsCorr_PF_h[cI]->GetMean());
-    v2ObsCorr_Mean_PF_h->SetBinError(cI+1, v2ObsCorr_PF_h[cI]->GetMeanError());
-    v2ObsCorr_Sigma_PF_h->SetBinContent(cI+1, v2ObsCorr_PF_h[cI]->GetStdDev());
-    v2ObsCorr_Sigma_PF_h->SetBinError(cI+1, v2ObsCorr_PF_h[cI]->GetStdDevError());
-
-    delete v2Raw_PF_h[cI];
-    delete v2RawCorr_PF_h[cI];
-
-    delete v2Obs_PF_h[cI];
-    delete v2ObsCorr_PF_h[cI];
+    v2Raw_Mean_PF_h->Write("", TObject::kOverwrite);
+    v2Raw_Sigma_PF_h->Write("", TObject::kOverwrite);
+    
+    v2RawCorr_Mean_PF_h->Write("", TObject::kOverwrite);
+    v2RawCorr_Sigma_PF_h->Write("", TObject::kOverwrite);
+    
+    v2Obs_Mean_PF_h->Write("", TObject::kOverwrite);
+    v2Obs_Sigma_PF_h->Write("", TObject::kOverwrite);
+    
+    v2ObsCorr_Mean_PF_h->Write("", TObject::kOverwrite);
+    v2ObsCorr_Sigma_PF_h->Write("", TObject::kOverwrite);
+    
+    delete v2Raw_Mean_PF_h;
+    delete v2Raw_Sigma_PF_h;
+    delete v2RawCorr_Mean_PF_h;
+    delete v2RawCorr_Sigma_PF_h;
+    
+    delete v2Obs_Mean_PF_h;
+    delete v2Obs_Sigma_PF_h;
+    delete v2ObsCorr_Mean_PF_h;
+    delete v2ObsCorr_Sigma_PF_h;
   }
 
-  v2Raw_Mean_PF_h->Write("", TObject::kOverwrite);
-  v2Raw_Sigma_PF_h->Write("", TObject::kOverwrite);
-
-  v2RawCorr_Mean_PF_h->Write("", TObject::kOverwrite);
-  v2RawCorr_Sigma_PF_h->Write("", TObject::kOverwrite);
-
-  v2Obs_Mean_PF_h->Write("", TObject::kOverwrite);
-  v2Obs_Sigma_PF_h->Write("", TObject::kOverwrite);
-
-  v2ObsCorr_Mean_PF_h->Write("", TObject::kOverwrite);
-  v2ObsCorr_Sigma_PF_h->Write("", TObject::kOverwrite);
-
-  delete v2Raw_Mean_PF_h;
-  delete v2Raw_Sigma_PF_h;
-  delete v2RawCorr_Mean_PF_h;
-  delete v2RawCorr_Sigma_PF_h;
-
-  delete v2Obs_Mean_PF_h;
-  delete v2Obs_Sigma_PF_h;
-  delete v2ObsCorr_Mean_PF_h;
-  delete v2ObsCorr_Sigma_PF_h;
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){  
     if(hasTrk){
@@ -482,6 +653,67 @@ int recreateV2V3TreeHist(const std::string inFileName)
     delete v2Obs_Sigma_Trk_h;
     delete v2ObsCorr_Mean_Trk_h;
     delete v2ObsCorr_Sigma_Trk_h;
+  }
+
+
+  for(Int_t cI = 0; cI < nCentBins; ++cI){  
+    if(hasEByE){
+      v2Raw_EByE_h[cI]->Write("", TObject::kOverwrite);
+      v2RawCorr_EByE_h[cI]->Write("", TObject::kOverwrite);
+      
+      v2Obs_EByE_h[cI]->Write("", TObject::kOverwrite);
+      v2ObsCorr_EByE_h[cI]->Write("", TObject::kOverwrite);
+
+      v2Raw_Mean_EByE_h->SetBinContent(cI+1, v2Raw_EByE_h[cI]->GetMean());
+      v2Raw_Mean_EByE_h->SetBinError(cI+1, v2Raw_EByE_h[cI]->GetMeanError());
+      v2Raw_Sigma_EByE_h->SetBinContent(cI+1, v2Raw_EByE_h[cI]->GetStdDev());
+      v2Raw_Sigma_EByE_h->SetBinError(cI+1, v2Raw_EByE_h[cI]->GetStdDevError());
+      
+      v2RawCorr_Mean_EByE_h->SetBinContent(cI+1, v2RawCorr_EByE_h[cI]->GetMean());
+      v2RawCorr_Mean_EByE_h->SetBinError(cI+1, v2RawCorr_EByE_h[cI]->GetMeanError());
+      v2RawCorr_Sigma_EByE_h->SetBinContent(cI+1, v2RawCorr_EByE_h[cI]->GetStdDev());
+      v2RawCorr_Sigma_EByE_h->SetBinError(cI+1, v2RawCorr_EByE_h[cI]->GetStdDevError());
+      
+      v2Obs_Mean_EByE_h->SetBinContent(cI+1, v2Obs_EByE_h[cI]->GetMean());
+      v2Obs_Mean_EByE_h->SetBinError(cI+1, v2Obs_EByE_h[cI]->GetMeanError());
+      v2Obs_Sigma_EByE_h->SetBinContent(cI+1, v2Obs_EByE_h[cI]->GetStdDev());
+      v2Obs_Sigma_EByE_h->SetBinError(cI+1, v2Obs_EByE_h[cI]->GetStdDevError());
+      
+      v2ObsCorr_Mean_EByE_h->SetBinContent(cI+1, v2ObsCorr_EByE_h[cI]->GetMean());
+      v2ObsCorr_Mean_EByE_h->SetBinError(cI+1, v2ObsCorr_EByE_h[cI]->GetMeanError());
+      v2ObsCorr_Sigma_EByE_h->SetBinContent(cI+1, v2ObsCorr_EByE_h[cI]->GetStdDev());
+      v2ObsCorr_Sigma_EByE_h->SetBinError(cI+1, v2ObsCorr_EByE_h[cI]->GetStdDevError());
+    }
+
+    delete v2Raw_EByE_h[cI];
+    delete v2RawCorr_EByE_h[cI];
+
+    delete v2Obs_EByE_h[cI];
+    delete v2ObsCorr_EByE_h[cI];
+  }
+
+  v2Raw_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2Raw_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
+  v2RawCorr_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2RawCorr_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
+  v2Obs_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2Obs_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
+  v2ObsCorr_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2ObsCorr_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
+  if(hasEByE){
+    delete v2Raw_Mean_EByE_h;
+    delete v2Raw_Sigma_EByE_h;
+    delete v2RawCorr_Mean_EByE_h;
+    delete v2RawCorr_Sigma_EByE_h;
+    
+    delete v2Obs_Mean_EByE_h;
+    delete v2Obs_Sigma_EByE_h;
+    delete v2ObsCorr_Mean_EByE_h;
+    delete v2ObsCorr_Sigma_EByE_h;
   }
 
   outFile_p->Close();

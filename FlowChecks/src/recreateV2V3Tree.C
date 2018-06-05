@@ -18,7 +18,7 @@
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vectorStringUtility.h"
 
-int recreateV2V3Tree(const std::string inFileName)
+int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 {
   const Int_t nCentBinsCorr = 5;
   const Int_t centBinsCorrLow[nCentBinsCorr] = {0, 5, 10, 30, 50};
@@ -35,7 +35,13 @@ int recreateV2V3Tree(const std::string inFileName)
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
 
-  TFile* outFile_p = new TFile(("output/v2V3Tree_" + dateStr + ".root").c_str(), "RECREATE");
+  if(outFileName.size() == 0) outFileName = "output/v2V3Tree_" + dateStr + ".root";
+  else{
+    if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
+    outFileName = outFileName + "_" + dateStr + ".root";
+  }
+
+  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   TTree* v2V3Tree_p = new TTree("v2V3Tree", "");
 
   Int_t hiBinOut_;
@@ -373,12 +379,13 @@ int recreateV2V3Tree(const std::string inFileName)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2){
-    std::cout << "USAGE: ./recreateV2V3Tree.exe <inFileName>" << std::endl;
+  if(argc != 2 && argc != 3){
+    std::cout << "USAGE: ./recreateV2V3Tree.exe <inFileName> <outFileName-OPT>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += recreateV2V3Tree(argv[1]);
+  if(argc == 2) retVal += recreateV2V3Tree(argv[1]);
+  else if(argc == 3) retVal += recreateV2V3Tree(argv[1], argv[2]);
   return retVal;
 }
