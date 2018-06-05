@@ -9,6 +9,7 @@
 #include "TDatime.h"
 
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
@@ -176,7 +177,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   }
 
   std::cout << "Checking for matched inputs..." << std::endl;
-  TFile* inDataFile_p = TFile::Open(fileList.at(0).c_str(), "READ");
+  TFile* inDataFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   std::vector<std::string> dataTreeList = returnRootFileContentsList(inDataFile_p, "TTree", "JetAna");
 
   unsigned int pos = 0;
@@ -269,7 +270,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << "File " << fI << "/" << fileList.size() << ": " << fileList.at(fI) << std::endl;
 
-    TFile* inDataFile_p = TFile::Open(fileList.at(fI).c_str(), "READ");
+    TFile* inDataFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
     TTree* jetTrees_p[nDataJet];
     TTree* hiTree_p = (TTree*)inDataFile_p->Get("hiEvtAnalyzer/HiTree");
     TTree* skimTree_p = (TTree*)inDataFile_p->Get("skimanalysis/HltTree");
