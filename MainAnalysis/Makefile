@@ -16,7 +16,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/deriveDijetWeights.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -50,6 +50,9 @@ bin/checkGoodJetBadJetPF.exe: src/checkGoodJetBadJetPF.C
 
 bin/processRawData.exe: src/processRawData.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/processRawData.exe src/processRawData.C
+
+bin/deriveDijetWeights.exe: src/deriveDijetWeights.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe src/deriveDijetWeights.C
 
 clean:
 	rm -f ./*~
