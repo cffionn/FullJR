@@ -40,6 +40,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
 {
   if(pfOrTrkStr.size() == 2 && pfOrTrkStr.find("PF") != std::string::npos) std::cout << "Running in mode: " << pfOrTrkStr << std::endl;
   else if(pfOrTrkStr.size() == 3 && pfOrTrkStr.find("Trk") != std::string::npos) std::cout << "Running in mode: " << pfOrTrkStr << std::endl;
+  else if(pfOrTrkStr.size() == 4 && pfOrTrkStr.find("EByE") != std::string::npos) std::cout << "Running in mode: " << pfOrTrkStr << std::endl;
   else{
     std::cout << "Given pfOrTrkStr \'" << pfOrTrkStr << "\' is invalid return 1" << std::endl;
     return 1;
@@ -355,7 +356,8 @@ int main(int argc, char* argv[])
   }
 
   int retVal = 0;
-  retVal += plotRecreateV2V3(argv[1], argv[2], "PF");
-  retVal += plotRecreateV2V3(argv[1], argv[2], "Trk");
+  //  retVal += plotRecreateV2V3(argv[1], argv[2], "PF");
+  //  retVal += plotRecreateV2V3(argv[1], argv[2], "Trk");
+  retVal += plotRecreateV2V3(argv[1], argv[2], "EByE");
   return retVal;
 }
