@@ -16,6 +16,7 @@
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
+#include "Utility/include/specialHYDJETEventExclude.h"
 #include "Utility/include/vanGoghPalette.h"
 
 
@@ -110,6 +111,21 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   TH1D* jtPt_Good_Unweighted_h = new TH1D("jtPt_Good_Unweighted_h", ";Jet p_{T} (Good);Counts", 10, 500, 1000);
   TH1D* jtPt_Bad_Unweighted_h = new TH1D("jtPt_Bad_Unweighted_h", ";Jet p_{T} (Bad);Counts", 10, 500, 1000);
 
+  TH1D* jtPt_Good_Unweighted_NoSpecialCut_h = new TH1D("jtPt_Good_Unweighted_NoSpecialCut_h", ";Jet p_{T} (Good);Counts", 10, 500, 1000);
+  TH1D* jtPt_Bad_Unweighted_NoSpecialCut_h = new TH1D("jtPt_Bad_Unweighted_NoSpecialCut_h", ";Jet p_{T} (Bad);Counts", 10, 500, 1000);
+
+  TH1D* jtPt_Good_Unweighted_Cut_h = new TH1D("jtPt_Good_Unweighted_Cut_h", ";Jet p_{T} (Good);Counts", 10, 500, 1000);
+  TH1D* jtPt_Bad_Unweighted_Cut_h = new TH1D("jtPt_Bad_Unweighted_Cut_h", ";Jet p_{T} (Bad);Counts", 10, 500, 1000);
+
+  TH1D* jtPt_Good_Weighted_h = new TH1D("jtPt_Good_Weighted_h", ";Jet p_{T} (Good);Counts (Counts)", 10, 500, 1000);
+  TH1D* jtPt_Bad_Weighted_h = new TH1D("jtPt_Bad_Weighted_h", ";Jet p_{T} (Bad);Counts (Counts)", 10, 500, 1000);
+
+  TH1D* jtPt_Good_Weighted_NoSpecialCut_h = new TH1D("jtPt_Good_Weighted_NoSpecialCut_h", ";Jet p_{T} (Good);Counts (Counts)", 10, 500, 1000);
+  TH1D* jtPt_Bad_Weighted_NoSpecialCut_h = new TH1D("jtPt_Bad_Weighted_NoSpecialCut_h", ";Jet p_{T} (Bad);Counts (Counts)", 10, 500, 1000);
+
+  TH1D* jtPt_Good_Weighted_Cut_h = new TH1D("jtPt_Good_Weighted_Cut_h", ";Jet p_{T} (Good);Counts (Counts)", 10, 500, 1000);
+  TH1D* jtPt_Bad_Weighted_Cut_h = new TH1D("jtPt_Bad_Weighted_Cut_h", ";Jet p_{T} (Bad);Counts (Counts)", 10, 500, 1000);
+
   TH1D* jtPfCHF_Good_Unweighted_h = new TH1D("jtPfCHF_Good_Unweighted_h", ";jtPfCHF;Counts", 10, 0.0, 1.0);
   TH1D* jtPfCEF_Good_Unweighted_h = new TH1D("jtPfCEF_Good_Unweighted_h", ";jtPfCEF;Counts", 10, 0.0, 1.0);
   TH1D* jtPfNHF_Good_Unweighted_h = new TH1D("jtPfNHF_Good_Unweighted_h", ";jtPfNHF;Counts", 10, 0.0, 1.0);
@@ -130,6 +146,32 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   TH2D* jtPfNEF_jtPfMUF_Good_Unweighted_h = new TH2D("jtPfNEF_jtPfMUF_Good_Unweighted_h", ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
 
+  TH1D* jtPfCHMF_Good_Unweighted_h = new TH1D("jtPfCHMF_Good_Unweighted_h", ";jtPfCHMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfCEMF_Good_Unweighted_h = new TH1D("jtPfCEMF_Good_Unweighted_h", ";jtPfCEMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfNHMF_Good_Unweighted_h = new TH1D("jtPfNHMF_Good_Unweighted_h", ";jtPfNHMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfNEMF_Good_Unweighted_h = new TH1D("jtPfNEMF_Good_Unweighted_h", ";jtPfNEMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfMUMF_Good_Unweighted_h = new TH1D("jtPfMUMF_Good_Unweighted_h", ";jtPfMUMF;Counts", 10, 0.0, 1.0);
+
+  TH2D* jtPfCHMF_jtPfCEMF_Good_Unweighted_h = new TH2D("jtPfCHMF_jtPfCEMF_Good_Unweighted_h", ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfNHMF_Good_Unweighted_h = new TH2D("jtPfCHMF_jtPfNHMF_Good_Unweighted_h", ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfNEMF_Good_Unweighted_h = new TH2D("jtPfCHMF_jtPfNEMF_Good_Unweighted_h", ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfMUMF_Good_Unweighted_h = new TH2D("jtPfCHMF_jtPfMUMF_Good_Unweighted_h", ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfCEMF_jtPfNHMF_Good_Unweighted_h = new TH2D("jtPfCEMF_jtPfNHMF_Good_Unweighted_h", ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCEMF_jtPfNEMF_Good_Unweighted_h = new TH2D("jtPfCEMF_jtPfNEMF_Good_Unweighted_h", ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCEMF_jtPfMUMF_Good_Unweighted_h = new TH2D("jtPfCEMF_jtPfMUMF_Good_Unweighted_h", ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfNHMF_jtPfNEMF_Good_Unweighted_h = new TH2D("jtPfNHMF_jtPfNEMF_Good_Unweighted_h", ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfNHMF_jtPfMUMF_Good_Unweighted_h = new TH2D("jtPfNHMF_jtPfMUMF_Good_Unweighted_h", ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfNEMF_jtPfMUMF_Good_Unweighted_h = new TH2D("jtPfNEMF_jtPfMUMF_Good_Unweighted_h", ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+
+  TH1D* jtPfCHM_Good_Unweighted_h = new TH1D("jtPfCHM_Good_Unweighted_h", ";jtPfCHM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfCEM_Good_Unweighted_h = new TH1D("jtPfCEM_Good_Unweighted_h", ";jtPfCEM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfNHM_Good_Unweighted_h = new TH1D("jtPfNHM_Good_Unweighted_h", ";jtPfNHM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfNEM_Good_Unweighted_h = new TH1D("jtPfNEM_Good_Unweighted_h", ";jtPfNEM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfMUM_Good_Unweighted_h = new TH1D("jtPfMUM_Good_Unweighted_h", ";jtPfMUM;Counts", 20, 0.0, 40.0);
 
   TH1D* jtPfCHF_Bad_Unweighted_h = new TH1D("jtPfCHF_Bad_Unweighted_h", ";jtPfCHF;Counts", 10, 0.0, 1.0);
   TH1D* jtPfCEF_Bad_Unweighted_h = new TH1D("jtPfCEF_Bad_Unweighted_h", ";jtPfCEF;Counts", 10, 0.0, 1.0);
@@ -151,8 +193,37 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   TH2D* jtPfNEF_jtPfMUF_Bad_Unweighted_h = new TH2D("jtPfNEF_jtPfMUF_Bad_Unweighted_h", ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
 
-  centerTitles({jtPt_Good_Unweighted_h, jtPfCHF_Good_Unweighted_h, jtPfCEF_Good_Unweighted_h, jtPfNHF_Good_Unweighted_h, jtPfNEF_Good_Unweighted_h, jtPfMUF_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPfCHF_Bad_Unweighted_h, jtPfCEF_Bad_Unweighted_h, jtPfNHF_Bad_Unweighted_h, jtPfNEF_Bad_Unweighted_h, jtPfMUF_Bad_Unweighted_h, jtPfCHF_jtPfCEF_Good_Unweighted_h, jtPfCHF_jtPfNHF_Good_Unweighted_h, jtPfCHF_jtPfNEF_Good_Unweighted_h, jtPfCHF_jtPfMUF_Good_Unweighted_h, jtPfCEF_jtPfNHF_Good_Unweighted_h, jtPfCEF_jtPfNEF_Good_Unweighted_h, jtPfCEF_jtPfMUF_Good_Unweighted_h, jtPfNHF_jtPfNEF_Good_Unweighted_h, jtPfNHF_jtPfMUF_Good_Unweighted_h, jtPfNEF_jtPfMUF_Good_Unweighted_h, jtPfCHF_jtPfCEF_Bad_Unweighted_h, jtPfCHF_jtPfNHF_Bad_Unweighted_h, jtPfCHF_jtPfNEF_Bad_Unweighted_h, jtPfCHF_jtPfMUF_Bad_Unweighted_h, jtPfCEF_jtPfNHF_Bad_Unweighted_h, jtPfCEF_jtPfNEF_Bad_Unweighted_h, jtPfCEF_jtPfMUF_Bad_Unweighted_h, jtPfNHF_jtPfNEF_Bad_Unweighted_h, jtPfNHF_jtPfMUF_Bad_Unweighted_h, jtPfNEF_jtPfMUF_Bad_Unweighted_h});
-  setSumW2({jtPt_Good_Unweighted_h, jtPfCHF_Good_Unweighted_h, jtPfCEF_Good_Unweighted_h, jtPfNHF_Good_Unweighted_h, jtPfNEF_Good_Unweighted_h, jtPfMUF_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPfCHF_Bad_Unweighted_h, jtPfCEF_Bad_Unweighted_h, jtPfNHF_Bad_Unweighted_h, jtPfNEF_Bad_Unweighted_h, jtPfMUF_Bad_Unweighted_h, jtPfCHF_jtPfCEF_Good_Unweighted_h, jtPfCHF_jtPfNHF_Good_Unweighted_h, jtPfCHF_jtPfNEF_Good_Unweighted_h, jtPfCHF_jtPfMUF_Good_Unweighted_h, jtPfCEF_jtPfNHF_Good_Unweighted_h, jtPfCEF_jtPfNEF_Good_Unweighted_h, jtPfCEF_jtPfMUF_Good_Unweighted_h, jtPfNHF_jtPfNEF_Good_Unweighted_h, jtPfNHF_jtPfMUF_Good_Unweighted_h, jtPfNEF_jtPfMUF_Good_Unweighted_h, jtPfCHF_jtPfCEF_Bad_Unweighted_h, jtPfCHF_jtPfNHF_Bad_Unweighted_h, jtPfCHF_jtPfNEF_Bad_Unweighted_h, jtPfCHF_jtPfMUF_Bad_Unweighted_h, jtPfCEF_jtPfNHF_Bad_Unweighted_h, jtPfCEF_jtPfNEF_Bad_Unweighted_h, jtPfCEF_jtPfMUF_Bad_Unweighted_h, jtPfNHF_jtPfNEF_Bad_Unweighted_h, jtPfNHF_jtPfMUF_Bad_Unweighted_h, jtPfNEF_jtPfMUF_Bad_Unweighted_h});
+  TH1D* jtPfCHMF_Bad_Unweighted_h = new TH1D("jtPfCHMF_Bad_Unweighted_h", ";jtPfCHMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfCEMF_Bad_Unweighted_h = new TH1D("jtPfCEMF_Bad_Unweighted_h", ";jtPfCEMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfNHMF_Bad_Unweighted_h = new TH1D("jtPfNHMF_Bad_Unweighted_h", ";jtPfNHMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfNEMF_Bad_Unweighted_h = new TH1D("jtPfNEMF_Bad_Unweighted_h", ";jtPfNEMF;Counts", 10, 0.0, 1.0);
+  TH1D* jtPfMUMF_Bad_Unweighted_h = new TH1D("jtPfMUMF_Bad_Unweighted_h", ";jtPfMUMF;Counts", 10, 0.0, 1.0);
+
+  TH2D* jtPfCHMF_jtPfCEMF_Bad_Unweighted_h = new TH2D("jtPfCHMF_jtPfCEMF_Bad_Unweighted_h", ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfNHMF_Bad_Unweighted_h = new TH2D("jtPfCHMF_jtPfNHMF_Bad_Unweighted_h", ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfNEMF_Bad_Unweighted_h = new TH2D("jtPfCHMF_jtPfNEMF_Bad_Unweighted_h", ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCHMF_jtPfMUMF_Bad_Unweighted_h = new TH2D("jtPfCHMF_jtPfMUMF_Bad_Unweighted_h", ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfCEMF_jtPfNHMF_Bad_Unweighted_h = new TH2D("jtPfCEMF_jtPfNHMF_Bad_Unweighted_h", ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCEMF_jtPfNEMF_Bad_Unweighted_h = new TH2D("jtPfCEMF_jtPfNEMF_Bad_Unweighted_h", ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfCEMF_jtPfMUMF_Bad_Unweighted_h = new TH2D("jtPfCEMF_jtPfMUMF_Bad_Unweighted_h", ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfNHMF_jtPfNEMF_Bad_Unweighted_h = new TH2D("jtPfNHMF_jtPfNEMF_Bad_Unweighted_h", ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+  TH2D* jtPfNHMF_jtPfMUMF_Bad_Unweighted_h = new TH2D("jtPfNHMF_jtPfMUMF_Bad_Unweighted_h", ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+  TH2D* jtPfNEMF_jtPfMUMF_Bad_Unweighted_h = new TH2D("jtPfNEMF_jtPfMUMF_Bad_Unweighted_h", ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+
+
+  TH1D* jtPfCHM_Bad_Unweighted_h = new TH1D("jtPfCHM_Bad_Unweighted_h", ";jtPfCHM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfCEM_Bad_Unweighted_h = new TH1D("jtPfCEM_Bad_Unweighted_h", ";jtPfCEM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfNHM_Bad_Unweighted_h = new TH1D("jtPfNHM_Bad_Unweighted_h", ";jtPfNHM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfNEM_Bad_Unweighted_h = new TH1D("jtPfNEM_Bad_Unweighted_h", ";jtPfNEM;Counts", 20, 0.0, 40.0);
+  TH1D* jtPfMUM_Bad_Unweighted_h = new TH1D("jtPfMUM_Bad_Unweighted_h", ";jtPfMUM;Counts", 20, 0.0, 40.0);
+
+
+  centerTitles({jtPt_Good_Unweighted_h, jtPt_Good_Unweighted_Cut_h, jtPt_Good_Unweighted_NoSpecialCut_h, jtPt_Good_Weighted_h, jtPt_Good_Weighted_Cut_h, jtPt_Good_Weighted_NoSpecialCut_h, jtPfCHF_Good_Unweighted_h, jtPfCEF_Good_Unweighted_h, jtPfNHF_Good_Unweighted_h, jtPfNEF_Good_Unweighted_h, jtPfMUF_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPt_Bad_Unweighted_Cut_h, jtPt_Bad_Unweighted_NoSpecialCut_h, jtPt_Bad_Weighted_h, jtPt_Bad_Weighted_Cut_h, jtPt_Bad_Weighted_NoSpecialCut_h, jtPfCHF_Bad_Unweighted_h, jtPfCEF_Bad_Unweighted_h, jtPfNHF_Bad_Unweighted_h, jtPfNEF_Bad_Unweighted_h, jtPfMUF_Bad_Unweighted_h, jtPfCHF_jtPfCEF_Good_Unweighted_h, jtPfCHF_jtPfNHF_Good_Unweighted_h, jtPfCHF_jtPfNEF_Good_Unweighted_h, jtPfCHF_jtPfMUF_Good_Unweighted_h, jtPfCEF_jtPfNHF_Good_Unweighted_h, jtPfCEF_jtPfNEF_Good_Unweighted_h, jtPfCEF_jtPfMUF_Good_Unweighted_h, jtPfNHF_jtPfNEF_Good_Unweighted_h, jtPfNHF_jtPfMUF_Good_Unweighted_h, jtPfNEF_jtPfMUF_Good_Unweighted_h, jtPfCHF_jtPfCEF_Bad_Unweighted_h, jtPfCHF_jtPfNHF_Bad_Unweighted_h, jtPfCHF_jtPfNEF_Bad_Unweighted_h, jtPfCHF_jtPfMUF_Bad_Unweighted_h, jtPfCEF_jtPfNHF_Bad_Unweighted_h, jtPfCEF_jtPfNEF_Bad_Unweighted_h, jtPfCEF_jtPfMUF_Bad_Unweighted_h, jtPfNHF_jtPfNEF_Bad_Unweighted_h, jtPfNHF_jtPfMUF_Bad_Unweighted_h, jtPfNEF_jtPfMUF_Bad_Unweighted_h, jtPfCHMF_Good_Unweighted_h, jtPfCEMF_Good_Unweighted_h, jtPfNHMF_Good_Unweighted_h, jtPfNEMF_Good_Unweighted_h, jtPfMUMF_Good_Unweighted_h, jtPfCHM_Good_Unweighted_h, jtPfCEM_Good_Unweighted_h, jtPfNHM_Good_Unweighted_h, jtPfNEM_Good_Unweighted_h, jtPfMUM_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPfCHMF_Bad_Unweighted_h, jtPfCEMF_Bad_Unweighted_h, jtPfNHMF_Bad_Unweighted_h, jtPfNEMF_Bad_Unweighted_h, jtPfMUMF_Bad_Unweighted_h, jtPfCHM_Bad_Unweighted_h, jtPfCEM_Bad_Unweighted_h, jtPfNHM_Bad_Unweighted_h, jtPfNEM_Bad_Unweighted_h, jtPfMUM_Bad_Unweighted_h, jtPfCHMF_jtPfCEMF_Good_Unweighted_h, jtPfCHMF_jtPfNHMF_Good_Unweighted_h, jtPfCHMF_jtPfNEMF_Good_Unweighted_h, jtPfCHMF_jtPfMUMF_Good_Unweighted_h, jtPfCEMF_jtPfNHMF_Good_Unweighted_h, jtPfCEMF_jtPfNEMF_Good_Unweighted_h, jtPfCEMF_jtPfMUMF_Good_Unweighted_h, jtPfNHMF_jtPfNEMF_Good_Unweighted_h, jtPfNHMF_jtPfMUMF_Good_Unweighted_h, jtPfNEMF_jtPfMUMF_Good_Unweighted_h, jtPfCHMF_jtPfCEMF_Bad_Unweighted_h, jtPfCHMF_jtPfNHMF_Bad_Unweighted_h, jtPfCHMF_jtPfNEMF_Bad_Unweighted_h, jtPfCHMF_jtPfMUMF_Bad_Unweighted_h, jtPfCEMF_jtPfNHMF_Bad_Unweighted_h, jtPfCEMF_jtPfNEMF_Bad_Unweighted_h, jtPfCEMF_jtPfMUMF_Bad_Unweighted_h, jtPfNHMF_jtPfNEMF_Bad_Unweighted_h, jtPfNHMF_jtPfMUMF_Bad_Unweighted_h, jtPfNEMF_jtPfMUMF_Bad_Unweighted_h});
+
+  setSumW2({jtPt_Good_Unweighted_h, jtPt_Good_Unweighted_Cut_h, jtPt_Good_Unweighted_NoSpecialCut_h, jtPt_Good_Weighted_h, jtPt_Good_Weighted_Cut_h, jtPt_Good_Weighted_NoSpecialCut_h, jtPfCHF_Good_Unweighted_h, jtPfCEF_Good_Unweighted_h, jtPfNHF_Good_Unweighted_h, jtPfNEF_Good_Unweighted_h, jtPfMUF_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPt_Bad_Unweighted_Cut_h, jtPt_Bad_Unweighted_NoSpecialCut_h, jtPt_Bad_Weighted_h, jtPt_Bad_Weighted_Cut_h, jtPt_Bad_Weighted_NoSpecialCut_h, jtPfCHF_Bad_Unweighted_h, jtPfCEF_Bad_Unweighted_h, jtPfNHF_Bad_Unweighted_h, jtPfNEF_Bad_Unweighted_h, jtPfMUF_Bad_Unweighted_h, jtPfCHF_jtPfCEF_Good_Unweighted_h, jtPfCHF_jtPfNHF_Good_Unweighted_h, jtPfCHF_jtPfNEF_Good_Unweighted_h, jtPfCHF_jtPfMUF_Good_Unweighted_h, jtPfCEF_jtPfNHF_Good_Unweighted_h, jtPfCEF_jtPfNEF_Good_Unweighted_h, jtPfCEF_jtPfMUF_Good_Unweighted_h, jtPfNHF_jtPfNEF_Good_Unweighted_h, jtPfNHF_jtPfMUF_Good_Unweighted_h, jtPfNEF_jtPfMUF_Good_Unweighted_h, jtPfCHF_jtPfCEF_Bad_Unweighted_h, jtPfCHF_jtPfNHF_Bad_Unweighted_h, jtPfCHF_jtPfNEF_Bad_Unweighted_h, jtPfCHF_jtPfMUF_Bad_Unweighted_h, jtPfCEF_jtPfNHF_Bad_Unweighted_h, jtPfCEF_jtPfNEF_Bad_Unweighted_h, jtPfCEF_jtPfMUF_Bad_Unweighted_h, jtPfNHF_jtPfNEF_Bad_Unweighted_h, jtPfNHF_jtPfMUF_Bad_Unweighted_h, jtPfNEF_jtPfMUF_Bad_Unweighted_h, jtPfCHMF_Good_Unweighted_h, jtPfCEMF_Good_Unweighted_h, jtPfNHMF_Good_Unweighted_h, jtPfNEMF_Good_Unweighted_h, jtPfMUMF_Good_Unweighted_h, jtPfCHM_Good_Unweighted_h, jtPfCEM_Good_Unweighted_h, jtPfNHM_Good_Unweighted_h, jtPfNEM_Good_Unweighted_h, jtPfMUM_Good_Unweighted_h, jtPt_Bad_Unweighted_h, jtPfCHMF_Bad_Unweighted_h, jtPfCEMF_Bad_Unweighted_h, jtPfNHMF_Bad_Unweighted_h, jtPfNEMF_Bad_Unweighted_h, jtPfMUMF_Bad_Unweighted_h, jtPfCHM_Bad_Unweighted_h, jtPfCEM_Bad_Unweighted_h, jtPfNHM_Bad_Unweighted_h, jtPfNEM_Bad_Unweighted_h, jtPfMUM_Bad_Unweighted_h, jtPfCHMF_jtPfCEMF_Good_Unweighted_h, jtPfCHMF_jtPfNHMF_Good_Unweighted_h, jtPfCHMF_jtPfNEMF_Good_Unweighted_h, jtPfCHMF_jtPfMUMF_Good_Unweighted_h, jtPfCEMF_jtPfNHMF_Good_Unweighted_h, jtPfCEMF_jtPfNEMF_Good_Unweighted_h, jtPfCEMF_jtPfMUMF_Good_Unweighted_h, jtPfNHMF_jtPfNEMF_Good_Unweighted_h, jtPfNHMF_jtPfMUMF_Good_Unweighted_h, jtPfNEMF_jtPfMUMF_Good_Unweighted_h, jtPfCHMF_jtPfCEMF_Bad_Unweighted_h, jtPfCHMF_jtPfNHMF_Bad_Unweighted_h, jtPfCHMF_jtPfNEMF_Bad_Unweighted_h, jtPfCHMF_jtPfMUMF_Bad_Unweighted_h, jtPfCEMF_jtPfNHMF_Bad_Unweighted_h, jtPfCEMF_jtPfNEMF_Bad_Unweighted_h, jtPfCEMF_jtPfMUMF_Bad_Unweighted_h, jtPfNHMF_jtPfNEMF_Bad_Unweighted_h, jtPfNHMF_jtPfMUMF_Bad_Unweighted_h, jtPfNEMF_jtPfMUMF_Bad_Unweighted_h});
 
   const Int_t nMaxJet_ = 500;
   Float_t pthat_;
@@ -166,11 +237,24 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   Float_t jtPfNHF_[nMaxJet_];
   Float_t jtPfNEF_[nMaxJet_];
   Float_t jtPfMUF_[nMaxJet_];
+
+  Float_t jtPfCHMF_[nMaxJet_];
+  Float_t jtPfCEMF_[nMaxJet_];
+  Float_t jtPfNHMF_[nMaxJet_];
+  Float_t jtPfNEMF_[nMaxJet_];
+  Float_t jtPfMUMF_[nMaxJet_];
+
   Int_t jtPfCHM_[nMaxJet_];
   Int_t jtPfCEM_[nMaxJet_];
   Int_t jtPfNHM_[nMaxJet_];
   Int_t jtPfNEM_[nMaxJet_];
   Int_t jtPfMUM_[nMaxJet_];
+
+  Int_t ngen_;
+  Float_t genpt_[nMaxJet_];
+  Float_t geneta_[nMaxJet_];
+  Float_t genphi_[nMaxJet_];
+  Int_t gensubid_[nMaxJet_];
 
   unsigned int run_, lumi_;
   unsigned long long evt_;
@@ -186,6 +270,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   goodGlobalSelection globalSel;
   globalSel.setIsPbPb(!isPP);
+
+  specialHYDJETEventExclude specialSel;
 
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
@@ -204,11 +290,21 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     jetTree_p->SetBranchStatus("jtPfNHF", 1);
     jetTree_p->SetBranchStatus("jtPfNEF", 1);
     jetTree_p->SetBranchStatus("jtPfMUF", 1);
+    jetTree_p->SetBranchStatus("jtPfCHMF", 1);
+    jetTree_p->SetBranchStatus("jtPfCEMF", 1);
+    jetTree_p->SetBranchStatus("jtPfNHMF", 1);
+    jetTree_p->SetBranchStatus("jtPfNEMF", 1);
+    jetTree_p->SetBranchStatus("jtPfMUMF", 1);
     jetTree_p->SetBranchStatus("jtPfCHM", 1);
     jetTree_p->SetBranchStatus("jtPfCEM", 1);
     jetTree_p->SetBranchStatus("jtPfNHM", 1);
     jetTree_p->SetBranchStatus("jtPfNEM", 1);
     jetTree_p->SetBranchStatus("jtPfMUM", 1);
+    jetTree_p->SetBranchStatus("ngen", 1);
+    jetTree_p->SetBranchStatus("genpt", 1);
+    jetTree_p->SetBranchStatus("geneta", 1);
+    jetTree_p->SetBranchStatus("genphi", 1);
+    jetTree_p->SetBranchStatus("gensubid", 1);
 
     jetTree_p->SetBranchAddress("pthat", &pthat_);
     jetTree_p->SetBranchAddress("nref", &nref_);
@@ -221,11 +317,21 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     jetTree_p->SetBranchAddress("jtPfNHF", jtPfNHF_);
     jetTree_p->SetBranchAddress("jtPfNEF", jtPfNEF_);
     jetTree_p->SetBranchAddress("jtPfMUF", jtPfMUF_);
+    jetTree_p->SetBranchAddress("jtPfCHMF", jtPfCHMF_);
+    jetTree_p->SetBranchAddress("jtPfCEMF", jtPfCEMF_);
+    jetTree_p->SetBranchAddress("jtPfNHMF", jtPfNHMF_);
+    jetTree_p->SetBranchAddress("jtPfNEMF", jtPfNEMF_);
+    jetTree_p->SetBranchAddress("jtPfMUMF", jtPfMUMF_);
     jetTree_p->SetBranchAddress("jtPfCHM", jtPfCHM_);
     jetTree_p->SetBranchAddress("jtPfCEM", jtPfCEM_);
     jetTree_p->SetBranchAddress("jtPfNHM", jtPfNHM_);
     jetTree_p->SetBranchAddress("jtPfNEM", jtPfNEM_);
     jetTree_p->SetBranchAddress("jtPfMUM", jtPfMUM_);
+    jetTree_p->SetBranchAddress("ngen", &ngen_);
+    jetTree_p->SetBranchAddress("genpt", genpt_);
+    jetTree_p->SetBranchAddress("geneta", geneta_);
+    jetTree_p->SetBranchAddress("genphi", genphi_);
+    jetTree_p->SetBranchAddress("gensubid", gensubid_);
 
     TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
 
@@ -288,6 +394,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       if(!globalSel.isGood()) continue;
       if(hiBin_ > 60) continue;
 
+      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_, genpt_, genphi_, geneta_, gensubid_);
+
       Double_t pthatWeight_ = -1;
       for(unsigned int pI = 0; pI < pthats.size()-1; ++pI){
         if(pthats.at(pI) <= pthat_ && pthat_ < pthats.at(pI+1)){
@@ -311,14 +419,44 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
 	bool isGood = refpt_[jI] > jtRefGoodPtMin;
 	bool isBad = refpt_[jI] < jtRefBadPtMax;
+	bool isNotCut = jtPfMUMF_[jI] < 0.6 && jtPfCHMF_[jI] < 0.9;
+
+	if(isBad && jtpt_[jI] >= 600 && jtpt_[jI] < 750 && isNotCut){
+	  std::cout << "Bad jet at entry: " << entry << std::endl;
+	  std::cout << " pt, refpt, eta, phi: " << jtpt_[jI] << ", " << refpt_[jI] << ", " << jteta_[jI] << ", " << jtphi_[jI] << std::endl;
+	}
+
+	if(isGood){
+	  jtPt_Good_Unweighted_NoSpecialCut_h->Fill(jtpt_[jI]);
+	  jtPt_Good_Weighted_NoSpecialCut_h->Fill(jtpt_[jI], pthatWeight_);	  
+	}
+	else{
+	  jtPt_Bad_Unweighted_NoSpecialCut_h->Fill(jtpt_[jI]);
+	  jtPt_Bad_Weighted_NoSpecialCut_h->Fill(jtpt_[jI], pthatWeight_);	  
+	}
+
+	if(!isPP && badJetSpecialSel) continue;
 
 	if(isGood){
 	  jtPt_Good_Unweighted_h->Fill(jtpt_[jI]);
+	  jtPt_Good_Weighted_h->Fill(jtpt_[jI], pthatWeight_);
+
+	  if(isNotCut){
+	    jtPt_Good_Unweighted_Cut_h->Fill(jtpt_[jI]);
+	    jtPt_Good_Weighted_Cut_h->Fill(jtpt_[jI], pthatWeight_);
+	  }
+
 	  jtPfCHF_Good_Unweighted_h->Fill(jtPfCHF_[jI]);
 	  jtPfCEF_Good_Unweighted_h->Fill(jtPfCEF_[jI]);
 	  jtPfNHF_Good_Unweighted_h->Fill(jtPfNHF_[jI]);
 	  jtPfNEF_Good_Unweighted_h->Fill(jtPfNEF_[jI]);
 	  jtPfMUF_Good_Unweighted_h->Fill(jtPfMUF_[jI]);
+
+	  jtPfCHM_Good_Unweighted_h->Fill(jtPfCHM_[jI]);
+	  jtPfCEM_Good_Unweighted_h->Fill(jtPfCEM_[jI]);
+	  jtPfNHM_Good_Unweighted_h->Fill(jtPfNHM_[jI]);
+	  jtPfNEM_Good_Unweighted_h->Fill(jtPfNEM_[jI]);
+	  jtPfMUM_Good_Unweighted_h->Fill(jtPfMUM_[jI]);
 
 	  jtPfCHF_jtPfCEF_Good_Unweighted_h->Fill(jtPfCHF_[jI], jtPfCEF_[jI]);
 	  jtPfCHF_jtPfNHF_Good_Unweighted_h->Fill(jtPfCHF_[jI], jtPfNHF_[jI]);
@@ -333,14 +471,49 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 	  jtPfNHF_jtPfMUF_Good_Unweighted_h->Fill(jtPfNHF_[jI], jtPfMUF_[jI]);
 
 	  jtPfNEF_jtPfMUF_Good_Unweighted_h->Fill(jtPfNEF_[jI], jtPfMUF_[jI]);
+
+	  jtPfCHMF_Good_Unweighted_h->Fill(jtPfCHMF_[jI]);
+	  jtPfCEMF_Good_Unweighted_h->Fill(jtPfCEMF_[jI]);
+	  jtPfNHMF_Good_Unweighted_h->Fill(jtPfNHMF_[jI]);
+	  jtPfNEMF_Good_Unweighted_h->Fill(jtPfNEMF_[jI]);
+	  jtPfMUMF_Good_Unweighted_h->Fill(jtPfMUMF_[jI]);
+
+	  jtPfCHMF_jtPfCEMF_Good_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfCEMF_[jI]);
+	  jtPfCHMF_jtPfNHMF_Good_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfNHMF_[jI]);
+	  jtPfCHMF_jtPfNEMF_Good_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfNEMF_[jI]);
+	  jtPfCHMF_jtPfMUMF_Good_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfCEMF_jtPfNHMF_Good_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfNHMF_[jI]);
+	  jtPfCEMF_jtPfNEMF_Good_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfNEMF_[jI]);
+	  jtPfCEMF_jtPfMUMF_Good_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfNHMF_jtPfNEMF_Good_Unweighted_h->Fill(jtPfNHMF_[jI], jtPfNEMF_[jI]);
+	  jtPfNHMF_jtPfMUMF_Good_Unweighted_h->Fill(jtPfNHMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfNEMF_jtPfMUMF_Good_Unweighted_h->Fill(jtPfNEMF_[jI], jtPfMUMF_[jI]);
 	}
 	else if(isBad){
 	  jtPt_Bad_Unweighted_h->Fill(jtpt_[jI]);
+	  jtPt_Bad_Weighted_h->Fill(jtpt_[jI], pthatWeight_);
+
+	  if(isNotCut){
+	    jtPt_Bad_Unweighted_Cut_h->Fill(jtpt_[jI]);
+	    jtPt_Bad_Weighted_Cut_h->Fill(jtpt_[jI], pthatWeight_);
+	  }
+
+
 	  jtPfCHF_Bad_Unweighted_h->Fill(jtPfCHF_[jI]);
 	  jtPfCEF_Bad_Unweighted_h->Fill(jtPfCEF_[jI]);
 	  jtPfNHF_Bad_Unweighted_h->Fill(jtPfNHF_[jI]);
 	  jtPfNEF_Bad_Unweighted_h->Fill(jtPfNEF_[jI]);
 	  jtPfMUF_Bad_Unweighted_h->Fill(jtPfMUF_[jI]);
+
+	  jtPfCHM_Bad_Unweighted_h->Fill(jtPfCHM_[jI]);
+	  jtPfCEM_Bad_Unweighted_h->Fill(jtPfCEM_[jI]);
+	  jtPfNHM_Bad_Unweighted_h->Fill(jtPfNHM_[jI]);
+	  jtPfNEM_Bad_Unweighted_h->Fill(jtPfNEM_[jI]);
+	  jtPfMUM_Bad_Unweighted_h->Fill(jtPfMUM_[jI]);
+
 
 	  jtPfCHF_jtPfCEF_Bad_Unweighted_h->Fill(jtPfCHF_[jI], jtPfCEF_[jI]);
 	  jtPfCHF_jtPfNHF_Bad_Unweighted_h->Fill(jtPfCHF_[jI], jtPfNHF_[jI]);
@@ -355,6 +528,26 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 	  jtPfNHF_jtPfMUF_Bad_Unweighted_h->Fill(jtPfNHF_[jI], jtPfMUF_[jI]);
 
 	  jtPfNEF_jtPfMUF_Bad_Unweighted_h->Fill(jtPfNEF_[jI], jtPfMUF_[jI]);	  
+
+	  jtPfCHMF_Bad_Unweighted_h->Fill(jtPfCHMF_[jI]);
+	  jtPfCEMF_Bad_Unweighted_h->Fill(jtPfCEMF_[jI]);
+	  jtPfNHMF_Bad_Unweighted_h->Fill(jtPfNHMF_[jI]);
+	  jtPfNEMF_Bad_Unweighted_h->Fill(jtPfNEMF_[jI]);
+	  jtPfMUMF_Bad_Unweighted_h->Fill(jtPfMUMF_[jI]);
+
+	  jtPfCHMF_jtPfCEMF_Bad_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfCEMF_[jI]);
+	  jtPfCHMF_jtPfNHMF_Bad_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfNHMF_[jI]);
+	  jtPfCHMF_jtPfNEMF_Bad_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfNEMF_[jI]);
+	  jtPfCHMF_jtPfMUMF_Bad_Unweighted_h->Fill(jtPfCHMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfCEMF_jtPfNHMF_Bad_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfNHMF_[jI]);
+	  jtPfCEMF_jtPfNEMF_Bad_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfNEMF_[jI]);
+	  jtPfCEMF_jtPfMUMF_Bad_Unweighted_h->Fill(jtPfCEMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfNHMF_jtPfNEMF_Bad_Unweighted_h->Fill(jtPfNHMF_[jI], jtPfNEMF_[jI]);
+	  jtPfNHMF_jtPfMUMF_Bad_Unweighted_h->Fill(jtPfNHMF_[jI], jtPfMUMF_[jI]);
+
+	  jtPfNEMF_jtPfMUMF_Bad_Unweighted_h->Fill(jtPfNEMF_[jI], jtPfMUMF_[jI]);	  
 	}
       }
     }
@@ -370,11 +563,23 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   std::vector<TH2*> badHistsTH2;
 
   goodHists.push_back(jtPt_Good_Unweighted_h);
+  goodHists.push_back(jtPt_Good_Unweighted_Cut_h);
+  goodHists.push_back(jtPt_Good_Unweighted_NoSpecialCut_h);
+  goodHists.push_back(jtPt_Good_Weighted_h);
+  goodHists.push_back(jtPt_Good_Weighted_Cut_h);
+  goodHists.push_back(jtPt_Good_Weighted_NoSpecialCut_h);
+
   goodHists.push_back(jtPfCHF_Good_Unweighted_h);
   goodHists.push_back(jtPfCEF_Good_Unweighted_h);
   goodHists.push_back(jtPfNHF_Good_Unweighted_h);
   goodHists.push_back(jtPfNEF_Good_Unweighted_h);
   goodHists.push_back(jtPfMUF_Good_Unweighted_h);
+
+  goodHists.push_back(jtPfCHM_Good_Unweighted_h);
+  goodHists.push_back(jtPfCEM_Good_Unweighted_h);
+  goodHists.push_back(jtPfNHM_Good_Unweighted_h);
+  goodHists.push_back(jtPfNEM_Good_Unweighted_h);
+  goodHists.push_back(jtPfMUM_Good_Unweighted_h);
 
   goodHistsTH2.push_back(jtPfCHF_jtPfCEF_Good_Unweighted_h);
   goodHistsTH2.push_back(jtPfCHF_jtPfNHF_Good_Unweighted_h);
@@ -390,12 +595,44 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   goodHistsTH2.push_back(jtPfNEF_jtPfMUF_Good_Unweighted_h);
 
+  goodHists.push_back(jtPfCHMF_Good_Unweighted_h);
+  goodHists.push_back(jtPfCEMF_Good_Unweighted_h);
+  goodHists.push_back(jtPfNHMF_Good_Unweighted_h);
+  goodHists.push_back(jtPfNEMF_Good_Unweighted_h);
+  goodHists.push_back(jtPfMUMF_Good_Unweighted_h);
+
+  goodHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Good_Unweighted_h);
+
+  goodHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Good_Unweighted_h);
+
+  goodHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Good_Unweighted_h);
+  goodHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Good_Unweighted_h);
+
+  goodHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Good_Unweighted_h);
+
   badHists.push_back(jtPt_Bad_Unweighted_h);
+  badHists.push_back(jtPt_Bad_Unweighted_Cut_h);
+  badHists.push_back(jtPt_Bad_Unweighted_NoSpecialCut_h);
+  badHists.push_back(jtPt_Bad_Weighted_h);
+  badHists.push_back(jtPt_Bad_Weighted_Cut_h);
+  badHists.push_back(jtPt_Bad_Weighted_NoSpecialCut_h);
+
   badHists.push_back(jtPfCHF_Bad_Unweighted_h);
   badHists.push_back(jtPfCEF_Bad_Unweighted_h);
   badHists.push_back(jtPfNHF_Bad_Unweighted_h);
   badHists.push_back(jtPfNEF_Bad_Unweighted_h);
   badHists.push_back(jtPfMUF_Bad_Unweighted_h);
+
+  badHists.push_back(jtPfCHM_Bad_Unweighted_h);
+  badHists.push_back(jtPfCEM_Bad_Unweighted_h);
+  badHists.push_back(jtPfNHM_Bad_Unweighted_h);
+  badHists.push_back(jtPfNEM_Bad_Unweighted_h);
+  badHists.push_back(jtPfMUM_Bad_Unweighted_h);
 
   badHistsTH2.push_back(jtPfCHF_jtPfCEF_Bad_Unweighted_h);
   badHistsTH2.push_back(jtPfCHF_jtPfNHF_Bad_Unweighted_h);
@@ -411,6 +648,26 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   badHistsTH2.push_back(jtPfNEF_jtPfMUF_Bad_Unweighted_h);
 
+  badHists.push_back(jtPfCHMF_Bad_Unweighted_h);
+  badHists.push_back(jtPfCEMF_Bad_Unweighted_h);
+  badHists.push_back(jtPfNHMF_Bad_Unweighted_h);
+  badHists.push_back(jtPfNEMF_Bad_Unweighted_h);
+  badHists.push_back(jtPfMUMF_Bad_Unweighted_h);
+
+  badHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Bad_Unweighted_h);
+
+  badHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Bad_Unweighted_h);
+
+  badHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Bad_Unweighted_h);
+  badHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Bad_Unweighted_h);
+
+  badHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Bad_Unweighted_h);
+
   outFile_p->cd();
 
   checkMakeDir("pdfDir");
@@ -421,28 +678,64 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   const int styles[nPlots] = {20, 21};
   const int colors[nPlots] = {vg.getColor(0), vg.getColor(1)};
 
+  double maxValPt = -1;
+  double minValPt = 100000;
+
+  for(unsigned int i = 0; i < goodHists.size(); ++i){
+    std::string canvStr = goodHists.at(i)->GetName();
+    if(canvStr.find("jtPt_") == std::string::npos) continue;
+
+    for(Int_t bIX = 0; bIX < goodHists.at(i)->GetNbinsX(); ++bIX){
+      if(maxValPt < goodHists.at(i)->GetBinContent(bIX+1)) maxValPt = goodHists.at(i)->GetBinContent(bIX+1);
+      if(minValPt > goodHists.at(i)->GetBinContent(bIX+1) && goodHists.at(i)->GetBinContent(bIX+1) > 0) minValPt = goodHists.at(i)->GetBinContent(bIX+1);
+
+      if(maxValPt < badHists.at(i)->GetBinContent(bIX+1)) maxValPt = badHists.at(i)->GetBinContent(bIX+1);
+      if(minValPt > badHists.at(i)->GetBinContent(bIX+1) && badHists.at(i)->GetBinContent(bIX+1) > 0) minValPt = badHists.at(i)->GetBinContent(bIX+1);
+    }
+  }
+
+  maxValPt *= 5.;
+  minValPt /= 5.;
+
   for(unsigned int i = 0; i < goodHists.size(); ++i){
     std::string canvStr = goodHists.at(i)->GetName();
     canvStr.replace(canvStr.find("_Good"), std::string("_Good").size(), "");
 
     TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+    gPad->SetTopMargin(0.01);
+    gPad->SetRightMargin(0.01);
     
-    goodHists.at(i)->Scale(1./goodHists.at(i)->Integral());
-    badHists.at(i)->Scale(1./badHists.at(i)->Integral());
+    if(canvStr.find("jtPt_") == std::string::npos){
+      goodHists.at(i)->Scale(1./goodHists.at(i)->Integral());
+      badHists.at(i)->Scale(1./badHists.at(i)->Integral());
 
-    double maxVal = -1;
-    double minVal = 9999;
+      goodHists.at(i)->GetYaxis()->SetTitle("Counts (Norm. To 1)");
+      badHists.at(i)->GetYaxis()->SetTitle("Counts (Norm. To 1)");
+    }
+    else{
+      goodHists.at(i)->SetMaximum(maxValPt);
+      goodHists.at(i)->SetMinimum(minValPt);
 
-    for(Int_t bIX = 0; bIX < goodHists.at(i)->GetNbinsX(); ++bIX){
-      if(maxVal < goodHists.at(i)->GetBinContent(bIX+1)) maxVal = goodHists.at(i)->GetBinContent(bIX+1);
-      if(maxVal < badHists.at(i)->GetBinContent(bIX+1)) maxVal = badHists.at(i)->GetBinContent(bIX+1);
-
-      if(minVal > goodHists.at(i)->GetBinContent(bIX+1) && goodHists.at(i)->GetBinContent(bIX+1) > 0) minVal = goodHists.at(i)->GetBinContent(bIX+1);
-      if(minVal > badHists.at(i)->GetBinContent(bIX+1) && badHists.at(i)->GetBinContent(bIX+1) > 0) minVal = badHists.at(i)->GetBinContent(bIX+1);
+      badHists.at(i)->SetMaximum(maxValPt);
+      badHists.at(i)->SetMinimum(minValPt);
     }
 
-    goodHists.at(i)->SetMaximum(maxVal*5.);
-    goodHists.at(i)->SetMinimum(minVal/5.);
+
+    if(canvStr.find("jtPt_") == std::string::npos){
+      double maxVal = -1;
+      double minVal = 9999;
+      
+      for(Int_t bIX = 0; bIX < goodHists.at(i)->GetNbinsX(); ++bIX){
+	if(maxVal < goodHists.at(i)->GetBinContent(bIX+1)) maxVal = goodHists.at(i)->GetBinContent(bIX+1);
+	if(maxVal < badHists.at(i)->GetBinContent(bIX+1)) maxVal = badHists.at(i)->GetBinContent(bIX+1);
+	
+	if(minVal > goodHists.at(i)->GetBinContent(bIX+1) && goodHists.at(i)->GetBinContent(bIX+1) > 0) minVal = goodHists.at(i)->GetBinContent(bIX+1);
+	if(minVal > badHists.at(i)->GetBinContent(bIX+1) && badHists.at(i)->GetBinContent(bIX+1) > 0) minVal = badHists.at(i)->GetBinContent(bIX+1);
+      }
+      
+      goodHists.at(i)->SetMaximum(maxVal*5.);
+      goodHists.at(i)->SetMinimum(minVal/5.);
+    }
 
     goodHists.at(i)->SetMarkerColor(colors[0]);
     goodHists.at(i)->SetMarkerStyle(styles[0]);
@@ -451,13 +744,14 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
     badHists.at(i)->SetMarkerColor(colors[1]);
     badHists.at(i)->SetMarkerStyle(styles[1]);
-    badHists.at(i)->SetMarkerSize(0.8);
+    badHists.at(i)->SetMarkerSize(0.6);
     badHists.at(i)->SetLineColor(colors[1]);
     
     canv_p->cd();
 
     goodHists.at(i)->DrawCopy("HIST E1 P");
     badHists.at(i)->DrawCopy("HIST E1 P SAME");
+    gStyle->SetOptStat(0);
 
     gPad->SetLogy();
 
