@@ -32,6 +32,7 @@ int validateJetResponse(const std::string inFileName)
     std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
   }
 
+  Bool_t isPP = false;
   Int_t nCentBins = -1;
   std::vector<Int_t> centBinsLow;
   std::vector<Int_t> centBinsHi;
@@ -43,7 +44,8 @@ int validateJetResponse(const std::string inFileName)
     std::string tempStr = cutDirList.at(cI);
     while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
 
-    if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isPP = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("centBinsLow") != std::string::npos && tempStr.size() == std::string("centBinsLow").size()){
       std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
       while(tempStr2.find(",") != std::string::npos){
@@ -96,15 +98,29 @@ int validateJetResponse(const std::string inFileName)
 
   checkMakeDir("pdfDir");
 
+  std::cout << __LINE__ << std::endl;
+
   for(Int_t jI = 0; jI < nJets; ++jI){
     std::string dirName = jetDirList.at(jI);
     dirName = dirName.substr(0, dirName.find("/"));
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      std::cout << __LINE__ << ", " << cI << std::endl;
+      std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      if(isPP) centStr = "PP";
+
+      std::cout << __LINE__ << ", " << cI << std::endl;
+
+      std::cout << dirName << "/rooResponse_" << dirName << "_" << centStr << "_RecoTrunc_h" << std::endl;
+      std::cout << dirName << "/recoJtPt_" << dirName << "_" << centStr << "_RecoTrunc_h" << std::endl;
+      std::cout << dirName << "/genJtPt_" << dirName << "_" << centStr << "_h" << std::endl;
       RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)inFile_p->Get((dirName + "/rooResponse_" + dirName + "_" + centStr + "_RecoTrunc_h").c_str());
+      std::cout << __LINE__ << ", " << cI << std::endl;
       TH1D* recoJtPt_RecoTrunc_h = (TH1D*)inFile_p->Get((dirName + "/recoJtPt_" + dirName + "_" + centStr + "_RecoTrunc_h").c_str());
+      std::cout << __LINE__ << ", " << cI << std::endl;
       TH1D* genJtPt_h = (TH1D*)inFile_p->Get((dirName + "/genJtPt_" + dirName + "_" + centStr + "_h").c_str());
+
+      std::cout << __LINE__ << ", " << cI << std::endl;
 
       recoJtPt_RecoTrunc_h->GetXaxis()->SetTitleFont(43);
       recoJtPt_RecoTrunc_h->GetYaxis()->SetTitleFont(43);
@@ -115,6 +131,8 @@ int validateJetResponse(const std::string inFileName)
       recoJtPt_RecoTrunc_h->GetYaxis()->SetTitleSize(14);
       recoJtPt_RecoTrunc_h->GetXaxis()->SetLabelSize(14);
       recoJtPt_RecoTrunc_h->GetYaxis()->SetLabelSize(14);
+
+      std::cout << __LINE__ << ", " << cI << std::endl;
 
       genJtPt_h->GetXaxis()->SetTitleFont(43);
       genJtPt_h->GetYaxis()->SetTitleFont(43);
@@ -133,6 +151,8 @@ int validateJetResponse(const std::string inFileName)
       canv_p->SetRightMargin(0.01);
 
       gStyle->SetOptStat(0);
+
+      std::cout << __LINE__ << std::endl;
 
       TPad* pads_p[nPad];
       for(Int_t pI = 0; pI < nPad; ++pI){
@@ -198,6 +218,8 @@ int validateJetResponse(const std::string inFileName)
 
       TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);
 
+      std::cout << __LINE__ << std::endl;
+
       unfold_h->SetMarkerColor(colors[2]);
       unfold_h->SetLineColor(colors[2]);
       unfold_h->SetMarkerStyle(styles[2]);
@@ -236,6 +258,7 @@ int validateJetResponse(const std::string inFileName)
       unfold_h->DrawCopy("HIST E1 P");
 
       canv_p->SaveAs(("pdfDir/" + dirName + "_" + centStr + "_" + dateStr + ".pdf").c_str());
+      std::cout << __LINE__ << std::endl;
 
       for(Int_t pI = 0; pI < nPad; ++pI){
 	delete pads_p[pI];
@@ -245,6 +268,7 @@ int validateJetResponse(const std::string inFileName)
     }
   }
   
+  std::cout << __LINE__ << std::endl;
 
   inFile_p->Close();
   delete inFile_p;

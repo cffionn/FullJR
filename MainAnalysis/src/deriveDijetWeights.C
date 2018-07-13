@@ -1,5 +1,7 @@
 #include "TFile.h"
 #include "TTree.h"
+#include "TObjArray.h"
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -9,11 +11,15 @@
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
-//5.02 TeV
+//5.02 TeV PYTHIA 6
 const Int_t nPtHat = 12;
 const Int_t ptHat[nPtHat+1] = {15, 30, 50, 80, 100, 120, 170, 220, 280, 370, 460, 540, 10000};
 //const Double_t ptHatCrossSections[nPtHat+1] = {.5269, .03455, .004068, .0004959, .00007096, .00001223, .000003031, .0000007746, .0000001410, .00000003216, .00000001001, 0.00000};
 const Double_t ptHatCrossSections[nPtHat+1] = {.5335, .03378, .003778, .0004412, .0001511, .00006147, .00001018, .000002477, .0000006160, .0000001088, .00000002527,  0.000000007865, 0.00000000};
+
+const Int_t nPtHat8 = 12;
+const Int_t ptHat8[nPtHat8+1] = {0, 15, 30, 50, 80, 120, 170, 220, 280, 370, 460, 540, 10000};
+const Double_t ptHatCrossSections8[nPtHat8+1] = {67.89, .5269, .03455, .004068, .0004959, .00007096, .00001223, .000003031, .0000007746, .0000001410, .00000003216, .00000001001, 0.000000000};
 
 //2.76TeV
 //const Int_t nPtHat = 9;
@@ -22,7 +28,7 @@ const Double_t ptHatCrossSections[nPtHat+1] = {.5335, .03378, .003778, .0004412,
 //const Double_t ptHatCrossSections[nPtHat+1] = {.2034, .01075, .001025, .00009865, .00001129, .000001465, .0000002837, .00000005323, .000000005934, 00000000.000000};
 
 
-int deriveDijetWeights(const std::string inConfigFileName)
+int deriveDijetWeights(const std::string inConfigFileName, const bool isPYTHIA6)
 {
   if(!checkFile(inConfigFileName) || inConfigFileName.find(".txt") == std::string::npos){
     std::cout << "Given inConfigFileName \'" << inConfigFileName << "\' is invalid. return 1" << std::endl;
@@ -76,12 +82,24 @@ int deriveDijetWeights(const std::string inConfigFileName)
     Int_t pthatPos = -1;
     Int_t currentPthat = pthats.at(pI);
 
-    for(Int_t pI2 = 0; pI2 < nPtHat; ++pI2){
-      if(pthats.at(pI) == ptHat[pI2]){
-	crossSections.push_back(ptHatCrossSections[pI2]);
-	pthatCounts.push_back(0);
-	pthatPos = pI2;
-	break;
+    if(isPYTHIA6){
+      for(Int_t pI2 = 0; pI2 < nPtHat; ++pI2){
+	if(pthats.at(pI) == ptHat[pI2]){
+	  crossSections.push_back(ptHatCrossSections[pI2]);
+	  pthatCounts.push_back(0);
+	  pthatPos = pI2;
+	  break;
+	}
+      }
+    }
+    else{
+      for(Int_t pI2 = 0; pI2 < nPtHat8; ++pI2){
+        if(pthats.at(pI) == ptHat8[pI2]){
+          crossSections.push_back(ptHatCrossSections8[pI2]);
+          pthatCounts.push_back(0);
+          pthatPos = pI2;
+          break;
+        }
       }
     }
 
@@ -91,9 +109,16 @@ int deriveDijetWeights(const std::string inConfigFileName)
     }
   }
 
-  pthats.push_back(ptHat[nPtHat]);
-  pthatCounts.push_back(0);
-  crossSections.push_back(ptHatCrossSections[nPtHat]);
+  if(isPYTHIA6){
+    pthats.push_back(ptHat[nPtHat]);
+    pthatCounts.push_back(0);
+    crossSections.push_back(ptHatCrossSections[nPtHat]);
+  }
+  else{
+    pthats.push_back(ptHat8[nPtHat8]);
+    pthatCounts.push_back(0);
+    crossSections.push_back(ptHatCrossSections8[nPtHat8]);
+  }
 
   if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl; 
 
@@ -113,16 +138,32 @@ int deriveDijetWeights(const std::string inConfigFileName)
       continue;
     }
     
-    std::vector<std::string> jetTreeList = returnRootFileContentsList(inFile_p, "TTree", "JetAnalyzer");
+    std::vector<std::string> jetTreeList = returnRootFileContentsList(inFile_p, "TTree", "ak");
+    int pthatPos = -1;
+    for(unsigned int jtI = 0; jtI < jetTreeList.size(); ++jtI){
+      TTree* jetTree_p = (TTree*)inFile_p->Get(jetTreeList.at(jtI).c_str());
+      TObjArray* branchList = (TObjArray*)jetTree_p->GetListOfBranches();
+
+      for(Int_t bI = 0; bI < branchList->GetEntries(); ++bI){
+	std::string tempStr = branchList->At(bI)->GetName();
+	if(tempStr.find("pthat") != std::string::npos && tempStr.size() == std::string("pthat").size()){
+	  pthatPos = jtI;
+	  break;
+	}
+      }
+
+      if(pthatPos >= 0) break;
+    }
     
-    if(jetTreeList.size() == 0){
+    
+    if(jetTreeList.size() == 0 || pthatPos < 0){
       std::cout << "given file \'" << tempFileName << "\' contains no valid jet trees, continue" << std::endl;
       inFile_p->Close();
       delete inFile_p;
       continue;
     }
     
-    TTree* jetTree_p = (TTree*)inFile_p->Get(jetTreeList.at(0).c_str());
+    TTree* jetTree_p = (TTree*)inFile_p->Get(jetTreeList.at(pthatPos).c_str());
     
     if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl; 
     
@@ -178,6 +219,7 @@ int deriveDijetWeights(const std::string inConfigFileName)
     weights.push_back(weight*multAdjust);
   }
 
+  std::cout << "Pthats size: " << pthats.size() << std::endl;
   std::cout << std::endl;
   std::cout << "Weights for copy-paste: ";
 
@@ -199,8 +241,8 @@ int deriveDijetWeights(const std::string inConfigFileName)
 
 int main(int argc, char *argv[])
 {
-  if(argc != 2){
-    std::cout << "Usage: deriveDijetWeights.exe <inConfigFile>" << std::endl;
+  if(argc != 3){
+    std::cout << "Usage: deriveDijetWeights.exe <inConfigFile> <isPYTHIA6>" << std::endl;
     std::cout << "Number of args given: " << argc << std::endl;
     for(int iter = 0; iter < argc; iter++){
       std::cout << "  argv[" << iter << "]: " << argv[iter] << std::endl;
@@ -208,5 +250,5 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  return deriveDijetWeights(argv[1]);
+  return deriveDijetWeights(argv[1], std::stoi(argv[2]));
 }
