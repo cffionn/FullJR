@@ -174,7 +174,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       if(jetList.at(jI).find("ak4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
     }
     else{
-      if(jetList.at(jI).find("akCs4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
+      if(jetList.at(jI).find("akCs4PU3PFFlow") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
     }
   }
   const Int_t posR4 = posR4Temp;
@@ -473,8 +473,6 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   specialHYDJETEventExclude specialSel;
 
-
-
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
 
@@ -734,7 +732,13 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 		if(passesID[idI]){
 		  jtPt_Good_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
 		  jtPt_FineTot_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+
+				
+		  if(jtpt_[tI][jI] >= 247.5 && jtpt_[tI][jI] <= 262.5 && pthatWeight_ > 0.01){
+		    if(tI == posR4 && idI == 0 && wI == 0) std::cout << "Bad jet weight between  247.5-262.5, entry: " << entry << std::endl;
+		  }
 		  
+
 		  for(unsigned int rI = 0; rI < recoPtPos.size(); ++rI){
 		    jtPfCHF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHF_[tI][jI], weight_);
 		    jtPfCEF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEF_[tI][jI], weight_);
@@ -796,6 +800,12 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 		if(passesID[idI]){
 		  jtPt_Bad_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
 		  jtPt_FineTot_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+
+		  
+		  if(jtpt_[tI][jI] >= 247.5 && jtpt_[tI][jI] <= 262.5 && pthatWeight_ > 0.01){
+		    if(tI == posR4 && idI == 0 && wI == 0) std::cout << "Bad jet weight between  247.5-262.5, entry: " << entry << std::endl;
+		  }
+		  
 
 		  if(centPos == 2 && jtpt_[tI][jI] > 300 && jtpt_[tI][jI] < 400 && idI == nID - 1 && wI == 1){
 		    //		    std::cout << "Warning bad jet: " << jtpt_[tI][jI] << ", weight==" << weight_ << ", entry==" << entry << std::endl;
@@ -991,6 +1001,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   for(unsigned int gI = 0; gI < goodHists.size(); ++gI){
     std::cout << " Good " << gI << "/" << goodHists.size() << ": " << goodHists.at(gI) << ", " << goodHists.at(gI)->GetName() << std::endl;
   }
+
+  specialSel.PrintExcludedNumbers();
 
   outFile_p->cd();
 
