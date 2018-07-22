@@ -10,6 +10,7 @@
 #include "TFile.h"
 #include "TDirectory.h"
 #include "TTree.h"
+#include "TH1D.h"
 #include "TH2D.h"
 #include "TNamed.h"
 #include "TMath.h"
@@ -17,6 +18,9 @@
 
 //RooUnfold dependencies
 #include "src/RooUnfoldResponse.h"
+
+//Local FullJR (MainAnalysis) dependencies
+#include "MainAnalysis/include/cutPropagator.h"
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
@@ -76,7 +80,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	  }
 	  if(tempStr.size() != 0) pthatWeights.push_back(std::stod(tempStr));	
 	}
-	else if(tempStr.substr(0, std::string("isPP=").size()).find("isPP=") != std::string::npos){
+	else if(tempStr.substr(0, std::string("ISPP=").size()).find("ISPP=") != std::string::npos){
 	  tempStr.replace(0,tempStr.find("=")+1, "");
 	  isPP = std::stoi(tempStr);
 	}
@@ -187,12 +191,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Int_t nJtPtBins = 10;
   const Double_t jtPtBins[nJtPtBins+1] = {100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 1100.};
 
-  const Int_t nID = 2;
-  const std::string idStr[nID] = {"NoID", "LightMUAndCHID"};
-  const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.00};
-  const Double_t jtPfCHMFCutHi[nID] = {1.0, 0.90};
-  const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.00};
-  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60};
+  const Int_t nID = 3;
+  const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID"};
+  const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00};
+  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90};
+  const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.0, 0.00};
+  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60};
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
   const Int_t nResponseBins = 300;
@@ -729,93 +733,28 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   outFile_p->cd();
 
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
-  cutDir_p->cd();
 
-  std::string jtPtBinsStr = "";
-  for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
-    jtPtBinsStr = jtPtBinsStr + std::to_string(jtPtBins[jI]) + ",";
-  }
+  cutPropagator cutProp;
+  cutProp.SetIsPP(isPP);
+  cutProp.SetJtAbsEtaMax(jtAbsEtaMax);
+  cutProp.SetNJtPtBins(nJtPtBins);
+  cutProp.SetJtPtBins(nJtPtBins+1, jtPtBins);
+  cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
+  cutProp.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
+  cutProp.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
+  cutProp.SetPthats(pthats);
+  cutProp.SetPthatWeights(pthatWeights);
+  cutProp.SetNCentBins(nCentBins);
+  cutProp.SetCentBinsLow(centBinsLow);
+  cutProp.SetCentBinsHi(centBinsHi);
+  cutProp.SetNID(nID);
+  cutProp.SetIdStr(nID, idStr);
+  cutProp.SetJtPfCHMFCutLow(nID, jtPfCHMFCutLow);
+  cutProp.SetJtPfCHMFCutHi(nID, jtPfCHMFCutHi);
+  cutProp.SetJtPfMUMFCutLow(nID, jtPfMUMFCutLow);
+  cutProp.SetJtPfMUMFCutHi(nID, jtPfMUMFCutHi);
 
-  std::string jtAbsEtaBinsLowStr = "";
-  std::string jtAbsEtaBinsHiStr = "";
-  for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
-    jtAbsEtaBinsLowStr = jtAbsEtaBinsLowStr + std::to_string(jtAbsEtaBinsLow[jI]) + ",";
-    jtAbsEtaBinsHiStr = jtAbsEtaBinsHiStr + std::to_string(jtAbsEtaBinsHi[jI]) + ",";
-  }
-
-  std::string pthatsStr = "";
-  for(unsigned int jI = 0; jI < pthats.size(); ++jI){
-    pthatsStr = pthatsStr + std::to_string(pthats.at(jI)) + ",";
-  }
-
-  std::string pthatWeightsStr = "";
-  for(unsigned int jI = 0; jI < pthatWeights.size(); ++jI){
-    pthatWeightsStr = pthatWeightsStr + to_string_with_precision(pthatWeights.at(jI), 12) + ",";
-    std::cout << "Weight orig, string: " << pthatWeights.at(jI) << ", " << to_string_with_precision(pthatWeights.at(jI), 12) << std::endl;
-  }
-
-  std::string centBinsLowStr = "";
-  for(Int_t jI = 0; jI < nCentBins; ++jI){
-    centBinsLowStr = centBinsLowStr + std::to_string(centBinsLow[jI]) + ",";
-  }
-
-  std::string centBinsHiStr = "";
-  for(Int_t jI = 0; jI < nCentBins; ++jI){
-    centBinsHiStr = centBinsHiStr + std::to_string(centBinsHi[jI]) + ",";
-  }
-
-  std::string nIDStr = std::to_string(nID);
-  std::string idStr2 = "";
-  std::string jtPfCHMFCutLowStr = "";
-  std::string jtPfCHMFCutHiStr = "";
-  std::string jtPfMUMFCutLowStr = "";
-  std::string jtPfMUMFCutHiStr = "";
-  
-  for(Int_t iI = 0; iI < nID; ++iI){
-    idStr2 = idStr2 + idStr[iI] + ",";
-    jtPfCHMFCutLowStr = jtPfCHMFCutLowStr + std::to_string(jtPfCHMFCutLow[iI]) + ",";
-    jtPfCHMFCutHiStr = jtPfCHMFCutHiStr + std::to_string(jtPfCHMFCutHi[iI]) + ",";
-    jtPfMUMFCutLowStr = jtPfMUMFCutLowStr + std::to_string(jtPfMUMFCutLow[iI]) + ",";
-    jtPfMUMFCutHiStr = jtPfMUMFCutHiStr + std::to_string(jtPfMUMFCutHi[iI]) + ",";
-  }
-  
-  TNamed isPPName("isPP", std::to_string(isPP));
-  TNamed jtAbsEtaMaxName("jtAbsEtaMax", std::to_string(jtAbsEtaMax).c_str());
-  TNamed nJtPtBinsName("nJtPtBins", std::to_string(nJtPtBins).c_str());
-  TNamed jtPtBinsName("jtPtBins", jtPtBinsStr.c_str());
-  TNamed nJtAbsEtaBinsName("nJtAbsEtaBins", std::to_string(nJtAbsEtaBins).c_str());
-  TNamed jtAbsEtaBinsLowName("jtAbsEtaBinsLow", jtAbsEtaBinsLowStr.c_str());
-  TNamed jtAbsEtaBinsHiName("jtAbsEtaBinsHi", jtAbsEtaBinsHiStr.c_str());
-  TNamed pthatsName("pthats", pthatsStr.c_str());
-  TNamed pthatWeightsName("pthatWeights", pthatWeightsStr.c_str());
-  TNamed nCentBinsName("nCentBins", std::to_string(nCentBins).c_str());
-  TNamed centBinsLowName("centBinsLow", centBinsLowStr.c_str());
-  TNamed centBinsHiName("centBinsHi", centBinsHiStr.c_str());
-  TNamed nIDName("nID", nIDStr.c_str());
-  TNamed idStrName("idStr", idStr2.c_str());
-  TNamed jtPfCHMFCutLowName("jtPfCHMFCutLow", jtPfCHMFCutLowStr.c_str());
-  TNamed jtPfCHMFCutHiName("jtPfCHMFCutHi", jtPfCHMFCutHiStr.c_str());
-  TNamed jtPfMUMFCutLowName("jtPfMUMFCutLow", jtPfMUMFCutLowStr.c_str());
-  TNamed jtPfMUMFCutHiName("jtPfMUMFCutHi", jtPfMUMFCutHiStr.c_str());
-
-  isPPName.Write("", TObject::kOverwrite);
-  jtAbsEtaMaxName.Write("", TObject::kOverwrite);
-  nJtPtBinsName.Write("", TObject::kOverwrite);
-  jtPtBinsName.Write("", TObject::kOverwrite);
-  nJtAbsEtaBinsName.Write("", TObject::kOverwrite);
-  jtAbsEtaBinsLowName.Write("", TObject::kOverwrite);
-  jtAbsEtaBinsHiName.Write("", TObject::kOverwrite);
-  pthatsName.Write("", TObject::kOverwrite);
-  pthatWeightsName.Write("", TObject::kOverwrite); 
-  nCentBinsName.Write("", TObject::kOverwrite);
-  centBinsLowName.Write("", TObject::kOverwrite);
-  centBinsHiName.Write("", TObject::kOverwrite);
-  nIDName.Write("", TObject::kOverwrite);
-  idStrName.Write("", TObject::kOverwrite);
-  jtPfCHMFCutLowName.Write("", TObject::kOverwrite);
-  jtPfCHMFCutHiName.Write("", TObject::kOverwrite);
-  jtPfMUMFCutLowName.Write("", TObject::kOverwrite);
-  jtPfMUMFCutHiName.Write("", TObject::kOverwrite);
+  if(!cutProp.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   outFile_p->Close();
   delete outFile_p;

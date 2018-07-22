@@ -13,8 +13,10 @@
 #include "TLatex.h"
 #include "TPad.h"
 #include "TLegend.h"
+#include "TLine.h"
 
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
@@ -130,11 +132,15 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     }
   }
 
-  const Double_t jtRecoPtMin = 200.;
-  const Double_t jtRecoPtMax = 1000.;
-  const Int_t nJtRecoPtBins = 16;
+  const Double_t jtRecoPtMin = 100.;
+  const Double_t jtRecoPtMax = 1100.;
+  const Int_t nJtRecoPtBins = 40;
   Double_t jtRecoPtBins[nJtRecoPtBins+1];
   getLinBins(jtRecoPtMin, jtRecoPtMax, nJtRecoPtBins, jtRecoPtBins);
+
+  const Int_t nJtRecoPtFineBins = 200;
+  Double_t jtRecoPtFineBins[nJtRecoPtFineBins+1];
+  getLinBins(jtRecoPtMin, jtRecoPtMax, nJtRecoPtFineBins, jtRecoPtFineBins);
 
   //  const Double_t jtRefGoodPtMin = 350.;
   //  const Double_t jtRefBadPtMax = 200.;
@@ -142,6 +148,15 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   std::vector<std::string> jetList = returnRootFileContentsList(inFile_p, "TTree", "JetAnalyzer");
+  
+  unsigned int pos = 0;
+  while(jetList.size() > pos){
+    if(jetList.at(pos).find("akPu") != std::string::npos) jetList.erase(jetList.begin()+pos);
+    //    else if(jetList.at(pos).find("akCs4PU3PFFlow") != std::string::npos) ++pos;
+    else ++pos;
+  }
+  
+
   inFile_p->Close();
   delete inFile_p;
   inFile_p = NULL;
@@ -169,246 +184,241 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     return 1;
   }
 
+  const Int_t nJtRecoPtBins2 = 2;
+  const Int_t jtRecoPtBins2Low[nJtRecoPtBins2] ={100, 300};
+  const Int_t jtRecoPtBins2Hi[nJtRecoPtBins2] ={300, 1100};
+
+  const Int_t nWeighted = 2;
+  const std::string weightStr[nWeighted] = {"Unweighted", "Weighted"};
+  
   const Int_t nID = 3;
   const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID"};
   const Double_t jtPfCHMFCutLow[nID] = {0.00, 0.00, 0.00};
   const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90};
   const Double_t jtPfMUMFCutLow[nID] = {0.00, 0.00, 0.00};
   const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60};
+  const Double_t jtPfCHFTimesPtCutLow[nID] = {0.0, 0.0, 0.0};
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
-  TH1D* jtPt_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPt_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH1D* jtPt_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH1D* jtPt_FineTot_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPt_Good_Unweighted_NoSpecialCut_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Unweighted_NoSpecialCut_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH1D* jtPt_Good_Unweighted_Cut_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Unweighted_Cut_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCHF_jtPfCEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPt_Good_Weighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Weighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCEF_jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPt_Good_Weighted_NoSpecialCut_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Weighted_NoSpecialCut_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNHF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPt_Good_Weighted_Cut_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPt_Bad_Weighted_Cut_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNEF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfNHF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfNEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfMUF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEF_jtPfNEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEF_jtPfMUF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfNHF_jtPfMUF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-
-  TH1D* jtPfCHMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-
-  TH2D* jtPfCHMF_jtPfCEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-
-  TH2D* jtPfCEMF_jtPfNHMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-
-  TH2D* jtPfNHMF_jtPfNEMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-
-  TH2D* jtPfNEMF_jtPfMUMF_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
 
 
-  TH1D* jtPfCHM_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEM_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHM_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEM_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUM_Good_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH1D* jtPfCHF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfNHF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfNEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHF_jtPfMUF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCHF_jtPfCEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEF_jtPfNEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEF_jtPfMUF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCEF_jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfNHF_jtPfMUF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNHF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNEF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHM_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfCEM_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNHM_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfNEM_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
-  TH1D* jtPfMUM_Bad_Unweighted_h[nJetAlgos][nCentBins][nID];
+  TH1D* jtPfCHM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
 
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
       if(isPP) centStr = "PP";
       
-      for(Int_t idI = 0; idI < nID; ++idI){
-	jtPt_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPt_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts", nJtRecoPtBins, jtRecoPtBins);
+      for(Int_t wI = 0; wI < nWeighted; ++wI){
+
+	for(Int_t idI = 0; idI < nID; ++idI){
+	  jtPt_Good_h[jI][cI][wI][idI] = new TH1D(("jtPt_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts", nJtRecoPtBins, jtRecoPtBins);
+	  jtPt_Bad_h[jI][cI][wI][idI] = new TH1D(("jtPt_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts", nJtRecoPtBins, jtRecoPtBins);
+	  jtPt_FineTot_h[jI][cI][wI][idI] = new TH1D(("jtPt_FineTot_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Fine Tot);Counts", nJtRecoPtFineBins, jtRecoPtFineBins);
+
+	  for(Int_t rI = 0; rI < nJtRecoPtBins2; ++rI){
+	    std::string recoPtStr = "RecoJtPt" + std::to_string(jtRecoPtBins2Low[rI]) + "to" + std::to_string(jtRecoPtBins2Hi[rI]);
+
+	    jtPfCHF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHF;Counts", 10, 0.0, 1.0);
+	    jtPfCEF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEF;Counts", 10, 0.0, 1.0);
+	    jtPfNHF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHF;Counts", 10, 0.0, 1.0);
+	    jtPfNEF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEF;Counts", 10, 0.0, 1.0);
+	    jtPfMUF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUF;Counts", 10, 0.0, 1.0);
+
+	    jtPfCHMF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHMF;Counts", 10, 0.0, 1.0);
+	    jtPfCEMF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEMF;Counts", 10, 0.0, 1.0);
+	    jtPfNHMF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHMF;Counts", 10, 0.0, 1.0);
+	    jtPfNEMF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEMF;Counts", 10, 0.0, 1.0);
+	    jtPfMUMF_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUMF;Counts", 10, 0.0, 1.0);
+
+	    jtPfCHM_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHM_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHM;Counts", 20, 0.0, 40.0);
+	    jtPfCEM_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEM_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEM;Counts", 20, 0.0, 40.0);
+	    jtPfNHM_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHM_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHM;Counts", 20, 0.0, 40.0);
+	    jtPfNEM_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEM_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEM;Counts", 20, 0.0, 40.0);
+	    jtPfMUM_Good_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUM_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUM;Counts", 20, 0.0, 40.0);
+	    
+	    jtPfCHF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHF;Counts", 10, 0.0, 1.0);
+	    jtPfCEF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEF;Counts", 10, 0.0, 1.0);
+	    jtPfNHF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHF;Counts", 10, 0.0, 1.0);
+	    jtPfNEF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEF;Counts", 10, 0.0, 1.0);
+	    jtPfMUF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUF;Counts", 10, 0.0, 1.0);
+
+	    jtPfCHMF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHMF;Counts", 10, 0.0, 1.0);
+	    jtPfCEMF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEMF;Counts", 10, 0.0, 1.0);
+	    jtPfNHMF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHMF;Counts", 10, 0.0, 1.0);
+	    jtPfNEMF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEMF;Counts", 10, 0.0, 1.0);
+	    jtPfMUMF_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUMF;Counts", 10, 0.0, 1.0);
+
+	    jtPfCHM_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCHM_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCHM;Counts", 20, 0.0, 40.0);
+	    jtPfCEM_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfCEM_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfCEM;Counts", 20, 0.0, 40.0);
+	    jtPfNHM_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNHM_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNHM;Counts", 20, 0.0, 40.0);
+	    jtPfNEM_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfNEM_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfNEM;Counts", 20, 0.0, 40.0);
+	    jtPfMUM_Bad_h[jI][cI][wI][idI][rI] = new TH1D(("jtPfMUM_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_" + recoPtStr + "_h").c_str(), ";jtPfMUM;Counts", 20, 0.0, 40.0);
+
+	    std::vector<TH1*> tempVect = {jtPfCHF_Good_h[jI][cI][wI][idI][rI], jtPfCEF_Good_h[jI][cI][wI][idI][rI], jtPfNHF_Good_h[jI][cI][wI][idI][rI], jtPfNEF_Good_h[jI][cI][wI][idI][rI], jtPfMUF_Good_h[jI][cI][wI][idI][rI], jtPfCHM_Good_h[jI][cI][wI][idI][rI], jtPfCEM_Good_h[jI][cI][wI][idI][rI], jtPfNHM_Good_h[jI][cI][wI][idI][rI], jtPfNEM_Good_h[jI][cI][wI][idI][rI], jtPfMUM_Good_h[jI][cI][wI][idI][rI], jtPfCHMF_Good_h[jI][cI][wI][idI][rI], jtPfCEMF_Good_h[jI][cI][wI][idI][rI], jtPfNHMF_Good_h[jI][cI][wI][idI][rI], jtPfNEMF_Good_h[jI][cI][wI][idI][rI], jtPfMUMF_Good_h[jI][cI][wI][idI][rI], jtPfCHF_Bad_h[jI][cI][wI][idI][rI], jtPfCEF_Bad_h[jI][cI][wI][idI][rI], jtPfNHF_Bad_h[jI][cI][wI][idI][rI], jtPfNEF_Bad_h[jI][cI][wI][idI][rI], jtPfMUF_Bad_h[jI][cI][wI][idI][rI], jtPfCHM_Bad_h[jI][cI][wI][idI][rI], jtPfCEM_Bad_h[jI][cI][wI][idI][rI], jtPfNHM_Bad_h[jI][cI][wI][idI][rI], jtPfNEM_Bad_h[jI][cI][wI][idI][rI], jtPfMUM_Bad_h[jI][cI][wI][idI][rI], jtPfCHMF_Bad_h[jI][cI][wI][idI][rI], jtPfCEMF_Bad_h[jI][cI][wI][idI][rI], jtPfNHMF_Bad_h[jI][cI][wI][idI][rI], jtPfNEMF_Bad_h[jI][cI][wI][idI][rI], jtPfMUMF_Bad_h[jI][cI][wI][idI][rI]};
+
+	    centerTitles(tempVect);
+	    setSumW2(tempVect);
+	  }
+	  
+	  jtPfCHF_jtPfCEF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfCEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfCEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfNHF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfNHF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfNEF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfNEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfMUF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfMUF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfCEF_jtPfNHF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfNHF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEF_jtPfNEF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfNEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEF_jtPfMUF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfMUF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNHF_jtPfNEF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNHF_jtPfNEF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfNHF_jtPfMUF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNHF_jtPfMUF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNEF_jtPfMUF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNEF_jtPfMUF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  
+	  jtPfCHMF_jtPfCEMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfCEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfNHMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfNHMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfNEMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfNEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfMUMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfMUMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfCEMF_jtPfNHMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfNHMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEMF_jtPfNEMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfNEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEMF_jtPfMUMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfMUMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNHMF_jtPfNEMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNHMF_jtPfNEMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfNHMF_jtPfMUMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNHMF_jtPfMUMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNEMF_jtPfMUMF_Good_h[jI][cI][wI][idI] = new TH2D(("jtPfNEMF_jtPfMUMF_Good_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  
+	  
+	  jtPfCHF_jtPfCEF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfCEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfCEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfNHF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfNHF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfNEF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfNEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHF_jtPfMUF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHF_jtPfMUF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfCEF_jtPfNHF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfNHF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEF_jtPfNEF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfNEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEF_jtPfMUF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEF_jtPfMUF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
 	
-	jtPt_Good_Unweighted_NoSpecialCut_h[jI][cI][idI] = new TH1D(("jtPt_Good_Unweighted_NoSpecialCut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Unweighted_NoSpecialCut_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Unweighted_NoSpecialCut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts", nJtRecoPtBins, jtRecoPtBins);
-	
-	jtPt_Good_Unweighted_Cut_h[jI][cI][idI] = new TH1D(("jtPt_Good_Unweighted_Cut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Unweighted_Cut_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Unweighted_Cut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts", nJtRecoPtBins, jtRecoPtBins);
-	
-	jtPt_Good_Weighted_h[jI][cI][idI] = new TH1D(("jtPt_Good_Weighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Weighted_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Weighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-	
-	jtPt_Good_Weighted_NoSpecialCut_h[jI][cI][idI] = new TH1D(("jtPt_Good_Weighted_NoSpecialCut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Weighted_NoSpecialCut_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Weighted_NoSpecialCut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-      
-	jtPt_Good_Weighted_Cut_h[jI][cI][idI] = new TH1D(("jtPt_Good_Weighted_Cut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Good);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-	jtPt_Bad_Weighted_Cut_h[jI][cI][idI] = new TH1D(("jtPt_Bad_Weighted_Cut_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";Jet p_{T} (Bad);Counts (Weighted)", nJtRecoPtBins, jtRecoPtBins);
-    
-	jtPfCHF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;Counts", 10, 0.0, 1.0);
-	jtPfCEF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;Counts", 10, 0.0, 1.0);
-	jtPfNHF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;Counts", 10, 0.0, 1.0);
-	jtPfNEF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;Counts", 10, 0.0, 1.0);
-	jtPfMUF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUF;Counts", 10, 0.0, 1.0);
-	
-	jtPfCHF_jtPfCEF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfCEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfCEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfNHF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfNHF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfNEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfMUF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfCEF_jtPfNHF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfNHF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEF_jtPfNEF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfNEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfMUF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHF_jtPfNEF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfNHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHF_jtPfMUF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNEF_jtPfMUF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfCHMF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;Counts", 10, 0.0, 1.0);
-	jtPfCEMF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;Counts", 10, 0.0, 1.0);
-	jtPfNHMF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;Counts", 10, 0.0, 1.0);
-	jtPfNEMF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;Counts", 10, 0.0, 1.0);
-	jtPfMUMF_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUMF;Counts", 10, 0.0, 1.0);
-	
-	jtPfCHMF_jtPfCEMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfCEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfNHMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfNEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfMUMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-      
-	jtPfCEMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfNHMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfNEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfMUMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHMF_jtPfNEMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfNHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHMF_jtPfMUMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNEMF_jtPfMUMF_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-      
-	
-	jtPfCHM_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHM_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHM;Counts", 20, 0.0, 40.0);
-	jtPfCEM_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEM_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEM;Counts", 20, 0.0, 40.0);
-	jtPfNHM_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHM_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHM;Counts", 20, 0.0, 40.0);
-	jtPfNEM_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEM_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEM;Counts", 20, 0.0, 40.0);
-	jtPfMUM_Good_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUM_Good_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUM;Counts", 20, 0.0, 40.0);
-      
-	jtPfCHF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;Counts", 10, 0.0, 1.0);
-	jtPfCEF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;Counts", 10, 0.0, 1.0);
-	jtPfNHF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;Counts", 10, 0.0, 1.0);
-	jtPfNEF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;Counts", 10, 0.0, 1.0);
-	jtPfMUF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUF;Counts", 10, 0.0, 1.0);
-      
-	jtPfCHF_jtPfCEF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfCEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfCEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfNHF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfNEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHF_jtPfMUF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfCEF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfNHF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNHF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfNEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEF_jtPfMUF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHF_jtPfNEF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfNHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHF_jtPfMUF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNEF_jtPfMUF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfCHMF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;Counts", 10, 0.0, 1.0);
-	jtPfCEMF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;Counts", 10, 0.0, 1.0);
-	jtPfNHMF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;Counts", 10, 0.0, 1.0);
-	jtPfNEMF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;Counts", 10, 0.0, 1.0);
-	jtPfMUMF_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUMF;Counts", 10, 0.0, 1.0);
-	
-	jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfCEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfNHMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfNEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCHMF_jtPfMUMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfNHMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfNEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfCEMF_jtPfMUMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHMF_jtPfNEMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNHMF_jtPfMUMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
-	
-	jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI] = new TH2D(("jtPfNEMF_jtPfMUMF_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);   
-	
-	jtPfCHM_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCHM_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHM;Counts", 20, 0.0, 40.0);
-	jtPfCEM_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfCEM_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEM;Counts", 20, 0.0, 40.0);
-	jtPfNHM_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNHM_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHM;Counts", 20, 0.0, 40.0);
-	jtPfNEM_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfNEM_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEM;Counts", 20, 0.0, 40.0);
-	jtPfMUM_Bad_Unweighted_h[jI][cI][idI] = new TH1D(("jtPfMUM_Bad_Unweighted_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfMUM;Counts", 20, 0.0, 40.0);
-	
-	centerTitles({jtPt_Good_Unweighted_h[jI][cI][idI], jtPt_Good_Unweighted_Cut_h[jI][cI][idI], jtPt_Good_Unweighted_NoSpecialCut_h[jI][cI][idI], jtPt_Good_Weighted_h[jI][cI][idI], jtPt_Good_Weighted_Cut_h[jI][cI][idI], jtPt_Good_Weighted_NoSpecialCut_h[jI][cI][idI], jtPfCHF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_Cut_h[jI][cI][idI], jtPt_Bad_Unweighted_NoSpecialCut_h[jI][cI][idI], jtPt_Bad_Weighted_h[jI][cI][idI], jtPt_Bad_Weighted_Cut_h[jI][cI][idI], jtPt_Bad_Weighted_NoSpecialCut_h[jI][cI][idI], jtPfCHF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfCEF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfNEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfCEF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfNEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCHM_Good_Unweighted_h[jI][cI][idI], jtPfCEM_Good_Unweighted_h[jI][cI][idI], jtPfNHM_Good_Unweighted_h[jI][cI][idI], jtPfNEM_Good_Unweighted_h[jI][cI][idI], jtPfMUM_Good_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHM_Bad_Unweighted_h[jI][cI][idI], jtPfCEM_Bad_Unweighted_h[jI][cI][idI], jtPfNHM_Bad_Unweighted_h[jI][cI][idI], jtPfNEM_Bad_Unweighted_h[jI][cI][idI], jtPfMUM_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfCEMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfNEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI]});
-      
-	setSumW2({jtPt_Good_Unweighted_h[jI][cI][idI], jtPt_Good_Unweighted_Cut_h[jI][cI][idI], jtPt_Good_Unweighted_NoSpecialCut_h[jI][cI][idI], jtPt_Good_Weighted_h[jI][cI][idI], jtPt_Good_Weighted_Cut_h[jI][cI][idI], jtPt_Good_Weighted_NoSpecialCut_h[jI][cI][idI], jtPfCHF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_Cut_h[jI][cI][idI], jtPt_Bad_Unweighted_NoSpecialCut_h[jI][cI][idI], jtPt_Bad_Weighted_h[jI][cI][idI], jtPt_Bad_Weighted_Cut_h[jI][cI][idI], jtPt_Bad_Weighted_NoSpecialCut_h[jI][cI][idI], jtPfCHF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfCEF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNHF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfNEF_Good_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfNEF_jtPfMUF_Good_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfCEF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfCHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNHF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfCEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfNEF_Bad_Unweighted_h[jI][cI][idI], jtPfNHF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfNEF_jtPfMUF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCHM_Good_Unweighted_h[jI][cI][idI], jtPfCEM_Good_Unweighted_h[jI][cI][idI], jtPfNHM_Good_Unweighted_h[jI][cI][idI], jtPfNEM_Good_Unweighted_h[jI][cI][idI], jtPfMUM_Good_Unweighted_h[jI][cI][idI], jtPt_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHM_Bad_Unweighted_h[jI][cI][idI], jtPfCEM_Bad_Unweighted_h[jI][cI][idI], jtPfNHM_Bad_Unweighted_h[jI][cI][idI], jtPfNEM_Bad_Unweighted_h[jI][cI][idI], jtPfMUM_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfCEMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNHMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfNEMF_Good_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfNEMF_jtPfMUMF_Good_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[jI][cI][idI], jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI], jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[jI][cI][idI]});
+	  jtPfNHF_jtPfNEF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNHF_jtPfNEF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfNEF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfNHF_jtPfMUF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNHF_jtPfMUF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNEF_jtPfMUF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNEF_jtPfMUF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEF;jtPfMUF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  	  
+	  jtPfCHMF_jtPfCEMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfCEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfCEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfNHMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfNHMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfNEMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfNEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCHMF_jtPfMUMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCHMF_jtPfMUMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfCEMF_jtPfNHMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfNHMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNHMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEMF_jtPfNEMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfNEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfCEMF_jtPfMUMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfCEMF_jtPfMUMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfCEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNHMF_jtPfNEMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNHMF_jtPfNEMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfNEMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  jtPfNHMF_jtPfMUMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNHMF_jtPfMUMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNHMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);
+	  
+	  jtPfNEMF_jtPfMUMF_Bad_h[jI][cI][wI][idI] = new TH2D(("jtPfNEMF_jtPfMUMF_Bad_" + weightStr[wI] + "_" + jetAlgos.at(jI) + "_" + centStr + "_" + idStr[idI] + "_h").c_str(), ";jtPfNEMF;jtPfMUMF", 10, 0.0, 1.0, 10, 0.0, 1.0);   
+		
+	  std::vector<TH1*> tempVect = {jtPt_Good_h[jI][cI][wI][idI], jtPt_Bad_h[jI][cI][wI][idI], jtPt_FineTot_h[jI][cI][wI][idI], jtPfCHF_jtPfCEF_Good_h[jI][cI][wI][idI], jtPfCHF_jtPfNHF_Good_h[jI][cI][wI][idI], jtPfCHF_jtPfNEF_Good_h[jI][cI][wI][idI], jtPfCHF_jtPfMUF_Good_h[jI][cI][wI][idI], jtPfCEF_jtPfNHF_Good_h[jI][cI][wI][idI], jtPfCEF_jtPfNEF_Good_h[jI][cI][wI][idI], jtPfCEF_jtPfMUF_Good_h[jI][cI][wI][idI], jtPfNHF_jtPfNEF_Good_h[jI][cI][wI][idI], jtPfNHF_jtPfMUF_Good_h[jI][cI][wI][idI], jtPfNEF_jtPfMUF_Good_h[jI][cI][wI][idI], jtPfCHF_jtPfCEF_Bad_h[jI][cI][wI][idI], jtPfCHF_jtPfNHF_Bad_h[jI][cI][wI][idI], jtPfCHF_jtPfNEF_Bad_h[jI][cI][wI][idI], jtPfCHF_jtPfMUF_Bad_h[jI][cI][wI][idI], jtPfCEF_jtPfNHF_Bad_h[jI][cI][wI][idI], jtPfCEF_jtPfNEF_Bad_h[jI][cI][wI][idI], jtPfCEF_jtPfMUF_Bad_h[jI][cI][wI][idI], jtPfNHF_jtPfNEF_Bad_h[jI][cI][wI][idI], jtPfNHF_jtPfMUF_Bad_h[jI][cI][wI][idI], jtPfNEF_jtPfMUF_Bad_h[jI][cI][wI][idI], jtPfCHMF_jtPfCEMF_Good_h[jI][cI][wI][idI], jtPfCHMF_jtPfNHMF_Good_h[jI][cI][wI][idI], jtPfCHMF_jtPfNEMF_Good_h[jI][cI][wI][idI], jtPfCHMF_jtPfMUMF_Good_h[jI][cI][wI][idI], jtPfCEMF_jtPfNHMF_Good_h[jI][cI][wI][idI], jtPfCEMF_jtPfNEMF_Good_h[jI][cI][wI][idI], jtPfCEMF_jtPfMUMF_Good_h[jI][cI][wI][idI], jtPfNHMF_jtPfNEMF_Good_h[jI][cI][wI][idI], jtPfNHMF_jtPfMUMF_Good_h[jI][cI][wI][idI], jtPfNEMF_jtPfMUMF_Good_h[jI][cI][wI][idI], jtPfCHMF_jtPfCEMF_Bad_h[jI][cI][wI][idI], jtPfCHMF_jtPfNHMF_Bad_h[jI][cI][wI][idI], jtPfCHMF_jtPfNEMF_Bad_h[jI][cI][wI][idI], jtPfCHMF_jtPfMUMF_Bad_h[jI][cI][wI][idI], jtPfCEMF_jtPfNHMF_Bad_h[jI][cI][wI][idI], jtPfCEMF_jtPfNEMF_Bad_h[jI][cI][wI][idI], jtPfCEMF_jtPfMUMF_Bad_h[jI][cI][wI][idI], jtPfNHMF_jtPfNEMF_Bad_h[jI][cI][wI][idI], jtPfNHMF_jtPfMUMF_Bad_h[jI][cI][wI][idI], jtPfNEMF_jtPfMUMF_Bad_h[jI][cI][wI][idI]};
+
+	  centerTitles(tempVect);     
+	  setSumW2(tempVect);
+	}
       }
     }
   }
@@ -417,9 +427,11 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   Float_t pthat_[nJetAlgos];
   Int_t nref_[nJetAlgos];
   Float_t jtpt_[nJetAlgos][nMaxJet_];
-  Float_t refpt_[nJetAlgos][nMaxJet_];
   Float_t jteta_[nJetAlgos][nMaxJet_];
   Float_t jtphi_[nJetAlgos][nMaxJet_];
+  Float_t refpt_[nJetAlgos][nMaxJet_];
+  Float_t refphi_[nJetAlgos][nMaxJet_];
+  Float_t refeta_[nJetAlgos][nMaxJet_];
   Float_t jtPfCHF_[nJetAlgos][nMaxJet_];
   Float_t jtPfCEF_[nJetAlgos][nMaxJet_];
   Float_t jtPfNHF_[nJetAlgos][nMaxJet_];
@@ -476,9 +488,11 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       jetTree_p[jI]->SetBranchStatus("pthat", 1);
       jetTree_p[jI]->SetBranchStatus("nref", 1);
       jetTree_p[jI]->SetBranchStatus("jtpt", 1);
-      jetTree_p[jI]->SetBranchStatus("refpt", 1);
       jetTree_p[jI]->SetBranchStatus("jteta", 1);
       jetTree_p[jI]->SetBranchStatus("jtphi", 1);
+      jetTree_p[jI]->SetBranchStatus("refpt", 1);
+      jetTree_p[jI]->SetBranchStatus("refeta", 1);
+      jetTree_p[jI]->SetBranchStatus("refphi", 1);
       jetTree_p[jI]->SetBranchStatus("jtPfCHF", 1);
       jetTree_p[jI]->SetBranchStatus("jtPfCEF", 1);
       jetTree_p[jI]->SetBranchStatus("jtPfNHF", 1);
@@ -503,9 +517,11 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       jetTree_p[jI]->SetBranchAddress("pthat", &(pthat_[jI]));
       jetTree_p[jI]->SetBranchAddress("nref", &(nref_[jI]));
       jetTree_p[jI]->SetBranchAddress("jtpt", jtpt_[jI]);
-      jetTree_p[jI]->SetBranchAddress("refpt", refpt_[jI]);
       jetTree_p[jI]->SetBranchAddress("jteta", jteta_[jI]);
       jetTree_p[jI]->SetBranchAddress("jtphi", jtphi_[jI]);
+      jetTree_p[jI]->SetBranchAddress("refpt", refpt_[jI]);
+      jetTree_p[jI]->SetBranchAddress("refeta", refeta_[jI]);
+      jetTree_p[jI]->SetBranchAddress("refphi", refphi_[jI]);
       jetTree_p[jI]->SetBranchAddress("jtPfCHF", jtPfCHF_[jI]);
       jetTree_p[jI]->SetBranchAddress("jtPfCEF", jtPfCEF_[jI]);
       jetTree_p[jI]->SetBranchAddress("jtPfNHF", jtPfNHF_[jI]);
@@ -577,7 +593,51 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
       for(Int_t jI = 0; jI < nJetAlgos; ++jI){
 	jetTree_p[jI]->GetEntry(entry);
+
+	const Int_t tempNMatch = ngen_[jI];
+	Bool_t isMatched[tempNMatch];
+
+	for(Int_t gI = 0; gI < tempNMatch; ++gI){
+	  isMatched[gI] = false;
+
+	  for(Int_t gI2 = gI+1; gI2 < tempNMatch; ++gI2){
+	    if(genpt_[jI][gI] < genpt_[jI][gI2]){
+	      Float_t tempGenPt = genpt_[jI][gI];
+	      Float_t tempGenEta = geneta_[jI][gI];
+	      Float_t tempGenPhi = genphi_[jI][gI];
+	      Int_t tempGenSubId = gensubid_[jI][gI];
+
+	      genpt_[jI][gI] = genpt_[jI][gI2];
+	      genphi_[jI][gI] = genphi_[jI][gI2];
+	      geneta_[jI][gI] = geneta_[jI][gI2];
+	      gensubid_[jI][gI] = gensubid_[jI][gI2];
+
+	      genpt_[jI][gI2] = tempGenPt;
+	      genphi_[jI][gI2] = tempGenPhi;
+	      geneta_[jI][gI2] = tempGenEta;
+	      gensubid_[jI][gI2] = tempGenSubId;
+	    }
+	  }
+	}	
+
+	for(Int_t rI = 0; rI < nref_[jI]; ++rI){
+	  if(refpt_[jI][rI] < 0 || (jtpt_[jI][rI] > 200 && refpt_[jI][rI]/jtpt_[jI][rI] < 0.10)){
+	    
+	    for(Int_t gI = 0; gI < tempNMatch; ++gI){
+	      if(isMatched[gI]) continue;
+	      if(gensubid_[gI] == 0) continue;
+	      if(getDR(geneta_[jI][gI], genphi_[jI][gI], jteta_[jI][rI], jtphi_[jI][rI]) < 0.2){
+		refpt_[jI][rI] = genpt_[jI][gI];
+		refphi_[jI][rI] = genphi_[jI][gI];
+		refeta_[jI][rI] = geneta_[jI][gI];
+		isMatched[gI] = true;
+		break;
+	      }
+	    }	    
+	  }
+	}
       }
+
       hiTree_p->GetEntry(entry);
       skimTree_p->GetEntry(entry);
 
@@ -617,22 +677,39 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
         pthatWeight_ = 1.;
       }
 
-      //      Double_t ncollWeight_ = findNcoll_Renorm(hiBin_);
-      //      Double_t fullWeight_ = ncollWeight_*pthatWeight_;
+      Double_t fullWeight_ = pthatWeight_;
+      if(!isPP){
+	Double_t ncollWeight_ = findNcoll_Renorm(hiBin_);
+	fullWeight_ *= ncollWeight_;
+      }
 
       for(Int_t tI = 0; tI < nJetAlgos; ++tI){
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  Bool_t passesID[nID];
+
+	  std::vector<Int_t> recoPtPos;
+
+	  for(Int_t rI = 0; rI < nJtRecoPtBins2; ++rI){
+	    if(jtpt_[tI][jI] >= jtRecoPtBins2Low[rI] && jtpt_[tI][jI] < jtRecoPtBins2Hi[rI]){
+	      recoPtPos.push_back(rI);
+	    }
+	  }
 
 	  for(Int_t idI = 0; idI < nID; ++idI){
 	    passesID[idI] = false;
 	  }
 
 	  for(Int_t idI = 0; idI < nID; ++idI){
+	    if(idI == 0){
+	      passesID[idI] = true;
+	      continue;
+	    }
+
  	    if(jtPfCHMF_[tI][jI] < jtPfCHMFCutLow[idI]) continue;
  	    if(jtPfCHMF_[tI][jI] > jtPfCHMFCutHi[idI]) continue;
  	    if(jtPfMUMF_[tI][jI] < jtPfMUMFCutLow[idI]) continue;
  	    if(jtPfMUMF_[tI][jI] > jtPfMUMFCutHi[idI]) continue;
+	    if(jtPfCHF_[tI][jI]*jtpt_[tI][jI] < jtPfCHFTimesPtCutLow[idI]) continue;
 
 	    passesID[idI] = true;
 	  }
@@ -640,149 +717,140 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 	  if(jtpt_[tI][jI] < jtRecoPtMin) continue;
 	  
-	  Double_t res = getResForPtEtaCentAlgo(jtpt_[tI][jI], jteta_[tI][jI], hiBin_/2, "akCs4PU3PFFlow");	
+	  //	  Double_t res = getResForPtEtaCentAlgo(jtpt_[tI][jI], jteta_[tI][jI], hiBin_/2, "akCs4PU3PFFlow");	
+	  Double_t res = getResForPtEtaCentAlgo(jtpt_[tI][jI], jteta_[tI][jI], hiBin_/2, jetAlgos.at(tI));	
 
 	  bool isGood = refpt_[tI][jI] > TMath::Max(0., jtpt_[tI][jI] - jtpt_[tI][jI]*3.*res);
 	  bool isBad = refpt_[tI][jI] < TMath::Max(0., jtpt_[tI][jI] - jtpt_[tI][jI]*5.*res);
-	  bool isNotCut = jtPfMUMF_[tI][jI] < 0.6 && jtPfCHMF_[tI][jI] < 0.9;
-	  
-	  if(isBad && jtpt_[tI][jI] >= 600 && jtpt_[tI][jI] < 750 && isNotCut){
-	    std::cout << "Bad jet at entry: " << entry << std::endl;
-	    std::cout << " pt, refpt, eta, phi: " << jtpt_[tI][jI] << ", " << refpt_[tI][jI] << ", " << jteta_[tI][jI] << ", " << jtphi_[tI][jI] << std::endl;
-	  }
-	  
-	  if(isGood){
-	    for(Int_t idI = 0; idI < nID; ++idI){
-	      if(passesID[idI]){
-		jtPt_Good_Unweighted_NoSpecialCut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		jtPt_Good_Weighted_NoSpecialCut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);	  
-	      }
-	    }
-	  }
-	  else{
-	    for(Int_t idI = 0; idI < nID; ++idI){
-	      if(passesID[idI]){
-		jtPt_Bad_Unweighted_NoSpecialCut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		jtPt_Bad_Weighted_NoSpecialCut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);	  
-	      }
-	    }
-	  }
-	  
+	  	  	  
 	  if(!isPP && badJetSpecialSel) continue;
 	  
 	  if(isGood){
-	    for(Int_t idI = 0; idI < nID; ++idI){
-              if(passesID[idI]){
-		jtPt_Good_Unweighted_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		jtPt_Good_Weighted_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);
-	    
-		if(isNotCut){
-		  jtPt_Good_Unweighted_Cut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		  jtPt_Good_Weighted_Cut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);
+	    for(Int_t wI = 0; wI < nWeighted; ++wI){
+	      Double_t weight_ = 1.;
+	      if(wI == 1) weight_ = fullWeight_;
+	      
+	      for(Int_t idI = 0; idI < nID; ++idI){
+		if(passesID[idI]){
+		  jtPt_Good_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+		  jtPt_FineTot_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+		  
+		  for(unsigned int rI = 0; rI < recoPtPos.size(); ++rI){
+		    jtPfCHF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHF_[tI][jI], weight_);
+		    jtPfCEF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEF_[tI][jI], weight_);
+		    jtPfNHF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHF_[tI][jI], weight_);
+		    jtPfNEF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEF_[tI][jI], weight_);
+		    jtPfMUF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUF_[tI][jI], weight_);
+		    
+		    jtPfCHM_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHM_[tI][jI], weight_);
+		    jtPfCEM_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEM_[tI][jI], weight_);
+		    jtPfNHM_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHM_[tI][jI], weight_);
+		    jtPfNEM_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEM_[tI][jI], weight_);
+		    jtPfMUM_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUM_[tI][jI], weight_);
+
+		    jtPfCHMF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHMF_[tI][jI], weight_);
+		    jtPfCEMF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEMF_[tI][jI], weight_);
+		    jtPfNHMF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHMF_[tI][jI], weight_);
+		    jtPfNEMF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEMF_[tI][jI], weight_);
+		    jtPfMUMF_Good_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUMF_[tI][jI], weight_);
+		  }
+
+		  jtPfCHF_jtPfCEF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfCEF_[tI][jI], weight_);
+		  jtPfCHF_jtPfNHF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfNHF_[tI][jI], weight_);
+		  jtPfCHF_jtPfNEF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfCHF_jtPfMUF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfCEF_jtPfNHF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfNHF_[tI][jI], weight_);
+		  jtPfCEF_jtPfNEF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfCEF_jtPfMUF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfNHF_jtPfNEF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNHF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfNHF_jtPfMUF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNHF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfNEF_jtPfMUF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNEF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  
+		  jtPfCHMF_jtPfCEMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfCEMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfNHMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNHMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfNEMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfMUMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfCEMF_jtPfNHMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNHMF_[tI][jI], weight_);
+		  jtPfCEMF_jtPfNEMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfCEMF_jtPfMUMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfNHMF_jtPfNEMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNHMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfNHMF_jtPfMUMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNHMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfNEMF_jtPfMUMF_Good_h[tI][centPos][wI][idI]->Fill(jtPfNEMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
 		}
-		
-		jtPfCHF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI]);
-		jtPfCEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI]);
-		jtPfNHF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI]);
-		jtPfNEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEF_[tI][jI]);
-		jtPfMUF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUF_[tI][jI]);
-		
-		jtPfCHM_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHM_[tI][jI]);
-		jtPfCEM_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEM_[tI][jI]);
-		jtPfNHM_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHM_[tI][jI]);
-		jtPfNEM_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEM_[tI][jI]);
-		jtPfMUM_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUM_[tI][jI]);
-		
-		jtPfCHF_jtPfCEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfCEF_[tI][jI]);
-		jtPfCHF_jtPfNHF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfNHF_[tI][jI]);
-		jtPfCHF_jtPfNEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfCHF_jtPfMUF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfCEF_jtPfNHF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfNHF_[tI][jI]);
-		jtPfCEF_jtPfNEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfCEF_jtPfMUF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfNHF_jtPfNEF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfNHF_jtPfMUF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfNEF_jtPfMUF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfCHMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI]);
-		jtPfCEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI]);
-		jtPfNHMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI]);
-		jtPfNEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEMF_[tI][jI]);
-		jtPfMUMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUMF_[tI][jI]);
-		
-		jtPfCHMF_jtPfCEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfCEMF_[tI][jI]);
-		jtPfCHMF_jtPfNHMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNHMF_[tI][jI]);
-		jtPfCHMF_jtPfNEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfCHMF_jtPfMUMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfMUMF_[tI][jI]);
-	    
-		jtPfCEMF_jtPfNHMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNHMF_[tI][jI]);
-		jtPfCEMF_jtPfNEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfCEMF_jtPfMUMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfMUMF_[tI][jI]);
-		
-		jtPfNHMF_jtPfNEMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfNHMF_jtPfMUMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI], jtPfMUMF_[tI][jI]);
-		
-		jtPfNEMF_jtPfMUMF_Good_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEMF_[tI][jI], jtPfMUMF_[tI][jI]);
 	      }
-	      else if(isBad){
-		jtPt_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		jtPt_Bad_Weighted_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);
-		
-		if(isNotCut){
-		  jtPt_Bad_Unweighted_Cut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI]);
-		  jtPt_Bad_Weighted_Cut_h[tI][centPos][idI]->Fill(jtpt_[tI][jI], pthatWeight_);
+	    }
+	  }	 
+	  else if(isBad){
+	    for(Int_t wI = 0; wI < nWeighted; ++wI){
+	      Double_t weight_ = 1.;
+	      if(wI == 1) weight_ = fullWeight_;
+	      
+	      for(Int_t idI = 0; idI < nID; ++idI){
+		if(passesID[idI]){
+		  jtPt_Bad_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+		  jtPt_FineTot_h[tI][centPos][wI][idI]->Fill(jtpt_[tI][jI], weight_);
+
+		  if(centPos == 2 && jtpt_[tI][jI] > 300 && jtpt_[tI][jI] < 400 && idI == nID - 1 && wI == 1){
+		    //		    std::cout << "Warning bad jet: " << jtpt_[tI][jI] << ", weight==" << weight_ << ", entry==" << entry << std::endl;
+		    //		    std::cout << " " << refpt_[tI][jI] << "= refpt" << std::endl;
+		  }
+
+		  for(unsigned int rI = 0; rI < recoPtPos.size(); ++rI){
+		    jtPfCHF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHF_[tI][jI], weight_);
+		    jtPfCEF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEF_[tI][jI], weight_);
+		    jtPfNHF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHF_[tI][jI], weight_);
+		    jtPfNEF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEF_[tI][jI], weight_);
+		    jtPfMUF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUF_[tI][jI], weight_);
+		    
+		    jtPfCHM_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHM_[tI][jI], weight_);
+		    jtPfCEM_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEM_[tI][jI], weight_);
+		    jtPfNHM_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHM_[tI][jI], weight_);
+		    jtPfNEM_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEM_[tI][jI], weight_);
+		    jtPfMUM_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUM_[tI][jI], weight_);
+		    
+		    jtPfCHMF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCHMF_[tI][jI], weight_);
+		    jtPfCEMF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfCEMF_[tI][jI], weight_);
+		    jtPfNHMF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNHMF_[tI][jI], weight_);
+		    jtPfNEMF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfNEMF_[tI][jI], weight_);
+		    jtPfMUMF_Bad_h[tI][centPos][wI][idI][recoPtPos.at(rI)]->Fill(jtPfMUMF_[tI][jI], weight_);
+		  }
+		  
+		  jtPfCHF_jtPfCEF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfCEF_[tI][jI], weight_);
+		  jtPfCHF_jtPfNHF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfNHF_[tI][jI], weight_);
+		  jtPfCHF_jtPfNEF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfCHF_jtPfMUF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfCEF_jtPfNHF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfNHF_[tI][jI], weight_);
+		  jtPfCEF_jtPfNEF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfCEF_jtPfMUF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfNHF_jtPfNEF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNHF_[tI][jI], jtPfNEF_[tI][jI], weight_);
+		  jtPfNHF_jtPfMUF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNHF_[tI][jI], jtPfMUF_[tI][jI], weight_);
+		  
+		  jtPfNEF_jtPfMUF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNEF_[tI][jI], jtPfMUF_[tI][jI], weight_);	  
+		  
+		  
+		  jtPfCHMF_jtPfCEMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfCEMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfNHMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNHMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfNEMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfCHMF_jtPfMUMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCHMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfCEMF_jtPfNHMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNHMF_[tI][jI], weight_);
+		  jtPfCEMF_jtPfNEMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfCEMF_jtPfMUMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfCEMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfNHMF_jtPfNEMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNHMF_[tI][jI], jtPfNEMF_[tI][jI], weight_);
+		  jtPfNHMF_jtPfMUMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNHMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);
+		  
+		  jtPfNEMF_jtPfMUMF_Bad_h[tI][centPos][wI][idI]->Fill(jtPfNEMF_[tI][jI], jtPfMUMF_[tI][jI], weight_);	  
 		}
-		
-		
-		jtPfCHF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI]);
-		jtPfCEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI]);
-		jtPfNHF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI]);
-		jtPfNEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEF_[tI][jI]);
-		jtPfMUF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUF_[tI][jI]);
-		
-		jtPfCHM_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHM_[tI][jI]);
-		jtPfCEM_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEM_[tI][jI]);
-		jtPfNHM_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHM_[tI][jI]);
-		jtPfNEM_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEM_[tI][jI]);
-		jtPfMUM_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUM_[tI][jI]);
-		
-		
-		jtPfCHF_jtPfCEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfCEF_[tI][jI]);
-		jtPfCHF_jtPfNHF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfNHF_[tI][jI]);
-		jtPfCHF_jtPfNEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfCHF_jtPfMUF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfCEF_jtPfNHF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfNHF_[tI][jI]);
-		jtPfCEF_jtPfNEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfCEF_jtPfMUF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfNHF_jtPfNEF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI], jtPfNEF_[tI][jI]);
-		jtPfNHF_jtPfMUF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHF_[tI][jI], jtPfMUF_[tI][jI]);
-		
-		jtPfNEF_jtPfMUF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEF_[tI][jI], jtPfMUF_[tI][jI]);	  
-		
-		jtPfCHMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI]);
-		jtPfCEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI]);
-		jtPfNHMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI]);
-		jtPfNEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEMF_[tI][jI]);
-		jtPfMUMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfMUMF_[tI][jI]);
-		
-		jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfCEMF_[tI][jI]);
-		jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNHMF_[tI][jI]);
-		jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCHMF_[tI][jI], jtPfMUMF_[tI][jI]);
-		
-		jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNHMF_[tI][jI]);
-		jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfCEMF_[tI][jI], jtPfMUMF_[tI][jI]);
-		
-		jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI], jtPfNEMF_[tI][jI]);
-		jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNHMF_[tI][jI], jtPfMUMF_[tI][jI]);
-		
-		jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[tI][centPos][idI]->Fill(jtPfNEMF_[tI][jI], jtPfMUMF_[tI][jI]);	  
 	      }
 	    }
 	  }
@@ -794,8 +862,10 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     delete inFile_p;
   }
 
+ 
   std::vector<TH1*> goodHists;
   std::vector<TH1*> badHists;
+  std::vector<TH1*> fineHists;
 
   std::vector<TH2*> goodHistsTH2;
   std::vector<TH2*> badHistsTH2;
@@ -808,117 +878,116 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   for(Int_t tI = 0; tI < nJetAlgos; ++tI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      for(Int_t idI = 0; idI < nID; ++idI){
-	goodHists.push_back(jtPt_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPt_Good_Unweighted_Cut_h[tI][cI][idI]);
-	goodHists.push_back(jtPt_Good_Unweighted_NoSpecialCut_h[tI][cI][idI]);
-	goodHists.push_back(jtPt_Good_Weighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPt_Good_Weighted_Cut_h[tI][cI][idI]);
-	goodHists.push_back(jtPt_Good_Weighted_NoSpecialCut_h[tI][cI][idI]);
-	
-	goodHists.push_back(jtPfCHF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfCEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNHF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfMUF_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHists.push_back(jtPfCHM_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfCEM_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNHM_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNEM_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfMUM_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHistsTH2.push_back(jtPfCHF_jtPfCEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHF_jtPfNHF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHF_jtPfNEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHF_jtPfMUF_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHistsTH2.push_back(jtPfCEF_jtPfNHF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCEF_jtPfNEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCEF_jtPfMUF_Good_Unweighted_h[tI][cI][idI]);
+      for(Int_t wI = 0; wI < nWeighted; ++wI){
+	for(Int_t idI = 0; idI < nID; ++idI){
+
+	  goodHists.push_back(jtPt_Good_h[tI][cI][wI][idI]);
+	  fineHists.push_back(jtPt_FineTot_h[tI][cI][wI][idI]);
+	  
+	  for(Int_t rI = 0; rI < nJtRecoPtBins2; ++rI){
+	    goodHists.push_back(jtPfCHF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfCEF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNHF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNEF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfMUF_Good_h[tI][cI][wI][idI][rI]);
+	    
+	    goodHists.push_back(jtPfCHM_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfCEM_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNHM_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNEM_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfMUM_Good_h[tI][cI][wI][idI][rI]);
+
+	    goodHists.push_back(jtPfCHMF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfCEMF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNHMF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfNEMF_Good_h[tI][cI][wI][idI][rI]);
+	    goodHists.push_back(jtPfMUMF_Good_h[tI][cI][wI][idI][rI]);
+	  }
+
+	  goodHistsTH2.push_back(jtPfCHF_jtPfCEF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHF_jtPfNHF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHF_jtPfNEF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHF_jtPfMUF_Good_h[tI][cI][wI][idI]);
+	  
+	  goodHistsTH2.push_back(jtPfCEF_jtPfNHF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCEF_jtPfNEF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCEF_jtPfMUF_Good_h[tI][cI][wI][idI]);
       
-	goodHistsTH2.push_back(jtPfNHF_jtPfNEF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfNHF_jtPfMUF_Good_Unweighted_h[tI][cI][idI]);
+	  goodHistsTH2.push_back(jtPfNHF_jtPfNEF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfNHF_jtPfMUF_Good_h[tI][cI][wI][idI]);
+	  
+	  goodHistsTH2.push_back(jtPfNEF_jtPfMUF_Good_h[tI][cI][wI][idI]);
+	  
+	  
+	  goodHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Good_h[tI][cI][wI][idI]);
+	  
+	  goodHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Good_h[tI][cI][wI][idI]);
+	  
+	  goodHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Good_h[tI][cI][wI][idI]);
+	  goodHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Good_h[tI][cI][wI][idI]);
+	  
+	  goodHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Good_h[tI][cI][wI][idI]);
+	  
+	  badHists.push_back(jtPt_Bad_h[tI][cI][wI][idI]);
 	
-	goodHistsTH2.push_back(jtPfNEF_jtPfMUF_Good_Unweighted_h[tI][cI][idI]);
+          for(Int_t rI = 0; rI < nJtRecoPtBins2; ++rI){
+	    badHists.push_back(jtPfCHF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfCEF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNHF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNEF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfMUF_Bad_h[tI][cI][wI][idI][rI]);
+	    
+	    badHists.push_back(jtPfCHM_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfCEM_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNHM_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNEM_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfMUM_Bad_h[tI][cI][wI][idI][rI]);
+
+	    badHists.push_back(jtPfCHMF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfCEMF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNHMF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfNEMF_Bad_h[tI][cI][wI][idI][rI]);
+	    badHists.push_back(jtPfMUMF_Bad_h[tI][cI][wI][idI][rI]);
+	  }
+
+	  badHistsTH2.push_back(jtPfCHF_jtPfCEF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHF_jtPfNHF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHF_jtPfNEF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHF_jtPfMUF_Bad_h[tI][cI][wI][idI]);
 	
-	goodHists.push_back(jtPfCHMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfCEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNHMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfNEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHists.push_back(jtPfMUMF_Good_Unweighted_h[tI][cI][idI]);
+	  badHistsTH2.push_back(jtPfCEF_jtPfNHF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCEF_jtPfNEF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCEF_jtPfMUF_Bad_h[tI][cI][wI][idI]);
+	  
+	  badHistsTH2.push_back(jtPfNHF_jtPfNEF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfNHF_jtPfMUF_Bad_h[tI][cI][wI][idI]);
+	  
+	  badHistsTH2.push_back(jtPfNEF_jtPfMUF_Bad_h[tI][cI][wI][idI]);
 	
-	goodHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Good_Unweighted_h[tI][cI][idI]);
-	goodHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Good_Unweighted_h[tI][cI][idI]);
-	
-	goodHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Good_Unweighted_h[tI][cI][idI]);
-	
-	badHists.push_back(jtPt_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPt_Bad_Unweighted_Cut_h[tI][cI][idI]);
-	badHists.push_back(jtPt_Bad_Unweighted_NoSpecialCut_h[tI][cI][idI]);
-	badHists.push_back(jtPt_Bad_Weighted_h[tI][cI][idI]);
-	badHists.push_back(jtPt_Bad_Weighted_Cut_h[tI][cI][idI]);
-	badHists.push_back(jtPt_Bad_Weighted_NoSpecialCut_h[tI][cI][idI]);
-	
-	badHists.push_back(jtPfCHF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfCEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNHF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfMUF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHists.push_back(jtPfCHM_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfCEM_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNHM_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNEM_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfMUM_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfCHF_jtPfCEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHF_jtPfNHF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHF_jtPfNEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHF_jtPfMUF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfCEF_jtPfNHF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCEF_jtPfNEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCEF_jtPfMUF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfNHF_jtPfNEF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfNHF_jtPfMUF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfNEF_jtPfMUF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHists.push_back(jtPfCHMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfCEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNHMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfNEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHists.push_back(jtPfMUMF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Bad_Unweighted_h[tI][cI][idI]);
-	badHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Bad_Unweighted_h[tI][cI][idI]);
-	
-	badHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Bad_Unweighted_h[tI][cI][idI]);
+	  badHistsTH2.push_back(jtPfCHMF_jtPfCEMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHMF_jtPfNHMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHMF_jtPfNEMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCHMF_jtPfMUMF_Bad_h[tI][cI][wI][idI]);
+	  
+	  badHistsTH2.push_back(jtPfCEMF_jtPfNHMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCEMF_jtPfNEMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfCEMF_jtPfMUMF_Bad_h[tI][cI][wI][idI]);
+	  
+	  badHistsTH2.push_back(jtPfNHMF_jtPfNEMF_Bad_h[tI][cI][wI][idI]);
+	  badHistsTH2.push_back(jtPfNHMF_jtPfMUMF_Bad_h[tI][cI][wI][idI]);
+	  
+	  badHistsTH2.push_back(jtPfNEMF_jtPfMUMF_Bad_h[tI][cI][wI][idI]);
+	}
       }
     }
   }
 
-  std::cout << __LINE__ << std::endl;
+  //std::cout << __LINE__ << std::endl;
   for(unsigned int gI = 0; gI < goodHists.size(); ++gI){
     std::cout << " Good " << gI << "/" << goodHists.size() << ": " << goodHists.at(gI) << ", " << goodHists.at(gI)->GetName() << std::endl;
   }
@@ -926,6 +995,11 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   outFile_p->cd();
 
   checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
+  for(Int_t jI = 0; jI < nJetAlgos; ++jI){
+    checkMakeDir("pdfDir/" + dateStr + "/" + jetAlgos.at(jI));
+  }
+
 
   vanGoghPalette vg;
 
@@ -952,9 +1026,9 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   maxValPt *= 5.;
   minValPt /= 5.;
 
-  const Float_t yPadFrac = 0.35;
+  const Float_t yPadFrac = 0.35 + .125;
 
-  std::cout << __LINE__ << std::endl;
+  //std::cout << __LINE__ << std::endl;
 
   TLegend* leg_p = new TLegend(0.5, 0.5, 0.9, 0.9);
   leg_p->SetBorderSize(0);
@@ -978,28 +1052,30 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     gPad->SetBottomMargin(gPad->GetBottomMargin()*1.3);
     gPad->SetLeftMargin(gPad->GetBottomMargin());
 
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
 
-    const Int_t nSpect = 2;
+    const Int_t nSpect = 4;
     TPad* spectRat[nSpect];
     for(Int_t sI = 0; sI < nSpect; ++sI){
       spectRat[sI] = NULL;
     }
     
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
 
+    std::string type = canvStr.substr(0, canvStr.find("_")+1);
 
-    if(canvStr.find("jtPt_") == std::string::npos){
-      goodHists.at(i)->Scale(1./goodHists.at(i)->Integral());
-      badHists.at(i)->Scale(1./badHists.at(i)->Integral());
+    if(false /*canvStr.find("jtPt_") == std::string::npos*/){
+      if(goodHists.at(i)->Integral() > 0) goodHists.at(i)->Scale(1./goodHists.at(i)->Integral());
+      if(badHists.at(i)->Integral() > 0) badHists.at(i)->Scale(1./badHists.at(i)->Integral());
 
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
 
       goodHists.at(i)->GetYaxis()->SetTitle("Counts (Norm. To 1)");
       badHists.at(i)->GetYaxis()->SetTitle("Counts (Norm. To 1)");
     }
     else{
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
+
 
       gPad->SetBottomMargin(0.01);
       gPad->SetLeftMargin(0.01);
@@ -1015,20 +1091,41 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       spectRat[0]->SetBottomMargin(0.001);
       spectRat[0]->SetTopMargin(0.01);
       spectRat[0]->SetRightMargin(0.01);
+      spectRat[0]->SetLeftMargin(0.10);
       spectRat[0]->Draw("SAME");
 
       canv_p->cd();
-      spectRat[1] = new TPad("pad1", "", 0.0, 0.0, 1.0, yPadFrac);
-      spectRat[1]->SetBottomMargin(spectRat[1]->GetLeftMargin()*3.);
+      spectRat[1] = new TPad("pad1", "", 0.0, yPadFrac - .125, 1.0, yPadFrac);
+      //      spectRat[1]->SetBottomMargin(spectRat[1]->GetLeftMargin()*3.);
+      spectRat[1]->SetBottomMargin(0.001);
       spectRat[1]->SetTopMargin(0.001);
       spectRat[1]->SetRightMargin(0.01);
+      spectRat[1]->SetLeftMargin(0.10);
       spectRat[1]->Draw("SAME");
+
+      canv_p->cd();
+      spectRat[2] = new TPad("pad1", "", 0.0, yPadFrac - .25, 1.0, yPadFrac - 0.125);
+      //      spectRat[1]->SetBottomMargin(spectRat[1]->GetLeftMargin()*3.);
+      spectRat[2]->SetBottomMargin(0.001);
+      spectRat[2]->SetTopMargin(0.001);
+      spectRat[2]->SetRightMargin(0.01);
+      spectRat[2]->SetLeftMargin(0.10);
+      spectRat[2]->Draw("SAME");
+
+      canv_p->cd();
+      spectRat[3] = new TPad("pad1", "", 0.0, 0.0, 1.0, yPadFrac - 0.25);
+      //      spectRat[1]->SetBottomMargin(spectRat[1]->GetLeftMargin()*3.);
+      spectRat[3]->SetBottomMargin(0.10*1./(yPadFrac - 0.125));
+      spectRat[3]->SetTopMargin(0.001);
+      spectRat[3]->SetRightMargin(0.01);
+      spectRat[3]->SetLeftMargin(0.10);
+      spectRat[3]->Draw("SAME");
 
       canv_p->cd();
       spectRat[0]->cd();
     }
 
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
 
     if(canvStr.find("jtPt_") == std::string::npos){
       double maxVal = -1;
@@ -1056,7 +1153,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     badHists.at(i)->SetMarkerSize(0.6);
     badHists.at(i)->SetLineColor(colors[1]);
     
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
     //    canv_p->cd();
 
     goodHists.at(i)->GetXaxis()->SetTitleFont(43);
@@ -1069,16 +1166,19 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     goodHists.at(i)->GetXaxis()->SetLabelSize(12);
     goodHists.at(i)->GetYaxis()->SetLabelSize(12);
 
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
+
+    goodHists.at(i)->GetYaxis()->SetTitleOffset(1.6);
+    goodHists.at(i)->GetXaxis()->SetTitleOffset(3.);
       
     goodHists.at(i)->DrawCopy("HIST E1 P");
     badHists.at(i)->DrawCopy("HIST E1 P SAME");
     gStyle->SetOptStat(0);
     leg_p->Draw("SAME");
 
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
 
-    if(canvStr.find("jtPt_") != std::string::npos){
+    if(true/*canvStr.find("jtPt_") != std::string::npos*/){
       TLatex* label_p = new TLatex();
       //      label_p->SetNDC();
       label_p->SetTextFont(43);
@@ -1087,28 +1187,39 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       std::string centStr = "PP";
       std::string centStr2 = "PP";
       int cent = 0;
-      std::string algoStr = "ak4PF";
+      std::string algoStr = "";
 
-      std::cout << __LINE__ << std::endl;
+      for(unsigned int jI = 0; jI < jetAlgos.size(); ++jI){
+	if(canvStr.find("_" + jetAlgos.at(jI) + "_") != std::string::npos){
+	  algoStr = jetAlgos.at(jI);
+	  break;
+	}
+      }
+
+      if(algoStr.size() == 0){
+	std::cout << "WARNING NO JET ALGO CHOSEN" << std::endl;
+      }
+
+      //std::cout << __LINE__ << std::endl;
 
       if(!isPP){
-	std::cout << __LINE__ << std::endl;
-
-	algoStr = "akCs4PU3PFFlow";
+	//std::cout << __LINE__ << std::endl;
+      
+	//	algoStr = "akCs4PU3PFFlow";
 	centStr = canvStr.substr(canvStr.find("Cent")+4, canvStr.size());
 	centStr.replace(centStr.find("_"), centStr.size(), "");
 	cent = std::stoi(centStr.substr(0, centStr.find("to")));
 
-	std::cout << __LINE__ << std::endl;
+	//std::cout << __LINE__ << std::endl;
 
 	centStr2 = centStr;
 	centStr2.replace(centStr2.find("to"), 2, "-");
 	centStr2 = centStr2 + "%";
 
-	std::cout << __LINE__ << std::endl;
+	//std::cout << __LINE__ << std::endl;
       }
 
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
 
       Double_t xVal1 = (jtRecoPtBins[0] + jtRecoPtBins[1])/2.;
       Double_t xVal2 = (jtRecoPtBins[nJtRecoPtBins/2 - 1] + jtRecoPtBins[nJtRecoPtBins/2])/2.;
@@ -1120,79 +1231,100 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       Double_t res2Good = TMath::Max(0., xVal2 - 3.*xVal2*getResForPtEtaCentAlgo(xVal2, 0, cent, algoStr));
       Double_t res2Bad = TMath::Max(0., xVal2 - 5.*xVal2*getResForPtEtaCentAlgo(xVal2, 0, cent, algoStr));
 
-      
-      label_p->DrawLatex(xVal1, maxValPt/4, ("At: " + prettyString(xVal1, 1, false)).c_str());
-      label_p->DrawLatex(xVal1, maxValPt/16, ("3#sigma Good: " + prettyString(res1Good, 1, false)).c_str());
-      label_p->DrawLatex(xVal1, maxValPt/(16*4), ("5#sigma Bad: " + prettyString(res1Bad, 1, false)).c_str());
 
-      label_p->DrawLatex(xVal2, maxValPt/4, ("At: " + prettyString(xVal2, 1, false)).c_str());
-      label_p->DrawLatex(xVal2, maxValPt/16, ("3#sigma Good: " + prettyString(res2Good, 1, false)).c_str());
-      label_p->DrawLatex(xVal2, maxValPt/(16*4), ("5#sigma Bad: " + prettyString(res2Bad, 1, false)).c_str());
+      if(type.find("jtPt_") != std::string::npos){
+	label_p->DrawLatex(xVal1, maxValPt/4, ("At: " + prettyString(xVal1, 1, false)).c_str());
+	label_p->DrawLatex(xVal1, maxValPt/16, ("3#sigma Good: " + prettyString(res1Good, 1, false)).c_str());
+	label_p->DrawLatex(xVal1, maxValPt/(16*4), ("5#sigma Bad: " + prettyString(res1Bad, 1, false)).c_str());
+	
+	label_p->DrawLatex(xVal2, maxValPt/4, ("At: " + prettyString(xVal2, 1, false)).c_str());
+	label_p->DrawLatex(xVal2, maxValPt/16, ("3#sigma Good: " + prettyString(res2Good, 1, false)).c_str());
+	label_p->DrawLatex(xVal2, maxValPt/(16*4), ("5#sigma Bad: " + prettyString(res2Bad, 1, false)).c_str());
+	label_p->DrawLatex(xVal3, maxValPt/4, centStr2.c_str());
+      }
+      else label_p->DrawLatex(0.8, maxValPt/4, centStr2.c_str());
 
-      label_p->DrawLatex(xVal3, maxValPt/4, centStr2.c_str());
 
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
 
       delete label_p;
     }
 
     gPad->SetLogy();
-
-    std::cout << __LINE__ << std::endl;
-
-    if(canvStr.find("jtPt_") != std::string::npos){
-      std::cout << __LINE__ << std::endl;
+  
+    std::string algoStr = "";
+    std::string algoStr2 = "";
+    for(unsigned int aI = 0; aI < jetAlgos.size(); ++aI){
+      std::string test = "_" + jetAlgos.at(aI) + "_";
+      if(canvStr.find(test) != std::string::npos){
+	algoStr = "_" + jetAlgos.at(aI) + "_";
+	algoStr2 = jetAlgos.at(aI);
+	break;
+      }
+    }
+    
+    //std::cout << __LINE__ << std::endl;
+    //okokok
+    if(true/*canvStr.find("jtPt_") != std::string::npos*/){
+      //std::cout << __LINE__ << std::endl;
       spectRat[1]->cd();
 
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
 
       std::string centStr = "PP";
       if(!isPP){
 	centStr = canvStr.substr(canvStr.find("Cent"), canvStr.size());
 	centStr.replace(centStr.find("_"), centStr.size(), "");
       }
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
 
       TH1D* tempHist_p = (TH1D*)goodHists.at(i)->Clone("temp");
       Int_t denomPos = -1;
+   
+      std::string recoPtStr = "";
+      if(canvStr.find("RecoJtPt") != std::string::npos){
+	recoPtStr = canvStr.substr(canvStr.find("RecoJtPt"), canvStr.size());
+	recoPtStr.replace(recoPtStr.find("_"), recoPtStr.size(), "");
+      }
 
-      std::cout << __LINE__ << std::endl;
+      //std::cout << __LINE__ << std::endl;
+    
+
+      
 
       for(unsigned int iter = 0; iter < goodHists.size(); ++iter){
-	std::cout << __LINE__ << ", " << iter << std::endl;
-      
-	std::cout << " " << __LINE__ << ", " << iter << ", " << goodHists.size() << std::endl;
 	std::string canvStr2 = goodHists.at(iter)->GetName();
-	std::cout << " " << __LINE__ << ", " << canvStr2 << std::endl;
-	if(canvStr2.find("jtPt_") == std::string::npos) continue;
-	std::cout << " possible match " << canvStr2 << std::endl;
-	if(canvStr2.find("_Cut_") != std::string::npos) continue;
+	if(canvStr2.find(type) == std::string::npos) continue;
 	if(canvStr2.find(centStr) == std::string::npos) continue;
 
-	std::cout << "hist \'" << canvStr << "\' gets here \'" << canvStr2 << "\'" << std::endl;
+	if(recoPtStr.size() != 0){
+	  if(canvStr2.find(recoPtStr) == std::string::npos) continue;
+	}
 
+	//	std::cout << "hist \'" << canvStr << "\' gets here \'" << canvStr2 << "\'" << std::endl;            
 	if(canvStr.find("Weighted") != std::string::npos){
-	  if(canvStr2.find("Weighted") != std::string::npos){
+	  if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
 	    denomPos = iter;
 	    break;
 	  }
 	}
 	else{
-	  if(canvStr2.find("Unweighted") != std::string::npos){
+	  if(canvStr2.find("Unweighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
 	    denomPos = iter;
 	    break;
 	  }
 	}
       }
+    
+      //std::cout << __LINE__ << std::endl;
 
-      std::cout << __LINE__ << std::endl;
-
-      std::cout << "Found denom for hist \'" << canvStr << "\': " << denomPos << std::endl; 
+      std::cout << "Found denom for hist \'" << canvStr << "\': " << denomPos << ", " << goodHists.at(denomPos)->GetName() << std::endl; 
      
-      tempHist_p->GetYaxis()->SetTitle("Cut/Raw Spect");
+      tempHist_p->GetYaxis()->SetTitle("Cut/Raw");
       tempHist_p->Divide(goodHists.at(denomPos));
-      tempHist_p->SetMaximum(1.05);
-      tempHist_p->SetMinimum(0.95);
+      std::cout << "Divide: " << goodHists.at(i)->GetName() << "/" << goodHists.at(denomPos)->GetName() << std::endl;
+      tempHist_p->SetMaximum(1.03);
+      tempHist_p->SetMinimum(0.97);
       tempHist_p->GetXaxis()->SetTitleFont(43);
       tempHist_p->GetYaxis()->SetTitleFont(43);
       tempHist_p->GetXaxis()->SetLabelFont(43);
@@ -1204,15 +1336,178 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
       tempHist_p->GetYaxis()->SetLabelSize(12);
 
       tempHist_p->GetYaxis()->SetNdivisions(505);
+      tempHist_p->GetXaxis()->SetTitleOffset(3.0);
+      tempHist_p->GetYaxis()->SetTitleOffset(1.6);    
       tempHist_p->DrawCopy("HIST E1 P");
+
+      TLine* line_p = new TLine();
+      line_p->SetLineStyle(2);
+      line_p->DrawLine(tempHist_p->GetBinLowEdge(1), 1., tempHist_p->GetBinLowEdge(tempHist_p->GetNbinsX()), 1.);
+      delete line_p;
+      
+      delete tempHist_p;
+
+      spectRat[2]->cd();
+
+      tempHist_p = (TH1D*)badHists.at(i)->Clone("temp");
+      TH1D* tempHist2_p = (TH1D*)badHists.at(i)->Clone("temp2");
+      denomPos = -1;
+      Int_t denomPos2 = -1;
+      
+      for(unsigned int iter = 0; iter < badHists.size(); ++iter){
+	std::string canvStr2 = badHists.at(iter)->GetName();
+	if(canvStr2.find(type) == std::string::npos) continue;
+	if(canvStr2.find(centStr) == std::string::npos) continue;
+
+	if(recoPtStr.size() != 0){
+	  if(canvStr2.find(recoPtStr) == std::string::npos) continue;
+	}
+
+	if(canvStr.find("Weighted") != std::string::npos){
+	  if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
+	    denomPos = iter;
+	    //	    break;
+	  }
+	  else if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("LightMUID") != std::string::npos){
+	    denomPos2 = iter;
+	  }
+	}
+	else{
+	  if(canvStr2.find("Unweighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
+	    denomPos = iter;
+	    //	    break;
+	  }
+	  else if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("LightMUID") != std::string::npos){
+	    denomPos2 = iter;
+	  }
+	}
+      }
+    
+      //std::cout << __LINE__ << std::endl;
+
+      std::cout << "Found denom for hist \'" << canvStr << "\': " << denomPos << std::endl; 
+     
+      tempHist_p->GetYaxis()->SetTitle("Cut/Raw");
+      tempHist_p->Divide(badHists.at(denomPos));
+      tempHist2_p->Divide(badHists.at(denomPos2));
+      std::cout << "Divide: " << badHists.at(i)->GetName() << "/" << badHists.at(denomPos)->GetName() << " (" << badHists.at(denomPos2)->GetName() << "), " << recoPtStr << std::endl;
+      tempHist_p->SetMaximum(1.05);
+      tempHist_p->SetMinimum(0.00);
+      tempHist_p->GetXaxis()->SetTitleFont(43);
+      tempHist_p->GetYaxis()->SetTitleFont(43);
+      tempHist_p->GetXaxis()->SetLabelFont(43);
+      tempHist_p->GetYaxis()->SetLabelFont(43);
+
+      tempHist_p->GetXaxis()->SetTitleSize(12);
+      tempHist_p->GetYaxis()->SetTitleSize(12);
+      tempHist_p->GetXaxis()->SetLabelSize(12);
+      tempHist_p->GetYaxis()->SetLabelSize(12);
+
+      tempHist_p->GetYaxis()->SetNdivisions(505);
+      tempHist_p->GetXaxis()->SetTitleOffset(4.0);
+      tempHist_p->GetYaxis()->SetTitleOffset(1.6);
+
+      Double_t min = 5.;
+
+      for(Int_t bI = 0; bI < tempHist_p->GetNbinsX(); ++bI){
+	if(tempHist_p->GetBinContent(bI+1) > 0 && tempHist_p->GetBinContent(bI+1) < min) min = tempHist_p->GetBinContent(bI+1);
+	if(tempHist2_p->GetBinContent(bI+1) > 0 && tempHist2_p->GetBinContent(bI+1) < min) min = tempHist2_p->GetBinContent(bI+1);
+      }
+
+      min /= 10.;
+
+      tempHist_p->SetMaximum(4.);
+      tempHist_p->SetMinimum(min);
+
+      tempHist_p->GetXaxis()->SetTitle("Reco. Jet p_{T}");
+      tempHist_p->DrawCopy("HIST E1 P");
+
+      tempHist2_p->SetMarkerStyle(25);
+      if(canvStr.find("NoID") == std::string::npos) tempHist2_p->DrawCopy("HIST E1 P SAME");
+
+      gPad->SetLogy();
+
+      delete tempHist_p;
+      delete tempHist2_p;
+
+      spectRat[3]->cd();
+
+      tempHist_p = (TH1D*)badHists.at(i)->Clone("temp");
+      denomPos = -1;
+      
+      for(unsigned int iter = 0; iter < goodHists.size(); ++iter){
+	std::string canvStr2 = goodHists.at(iter)->GetName();
+	if(canvStr2.find(type) == std::string::npos) continue;
+	if(canvStr2.find(centStr) == std::string::npos) continue;
+
+	if(recoPtStr.size() != 0){
+	  if(canvStr2.find(recoPtStr) == std::string::npos) continue;
+	}
+
+	if(canvStr.find("Weighted") != std::string::npos){
+	  if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
+	    denomPos = iter;
+	    //	    break;
+	  }
+	  else if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("LightMUID") != std::string::npos){
+	    denomPos2 = iter;
+	  }
+	}
+	else{
+	  if(canvStr2.find("Unweighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("NoID") != std::string::npos){
+	    denomPos = iter;
+	    //	    break;
+	  }
+	  else if(canvStr2.find("Weighted") != std::string::npos && canvStr2.find(algoStr) != std::string::npos && canvStr2.find("LightMUID") != std::string::npos){
+	    denomPos2 = iter;
+	  }
+	}
+      }
+    
+      //std::cout << __LINE__ << std::endl;
+
+      std::cout << "Found denom for hist \'" << canvStr << "\': " << denomPos << std::endl; 
+     
+      tempHist_p->GetYaxis()->SetTitle("Bad/Good");
+      tempHist_p->Divide(goodHists.at(denomPos));
+      tempHist_p->GetXaxis()->SetTitleFont(43);
+      tempHist_p->GetYaxis()->SetTitleFont(43);
+      tempHist_p->GetXaxis()->SetLabelFont(43);
+      tempHist_p->GetYaxis()->SetLabelFont(43);
+
+      tempHist_p->GetXaxis()->SetTitleSize(12);
+      tempHist_p->GetYaxis()->SetTitleSize(12);
+      tempHist_p->GetXaxis()->SetLabelSize(12);
+      tempHist_p->GetYaxis()->SetLabelSize(12);
+
+      tempHist_p->GetYaxis()->SetNdivisions(505);
+      tempHist_p->GetXaxis()->SetTitleOffset(4.0);
+      tempHist_p->GetYaxis()->SetTitleOffset(1.6);
+
+      min = 5.;
+
+      for(Int_t bI = 0; bI < tempHist_p->GetNbinsX(); ++bI){
+	if(tempHist_p->GetBinContent(bI+1) > 0 && tempHist_p->GetBinContent(bI+1) < min) min = tempHist_p->GetBinContent(bI+1);
+      }
+
+      min /= 10.;
+
+      tempHist_p->SetMaximum(4.);
+      tempHist_p->SetMinimum(min);
+
+      tempHist_p->GetXaxis()->SetTitle("Reco. Jet p_{T}");
+      tempHist_p->DrawCopy("HIST E1 P");
+
+      gPad->SetLogy();
+
       delete tempHist_p;
     }
     
-    std::cout << __LINE__ << std::endl;
+    //std::cout << __LINE__ << std::endl;
 
-    canv_p->SaveAs(("pdfDir/" + canvStr + "_" + dateStr + ".pdf").c_str());
+    canv_p->SaveAs(("pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf").c_str());
 
-    if(canvStr.find("jtPt_") != std::string::npos){
+    if(true/*canvStr.find("jtPt_") != std::string::npos*/){
       for(Int_t sI = 0; sI < nSpect; ++sI){
 	delete spectRat[sI];
       }
@@ -1223,7 +1518,12 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     badHists.at(i)->Write("", TObject::kOverwrite);
   }
 
-  std::cout << __LINE__ << std::endl;
+  for(unsigned int i = 0; i < fineHists.size(); ++i){
+    fineHists.at(i)->Write("", TObject::kOverwrite);
+    delete fineHists.at(i);
+  }
+
+  //std::cout << __LINE__ << std::endl;
 
   for(unsigned int i = 0; i < goodHists.size(); ++i){
     delete goodHists.at(i);
@@ -1237,8 +1537,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
     TCanvas* canv_p = new TCanvas("canv_p", "", 450*2, 450);
     
-    goodHistsTH2.at(i)->Scale(1./goodHistsTH2.at(i)->Integral());
-    badHistsTH2.at(i)->Scale(1./badHistsTH2.at(i)->Integral());
+    if(goodHistsTH2.at(i)->Integral() > 0) goodHistsTH2.at(i)->Scale(1./goodHistsTH2.at(i)->Integral());
+    if(badHistsTH2.at(i)->Integral() > 0) badHistsTH2.at(i)->Scale(1./badHistsTH2.at(i)->Integral());
 
     double maxVal = -1;
     double minVal = 9999;
@@ -1273,7 +1573,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     gPad->SetLogz();
     gStyle->SetOptStat(0);
 
-    canv_p->SaveAs(("pdfDir/" + canvStr + "_" + dateStr + ".pdf").c_str());
+    //    canv_p->SaveAs(("pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf").c_str());
     delete canv_p;
 
     goodHistsTH2.at(i)->Write("", TObject::kOverwrite);

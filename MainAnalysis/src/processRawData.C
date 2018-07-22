@@ -7,6 +7,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TDatime.h"
+#include "TDirectory.h"
 
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/mntToXRootdFileString.h"
@@ -28,7 +29,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
   }
 
-  Int_t nCentBins = -1;
+  Int_t nCentBinsTemp = -1;
   std::vector<Int_t> centBinsLow;
   std::vector<Int_t> centBinsHi;
 
@@ -43,6 +44,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   bool isResponsePP = false;
 
+  Int_t nIDTemp = -1;
+  std::vector<std::string> idStr;
+  std::vector<double> jtPfCHMFCutLow;
+  std::vector<double> jtPfCHMFCutHi;
+  std::vector<double> jtPfMUMFCutLow;
+  std::vector<double> jtPfMUMFCutHi;
+
   std::cout << "Using cuts: " << std::endl;
   for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
     std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
@@ -50,7 +58,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     std::string tempStr = cutDirList.at(cI);
     while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
 
-    if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBins = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("centBinsLow") != std::string::npos && tempStr.size() == std::string("centBinsLow").size()){
       std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
       while(tempStr2.find(",") != std::string::npos){
@@ -95,20 +103,63 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
       if(tempStr2.size() != 0) jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2));
     }
+    else if(tempStr.find("nID") != std::string::npos && tempStr.size() == std::string("nID").size()) nIDTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("idStr") != std::string::npos && tempStr.size() == std::string("idStr").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        idStr.push_back(tempStr2.substr(0, tempStr2.find(",")));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) idStr.push_back(tempStr2);
+    }
+    else if(tempStr.find("jtPfCHMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHMFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCHMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHMFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUMFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUMFCutHi.push_back(std::stod(tempStr2));
+    }
   }
 
-  if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
+  if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
+  if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(jtAbsEtaMaxTemp < -98) std::cout << "jtAbsEtaMaxTemp less than -98. please check input file. return 1" << std::endl;
 
-  if(nCentBins < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98){
+  if(nCentBinsTemp < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98 || nIDTemp < 0){
     responseFile_p->Close();
     delete responseFile_p;
     return 1;
   }
 
   const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
+  const Int_t nCentBins = nCentBinsTemp;
 
   const Int_t nJtPtBins = nJtPtBinsTemp;
   Double_t jtPtBins[nJtPtBins+1];
@@ -130,6 +181,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   }
   std::cout << std::endl;
 
+  const Int_t nID = nIDTemp; 
 
   std::cout << "nCentBins: " << nCentBins << std::endl;
   for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -213,25 +265,31 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
+  
+  while(outFileName.size() > 20){outFileName = outFileName.substr(0,outFileName.size()-1);}
+  while(outFileName2.size() > 20){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   TDirectory* dir_p[nDataJet];
-  TH1D* jtPtRaw_h[nDataJet][nCentBins][nJtAbsEtaBins];
-  TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nJtAbsEtaBins];
+  TH1D* jtPtRaw_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
+  TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
     tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
     dir_p[jI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
+    std::cout << " " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-
-      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-        const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
-	jtPtRaw_h[jI][cI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
-	jtPtRaw_RecoTrunc_h[jI][cI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+      
+      for(Int_t idI = 0; idI < nID; ++idI){
+	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	  jtPtRaw_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	}
       }
     }
   }
@@ -250,7 +308,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   Float_t jtpt_[nDataJet][nMaxJet];
   Float_t jteta_[nDataJet][nMaxJet];
   Float_t jtphi_[nDataJet][nMaxJet];
-
+  Float_t jtPfCHMF_[nDataJet][nMaxJet];
+  Float_t jtPfMUMF_[nDataJet][nMaxJet];
 
   Float_t vz_;
   Float_t hiHF_;
@@ -284,11 +343,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       jetTrees_p[jI]->SetBranchStatus("jtpt", 1);
       jetTrees_p[jI]->SetBranchStatus("jtphi", 1);
       jetTrees_p[jI]->SetBranchStatus("jteta", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfCHMF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfMUMF", 1);
 
       jetTrees_p[jI]->SetBranchAddress("nref", &(nref_[jI]));
       jetTrees_p[jI]->SetBranchAddress("jtpt", jtpt_[jI]);
       jetTrees_p[jI]->SetBranchAddress("jtphi", jtphi_[jI]);
       jetTrees_p[jI]->SetBranchAddress("jteta", jteta_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfCHMF", jtPfCHMF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfMUMF", jtPfMUMF_[jI]);
     }
     
     hiTree_p->SetBranchStatus("*", 0);
@@ -373,15 +436,28 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 
-	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
-	    bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]);
-	    bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[1] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
+	  std::vector<int> idPoses;
+	  for(Int_t idI = 0; idI < nID; ++idI){
+	    if(jtPfCHMFCutLow[idI] > jtPfCHMF_[tI][jI]) continue;
+	    if(jtPfCHMFCutHi[idI] <= jtPfCHMF_[tI][jI]) continue;
+	    if(jtPfMUMFCutLow[idI] > jtPfMUMF_[tI][jI]) continue;
+	    if(jtPfMUMFCutHi[idI] <= jtPfMUMF_[tI][jI]) continue;
 
-	    if(goodReco){
-	      jtPtRaw_h[tI][centPos][aI]->Fill(jtpt_[tI][jI]);
-	      if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][aI]->Fill(jtpt_[tI][jI]);
+	    idPoses.push_back(idI);
+	  }
+
+	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
+	      bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]);
+	      bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[1] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
+	      
+	      if(goodReco){
+		jtPtRaw_h[tI][centPos][idPoses.at(idI)][aI]->Fill(jtpt_[tI][jI]);
+		if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][idPoses.at(idI)][aI]->Fill(jtpt_[tI][jI]);
+	      }
 	    }
 	  }
+
 	}
       }
     }
@@ -398,13 +474,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     dir_p[jI]->cd();
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
+      for(Int_t idI = 0; idI < nID; ++idI){
 
-      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	jtPtRaw_h[jI][cI][aI]->Write("", TObject::kOverwrite);
-	delete jtPtRaw_h[jI][cI][aI];
-
-	jtPtRaw_RecoTrunc_h[jI][cI][aI]->Write("", TObject::kOverwrite);
-	delete jtPtRaw_RecoTrunc_h[jI][cI][aI];
+	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	  jtPtRaw_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
+	  delete jtPtRaw_h[jI][cI][idI][aI];
+	  
+	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
+	  delete jtPtRaw_RecoTrunc_h[jI][cI][idI][aI];
+	}
       }
     }
   }
@@ -420,12 +498,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 int main(int argc, char* argv[])
 {
-  if(argc != 3){
-    std::cout << "Usage: ./bin/processRawData.exe <inDataFileName> <inResponseName>" << std::endl;
+  if(argc != 3 && argc != 4){
+    std::cout << "Usage: ./bin/processRawData.exe <inDataFileName> <inResponseName> <isPP-opt>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += processRawData(argv[1], argv[2]);
+  if(argc == 3) retVal += processRawData(argv[1], argv[2]);
+  else retVal += processRawData(argv[1], argv[2], std::stoi(argv[3]));
   return retVal;
 }

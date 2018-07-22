@@ -24,7 +24,7 @@ cppWatch::cppWatch(){totalInt = 0; currentInt = 0; return;}
 
 void cppWatch::stop()
 {
-  std::clock_t c_end = std::clock();
+  //  std::clock_t c_end = std::clock();
   std::time_t t_end = std::time(NULL);
 
   totalInt += t_end  - t_start;

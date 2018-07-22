@@ -13,13 +13,15 @@ class specialHYDJETEventExclude
   specialHYDJETEventExclude(){};
 
   //Following are defined with respect to ak4GenJets
-  static const int nEvtToExclude = 1;
-  Float_t leadingGenJtPt[nEvtToExclude] = {650.40368};
-  Float_t subleadingGenJtPt[nEvtToExclude] = {616.23840};
-  Float_t leadingGenJtPhi[nEvtToExclude] = {-0.294406};
-  Float_t subleadingGenJtPhi[nEvtToExclude] = {2.8826510};
-  Float_t leadingGenJtEta[nEvtToExclude] = {-0.222331};
-  Float_t subleadingGenJtEta[nEvtToExclude] = {-0.346403};
+  //First exclusion 600 gev dijet
+  //Second exclusion 276 gev single jet, no compensating neutrino, no compensating large eta jet, complete mystery
+  static const int nEvtToExclude = 2;
+  Float_t leadingGenJtPt[nEvtToExclude] = {650.40368, 276.91653};
+  Float_t subleadingGenJtPt[nEvtToExclude] = {616.23840, 30.184194};
+  Float_t leadingGenJtPhi[nEvtToExclude] = {-0.294406, 1.9887496};
+  Float_t subleadingGenJtPhi[nEvtToExclude] = {2.8826510, 0.3335092};
+  Float_t leadingGenJtEta[nEvtToExclude] = {-0.222331, -0.214549};
+  Float_t subleadingGenJtEta[nEvtToExclude] = {-0.346403, 0.0162385};
 
   double deltaVal = 0.01;
 
@@ -31,14 +33,13 @@ bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[]
   bool isLeadFound = false;
   bool isSubleadFound = false;
 
+  for(int j = 0; j < nEvtToExclude; ++j){
+    for(int i = 0; i < ngen_; ++i){
+      if(gensubid_[i] == 0) continue;
 
-  for(int i = 0; i < ngen_; ++i){
-    if(gensubid_[i] == 0) continue;
-
-    for(int j = 0; j < nEvtToExclude; ++j){
       bool leadDeltaPt = genpt_[i] > leadingGenJtPt[j] - deltaVal && genpt_[i] < leadingGenJtPt[j] + deltaVal;
       bool subleadDeltaPt = genpt_[i] > subleadingGenJtPt[j] - deltaVal && genpt_[i] < subleadingGenJtPt[j] + deltaVal;
-
+      
       bool leadDeltaPhi = genphi_[i] > leadingGenJtPhi[j] - deltaVal && genphi_[i] < leadingGenJtPhi[j] + deltaVal;
       bool subleadDeltaPhi = genphi_[i] > subleadingGenJtPhi[j] - deltaVal && genphi_[i] < subleadingGenJtPhi[j] + deltaVal;
 
@@ -47,6 +48,12 @@ bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[]
 
       if(leadDeltaPt && leadDeltaPhi && leadDeltaEta) isLeadFound = true;
       if(subleadDeltaPt && subleadDeltaPhi && subleadDeltaEta) isSubleadFound = true;
+    }
+
+    if(isLeadFound && isSubleadFound) break;
+    else{
+      isLeadFound = false;
+      isSubleadFound = false;
     }
   }
 
