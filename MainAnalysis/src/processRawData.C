@@ -60,103 +60,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<double> jtPfMUMFCutLow = cutProp.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutProp.GetJtPfMUMFCutHi();
 
-  /*
-  std::cout << "Using cuts: " << std::endl;
-  for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
-    std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
-
-    std::string tempStr = cutDirList.at(cI);
-    while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
-
-    if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("centBinsLow") != std::string::npos && tempStr.size() == std::string("centBinsLow").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        centBinsLow.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) centBinsLow.push_back(std::stoi(tempStr2));
-    }
-    else if(tempStr.find("centBinsHi") != std::string::npos && tempStr.size() == std::string("centBinsHi").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        centBinsHi.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
-    }
-    else if(tempStr.find("jtAbsEtaMax") != std::string::npos && tempStr.size() == std::string("jtAbsEtaMax").size()) jtAbsEtaMaxTemp = std::stof(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBinsTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isResponsePP = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtPtBinsTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPtBinsTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtAbsEtaBinsLow") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsLow").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtAbsEtaBinsHi") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsHi").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("nID") != std::string::npos && tempStr.size() == std::string("nID").size()) nIDTemp = std::stoi(((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("idStr") != std::string::npos && tempStr.size() == std::string("idStr").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        idStr.push_back(tempStr2.substr(0, tempStr2.find(",")));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) idStr.push_back(tempStr2);
-    }
-    else if(tempStr.find("jtPfCHMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutLow").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtPfCHMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPfCHMFCutLow.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtPfCHMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutHi").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtPfCHMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPfCHMFCutHi.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtPfMUMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutLow").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtPfMUMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPfMUMFCutLow.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtPfMUMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutHi").size()){
-      std::string tempStr2 = ((TNamed*)responseFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-        jtPfMUMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-        tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPfMUMFCutHi.push_back(std::stod(tempStr2));
-    }
-  }
-  */
-
   if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
@@ -447,12 +350,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 
+	  /*
+	  std::cout << "JtAbsEtaPoses.size(): " << jtAbsEtaPoses.size() << std::endl;
+	  if(jtAbsEtaPoses.size() != 0) std::cout << " " << jtAbsEtaPoses.at(0) << ", " << jtAbsEtaPoses.at(jtAbsEtaPoses.size()-1) << std::endl;
+	  */
+
 	  std::vector<int> idPoses;
 	  for(Int_t idI = 0; idI < nID; ++idI){
-	    if(jtPfCHMFCutLow[idI] > jtPfCHMF_[tI][jI]) continue;
-	    if(jtPfCHMFCutHi[idI] <= jtPfCHMF_[tI][jI]) continue;
-	    if(jtPfMUMFCutLow[idI] > jtPfMUMF_[tI][jI]) continue;
-	    if(jtPfMUMFCutHi[idI] <= jtPfMUMF_[tI][jI]) continue;
+	    if(jtPfCHMFCutLow.at(idI) > jtPfCHMF_[tI][jI]) continue;
+	    if(jtPfCHMFCutHi.at(idI) <= jtPfCHMF_[tI][jI]) continue;
+	    if(jtPfMUMFCutLow.at(idI) > jtPfMUMF_[tI][jI]) continue;
+	    if(jtPfMUMFCutHi.at(idI) <= jtPfMUMF_[tI][jI]) continue;
 
 	    idPoses.push_back(idI);
 	  }
@@ -463,8 +371,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[1] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
 	      
 	      if(goodReco){
-		jtPtRaw_h[tI][centPos][idPoses.at(idI)][aI]->Fill(jtpt_[tI][jI]);
-		if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][idPoses.at(idI)][aI]->Fill(jtpt_[tI][jI]);
+		jtPtRaw_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
+		if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
 	      }
 	    }
 	  }
@@ -497,6 +405,33 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
     }
   }
+
+  outFile_p->cd();
+  TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
+
+
+  cutPropagator cutPropOut;
+  cutPropOut.Clean();
+  cutPropOut.SetIsPP(isDataPP);
+  cutPropOut.SetJtAbsEtaMax(jtAbsEtaMax);
+  cutPropOut.SetNJtPtBins(nJtPtBins);
+  cutPropOut.SetJtPtBins(nJtPtBins+1, jtPtBins);
+  cutPropOut.SetNJtAbsEtaBins(nJtAbsEtaBins);
+  cutPropOut.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
+  cutPropOut.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
+  cutPropOut.SetPthats({});
+  cutPropOut.SetPthatWeights({});
+  cutPropOut.SetNCentBins(nCentBins);
+  cutPropOut.SetCentBinsLow(centBinsLow);
+  cutPropOut.SetCentBinsHi(centBinsHi);
+  cutPropOut.SetNID(nID);
+  cutPropOut.SetIdStr(idStr);
+  cutPropOut.SetJtPfCHMFCutLow(jtPfCHMFCutLow);
+  cutPropOut.SetJtPfCHMFCutHi(jtPfCHMFCutHi);
+  cutPropOut.SetJtPfMUMFCutLow(jtPfMUMFCutLow);
+  cutPropOut.SetJtPfMUMFCutHi(jtPfMUMFCutHi);
+
+  if(!cutPropOut.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   outFile_p->Close();
   delete outFile_p;

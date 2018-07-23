@@ -527,14 +527,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	  bool goodTruth = (refpt_[tI][jI] >= jtPtBins[0] && refpt_[tI][jI] < jtPtBins[nJtPtBins]);
 
 	  if(!goodReco && !goodTruth) continue;
-
-	  std::vector<int> jtAbsEtaPoses;
-	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	    if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
-	      jtAbsEtaPoses.push_back(aI);
-	    }
-	  }
-
+      	
 	  //via https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
 	  bool passesTightLepVeto = jtPfCHF_[tI][jI] < 0.9 && jtPfCEF_[tI][jI] < 0.9;
 	  passesTightLepVeto = passesTightLepVeto && jtPfCHM_[tI][jI] + jtPfCEM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfMUM_[tI][jI] > 1;
@@ -571,6 +564,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
 	  //	  if(recoJtPos < 0) std::cout << "WARNING: recoJtPos -1 for jtpt==" << jtpt_[tI][jI] << std::endl;
 	  //	  if(genJtPos < 0) std::cout << "WARNING: genJtPos -1 for refpt==" << refpt_[tI][jI] << std::endl;
+	
+	  std::vector<int> jtAbsEtaPoses;
+          for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+            if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
+              jtAbsEtaPoses.push_back(aI);
+            }
+          }
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int iI = 0; iI < passesID.size(); ++iI){
