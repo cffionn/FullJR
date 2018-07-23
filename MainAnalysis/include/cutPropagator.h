@@ -42,6 +42,7 @@ class cutPropagator
   void Clean();
   bool GetAllVarFromFile(TFile* inFile_p);
   bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p);
+  bool CheckPropagatorMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb);
 
   bool GetIsPP(){return isPP;}
 
@@ -351,6 +352,98 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   jtPfCHMFCutHiName.Write("", TObject::kOverwrite);
   jtPfMUMFCutLowName.Write("", TObject::kOverwrite);
   jtPfMUMFCutHiName.Write("", TObject::kOverwrite);
+
+  return true;
+}
+
+
+bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb)
+{
+  const double delta = 0.0001;
+  if(jtAbsEtaMax - delta > inCutProp.GetJtAbsEtaMax()) return false;
+  if(jtAbsEtaMax + delta < inCutProp.GetJtAbsEtaMax()) return false;
+  if(nJtPtBins != inCutProp.GetNJtPtBins()) return false;
+  if(nJtAbsEtaBins != inCutProp.GetNJtAbsEtaBins()) return false;
+  if(nID != inCutProp.GetNID()) return false;
+  if(jtPtBins.size() != inCutProp.GetJtPtBins().size()) return false;
+  if(jtAbsEtaBinsLow.size() != inCutProp.GetJtAbsEtaBinsLow().size()) return false;
+  if(jtAbsEtaBinsHi.size() != inCutProp.GetJtAbsEtaBinsHi().size()) return false;
+  if(idStr.size() != inCutProp.GetIdStr().size()) return false;
+  if(jtPfCHMFCutLow.size() != inCutProp.GetJtPfCHMFCutLow().size()) return false;
+  if(jtPfCHMFCutHi.size() != inCutProp.GetJtPfCHMFCutHi().size()) return false;
+  if(jtPfMUMFCutLow.size() != inCutProp.GetJtPfMUMFCutLow().size()) return false;
+  if(jtPfMUMFCutHi.size() != inCutProp.GetJtPfMUMFCutHi().size()) return false;
+
+  for(unsigned int i = 0; i < jtPtBins.size(); ++i){
+    if(jtPtBins.at(i) - delta > inCutProp.GetJtPtBins().at(i)) return false;
+    if(jtPtBins.at(i) + delta < inCutProp.GetJtPtBins().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtAbsEtaBinsLow.size(); ++i){
+    if(jtAbsEtaBinsLow.at(i) - delta > inCutProp.GetJtAbsEtaBinsLow().at(i)) return false;
+    if(jtAbsEtaBinsLow.at(i) + delta < inCutProp.GetJtAbsEtaBinsLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtAbsEtaBinsHi.size(); ++i){
+    if(jtAbsEtaBinsHi.at(i) - delta > inCutProp.GetJtAbsEtaBinsHi().at(i)) return false;
+    if(jtAbsEtaBinsHi.at(i) + delta < inCutProp.GetJtAbsEtaBinsHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < idStr.size(); ++i){
+    if(idStr.at(i).size() != inCutProp.GetIdStr().at(i).size()) return false;
+    if(idStr.at(i).find(inCutProp.GetIdStr().at(i)) == std::string::npos) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfCHMFCutLow.size(); ++i){
+    if(jtPfCHMFCutLow.at(i) - delta > inCutProp.GetJtPfCHMFCutLow().at(i)) return false;
+    if(jtPfCHMFCutLow.at(i) + delta < inCutProp.GetJtPfCHMFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfCHMFCutHi.size(); ++i){
+    if(jtPfCHMFCutHi.at(i) - delta > inCutProp.GetJtPfCHMFCutHi().at(i)) return false;
+    if(jtPfCHMFCutHi.at(i) + delta < inCutProp.GetJtPfCHMFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMUMFCutLow.size(); ++i){
+    if(jtPfMUMFCutLow.at(i) - delta > inCutProp.GetJtPfMUMFCutLow().at(i)) return false;
+    if(jtPfMUMFCutLow.at(i) + delta < inCutProp.GetJtPfMUMFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMUMFCutHi.size(); ++i){
+    if(jtPfMUMFCutHi.at(i) - delta > inCutProp.GetJtPfMUMFCutHi().at(i)) return false;
+    if(jtPfMUMFCutHi.at(i) + delta < inCutProp.GetJtPfMUMFCutHi().at(i)) return false;
+  }
+
+  if(doBothMCOrBothData){
+    if(nPthats != inCutProp.GetNPthats()) return false;
+    if(pthats.size() != inCutProp.GetPthats().size()) return false;
+    if(pthatWeights.size() != inCutProp.GetPthatWeights().size()) return false;
+
+    for(unsigned int i = 0; i < pthats.size(); ++i){
+      if(pthats.at(i) - delta > inCutProp.GetPthats().at(i)) return false;
+      if(pthats.at(i) + delta < inCutProp.GetPthats().at(i)) return false;
+    }
+
+    for(unsigned int i = 0; i < pthatWeights.size(); ++i){
+      if(pthatWeights.at(i) - delta > inCutProp.GetPthatWeights().at(i)) return false;
+      if(pthatWeights.at(i) + delta < inCutProp.GetPthatWeights().at(i)) return false;
+    }
+  }
+
+  if(doBothPPOrBothPbPb){
+    if(isPP != inCutProp.GetIsPP()) return false;
+    if(nCentBins != inCutProp.GetNCentBins()) return false;
+    if(centBinsLow.size() != inCutProp.GetCentBinsLow().size()) return false;
+    if(centBinsHi.size() != inCutProp.GetCentBinsHi().size()) return false;
+
+    for(unsigned int i = 0; i < centBinsLow.size(); ++i){
+      if(centBinsLow.at(i) != inCutProp.GetCentBinsLow().at(i)) return false;
+    }
+    
+    for(unsigned int i = 0; i < centBinsHi.size(); ++i){
+      if(centBinsHi.at(i) != inCutProp.GetCentBinsHi().at(i)) return false;
+    }    
+  }
 
   return true;
 }
