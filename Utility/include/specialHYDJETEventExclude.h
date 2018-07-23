@@ -24,15 +24,19 @@ class specialHYDJETEventExclude
   Float_t leadingGenJtEta[nEvtToExclude] = {-0.222331, -0.697133, 0.7997897, -1.317555, 0.0763501, -0.214549, -0.992048, -0.620375, 1.3119092, -1.020294, -0.953381, -0.523874, 1.4934288, -0.163160};
   Float_t subleadingGenJtEta[nEvtToExclude] = {-0.346403, -1.855122, 0.8341307, -2.253091, 1.0136429, 0.0162385, -0.787025, -0.361022, -0.073839, 2.7714095, 1.4386611, -0.764248, -1.910048, -1.704711};
   Int_t excluded[nEvtToExclude] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  Int_t entries[nEvtToExclude] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  Int_t runs[nEvtToExclude] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  Int_t lumis[nEvtToExclude] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  Int_t evts[nEvtToExclude] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
   double deltaVal = 0.01;
 
-  bool CheckEventBadJet(const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[]);
+  bool CheckEventBadJet(const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[], Int_t entry, Int_t run, Int_t lumi, Int_t evt);
   void PrintExcludedNumbers();
   int TotalExcludedNumbers();
 };
 
-bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[])
+bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[], Int_t entry, Int_t run = -1, Int_t lumi = -1, Int_t evt = -1)
 {
   bool isLeadFound = false;
   bool isSubleadFound = false;
@@ -56,6 +60,10 @@ bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[]
 
     if(isLeadFound && isSubleadFound){
       excluded[j] += 1;
+      if(entries[j] < 0) entries[j] = entry;
+      if(runs[j] < 0) runs[j] = run;
+      if(lumis[j] < 0) lumis[j] = lumi;
+      if(evts[j] < 0) evts[j] = evt;
       break;
     }
     else{
@@ -73,7 +81,7 @@ void specialHYDJETEventExclude::PrintExcludedNumbers()
   Int_t total = 0;
   std::cout << "Events excluded per jet:" << std::endl;
   for(Int_t i = 0; i < nEvtToExclude; ++i){
-    std::cout << " Leading Jet p_{T} " << leadingGenJtPt[i] << ": " << excluded[i] << std::endl;
+    std::cout << " Leading Jet p_{T} " << leadingGenJtPt[i] << ": " << excluded[i] << " (Entry == " << entries[i] << "), " << runs[i] << ":" << lumis[i] << ":" << evts[i] << std::endl;
     total += excluded[i];
   }
   std::cout << "Total: " << total << std::endl;

@@ -1,14 +1,20 @@
+//cpp dependencies
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <vector>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
 #include "TDatime.h"
 #include "TDirectory.h"
 
+//Local dependencies
+#include "MainAnalysis/include/cutPropagator.h"
+
+//Non-local FullJR dependencies (Utility, etc.)
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/plotUtilities.h"
@@ -29,28 +35,32 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
   }
 
-  Int_t nCentBinsTemp = -1;
-  std::vector<Int_t> centBinsLow;
-  std::vector<Int_t> centBinsHi;
+  cutPropagator cutProp;
+  cutProp.Clean();
+  cutProp.GetAllVarFromFile(responseFile_p);
+  Int_t nCentBinsTemp = cutProp.GetNCentBins();
+  std::vector<Int_t> centBinsLow = cutProp.GetCentBinsLow();
+  std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
-  Float_t jtAbsEtaMaxTemp = -99.;
+  Float_t jtAbsEtaMaxTemp = cutProp.GetJtAbsEtaMax();
 
-  Int_t nJtPtBinsTemp = -1;
-  std::vector<Double_t> jtPtBinsTemp;
+  Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
+  std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
 
-  Int_t nJtAbsEtaBinsTemp = -1;
-  std::vector<Double_t> jtAbsEtaBinsLowTemp;
-  std::vector<Double_t> jtAbsEtaBinsHiTemp;
+  Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
+  std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
+  std::vector<Double_t> jtAbsEtaBinsHiTemp = cutProp.GetJtAbsEtaBinsHi();
 
-  bool isResponsePP = false;
+  bool isResponsePP = cutProp.GetIsPP();
 
-  Int_t nIDTemp = -1;
-  std::vector<std::string> idStr;
-  std::vector<double> jtPfCHMFCutLow;
-  std::vector<double> jtPfCHMFCutHi;
-  std::vector<double> jtPfMUMFCutLow;
-  std::vector<double> jtPfMUMFCutHi;
+  Int_t nIDTemp = cutProp.GetNID();
+  std::vector<std::string> idStr = cutProp.GetIdStr();
+  std::vector<double> jtPfCHMFCutLow = cutProp.GetJtPfCHMFCutLow();
+  std::vector<double> jtPfCHMFCutHi = cutProp.GetJtPfCHMFCutHi();
+  std::vector<double> jtPfMUMFCutLow = cutProp.GetJtPfMUMFCutLow();
+  std::vector<double> jtPfMUMFCutHi = cutProp.GetJtPfMUMFCutHi();
 
+  /*
   std::cout << "Using cuts: " << std::endl;
   for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
     std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
@@ -145,6 +155,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       if(tempStr2.size() != 0) jtPfMUMFCutHi.push_back(std::stod(tempStr2));
     }
   }
+  */
 
   if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;

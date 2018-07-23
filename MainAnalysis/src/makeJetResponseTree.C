@@ -486,7 +486,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	if(centPos < 0) continue;
       }
     
-      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4]);
+      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4], entry);
       if(badJetSpecialSel) continue;
 
       Double_t pthatWeight_ = -1;

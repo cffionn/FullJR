@@ -134,12 +134,20 @@ int checkGenHydSpectra(const std::string inName)
       jetTrees_p[jI] = (TTree*)inFile_p->Get(jetAlgos.at(jI).c_str());
     }
 
+    unsigned int run_, lumi_;
+    unsigned long long evt_;
     Int_t hiBin_;
     
     hiTree_p->SetBranchStatus("*", 0);
     hiTree_p->SetBranchStatus("hiBin", 1);
+    hiTree_p->SetBranchStatus("run", 1);
+    hiTree_p->SetBranchStatus("lumi", 1);
+    hiTree_p->SetBranchStatus("evt", 1);
 
     hiTree_p->SetBranchAddress("hiBin", &hiBin_);
+    hiTree_p->SetBranchAddress("run", &run_);
+    hiTree_p->SetBranchAddress("lumi", &lumi_);
+    hiTree_p->SetBranchAddress("evt", &evt_);
 
     const Int_t nMaxJets = 500;
     Int_t ngen_[nJetAlgos];
@@ -186,7 +194,7 @@ int checkGenHydSpectra(const std::string inName)
       
       ++totalEvt;
       
-      bool isBadEvent = specialSel.CheckEventBadJet(ngen_[r4Pos], genpt_[r4Pos], genphi_[r4Pos], geneta_[r4Pos], gensubid_[r4Pos]);
+      bool isBadEvent = specialSel.CheckEventBadJet(ngen_[r4Pos], genpt_[r4Pos], genphi_[r4Pos], geneta_[r4Pos], gensubid_[r4Pos], entry, run_, lumi_, evt_);
 
       Int_t subid = -1;
       Float_t leadingPt = -1;
@@ -200,7 +208,7 @@ int checkGenHydSpectra(const std::string inName)
 
 	  if(r4Pos == jI){
 	    if(gensubid_[jI][gI] != subid){
-	      if(!isBadEvent && leadingPt > 150 && subleadingPt < 50) std::cout << "Large asymm jet p_{T}: " << leadingPt << ", " << subleadingPt << ", " << subid << ", " << ", CORRECT, " << entry << std::endl;
+	      //	      if(!isBadEvent && leadingPt > 150 && subleadingPt < 50) std::cout << "Large asymm jet p_{T}: " << leadingPt << ", " << subleadingPt << ", " << subid << ", " << ", CORRECT, " << entry << std::endl;
 	      subid = gensubid_[jI][gI];
 	      leadingPt = genpt_[jI][gI];
 	      subleadingPt = -1;
@@ -224,7 +232,7 @@ int checkGenHydSpectra(const std::string inName)
 	}
       }
 
-      if(!isBadEvent && leadingPt > 150 && subleadingPt < 50) std::cout << "Large asymm jet p_{T} (END): " << leadingPt << ", " << subleadingPt << ", " << subid << ", " << entry << std::endl;
+      //      if(!isBadEvent && leadingPt > 150 && subleadingPt < 50) std::cout << "Large asymm jet p_{T} (END): " << leadingPt << ", " << subleadingPt << ", " << subid << ", " << entry << std::endl;
 
 
 

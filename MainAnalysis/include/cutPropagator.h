@@ -10,6 +10,8 @@
 #include "TDirectory.h"
 #include "TNamed.h"
 
+#include "Utility/include/returnRootFileContentsList.h"
+
 class cutPropagator
 {
  public:
@@ -37,6 +39,7 @@ class cutPropagator
   std::vector<double> jtPfMUMFCutLow;
   std::vector<double> jtPfMUMFCutHi;
 
+  void Clean();
   bool GetAllVarFromFile(TFile* inFile_p);
   bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p);
 
@@ -105,11 +108,141 @@ class cutPropagator
 };
 
 
+void cutPropagator::Clean()
+{
+  isPP = false;
+
+  jtAbsEtaMax = -99;
+  nJtPtBins = -1;
+  jtPtBins.clear();
+  nJtAbsEtaBins = -1;
+  jtAbsEtaBinsLow.clear();
+  jtAbsEtaBinsHi.clear();
+
+  nPthats = -1;
+  pthats.clear();
+  pthatWeights.clear();
+
+  nCentBins = -1;
+  centBinsLow.clear();
+  centBinsHi.clear();
+
+  nID = -1;
+  idStr.clear();
+  jtPfCHMFCutLow.clear();
+  jtPfCHMFCutHi.clear();
+  jtPfMUMFCutLow.clear();
+  jtPfMUMFCutHi.clear();
+
+  return;
+}
+
 bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
 {
-  TDirectory* cutDir_p = (TDirectory*)inFile_p->Get("cutDir");
-  
-  
+  inFile_p->cd();
+  std::vector<std::string> cutDirList = returnRootFileContentsList(inFile_p, "TNamed", "");
+  unsigned int pos = 0;
+  while(pos < cutDirList.size()){
+    if(cutDirList.at(pos).find("cutDir/") != std::string::npos) ++pos;
+    else cutDirList.erase(cutDirList.begin()+pos);
+  }
+
+  if(cutDirList.size() == 0){
+    std::cout << "cutPropagator::GetAllVarFromFile - given inFile_p \'" << inFile_p->GetName() << "\' contains no cutDir. return 1" << std::endl;
+    return false;
+  }
+
+  for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
+    std::string tempStr = cutDirList.at(cI);
+    while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
+
+    if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("centBinsLow") != std::string::npos && tempStr.size() == std::string("centBinsLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        centBinsLow.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) centBinsLow.push_back(std::stoi(tempStr2));
+    }
+    else if(tempStr.find("centBinsHi") != std::string::npos && tempStr.size() == std::string("centBinsHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        centBinsHi.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
+    }
+    else if(tempStr.find("jtAbsEtaMax") != std::string::npos && tempStr.size() == std::string("jtAbsEtaMax").size()) jtAbsEtaMax = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isPP = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPtBins.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPtBins.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtAbsEtaBinsLow") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtAbsEtaBinsLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtAbsEtaBinsHi") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtAbsEtaBinsHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtAbsEtaBinsHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("nID") != std::string::npos && tempStr.size() == std::string("nID").size()) nID = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("idStr") != std::string::npos && tempStr.size() == std::string("idStr").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        idStr.push_back(tempStr2.substr(0, tempStr2.find(",")));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) idStr.push_back(tempStr2);
+    }
+    else if(tempStr.find("jtPfCHMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHMFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCHMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfCHMFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHMFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUMFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUMFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUMFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUMFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfMUMFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUMFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUMFCutHi.push_back(std::stod(tempStr2));
+    }
+  }
 
   return true;
 }
