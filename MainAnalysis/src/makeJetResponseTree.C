@@ -188,8 +188,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Double_t jtAbsEtaBinsLow[nJtAbsEtaBins] = {0.0, 0.5, 1.0, 1.5, 0.0};
   const Double_t jtAbsEtaBinsHi[nJtAbsEtaBins] = {0.5, 1.0, 1.5, 2.0, 2.0};
 
+  /*
   const Int_t nJtPtBins = 10;
   const Double_t jtPtBins[nJtPtBins+1] = {100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 1100.};
+  */
+
+  const Int_t nJtPtBins = 8;
+  const Double_t jtPtBins[nJtPtBins+1] = {100., 150., 200., 250., 300., 400., 600., 1000., 2000.};
 
   const Int_t nID = 3;
   const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID"};
@@ -285,13 +290,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	    const std::string jtPtStr2 = prettyString(jtPtBins[jI], 1, false) + "< p_{T,Gen} <" + prettyString(jtPtBins[jI+1], 1, false);
 	    const std::string jtPtStr3 = prettyString(jtPtBins[jI], 1, false) + "< p_{T,Reco} <" + prettyString(jtPtBins[jI+1], 1, false);
 	  
-	    recoJtPtPerGenPtBin_h[dI][cI][iI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
+	    recoJtPtPerGenPtBin_h[dI][cI][iI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
 	    
-	    genJtPtPerRecoPtBin_h[dI][cI][iI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
+	    genJtPtPerRecoPtBin_h[dI][cI][iI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
 	    
-	    recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
+	    recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
 	    
-	    genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
+	    genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
 	    
 	    centerTitles({recoJtPtPerGenPtBin_h[dI][cI][iI][aI][jI], genJtPtPerRecoPtBin_h[dI][cI][iI][aI][jI], recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][aI][jI], genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][aI][jI]});
 	  }

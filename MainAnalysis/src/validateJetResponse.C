@@ -25,7 +25,7 @@
 #include "Utility/include/vanGoghPalette.h"
 
 
-int validateJetResponse(const std::string inResponseName)
+int validateJetResponse(const std::string inResponseName, const bool doParaFills)
 {
   if(!checkFile(inResponseName)){
     std::cout << "Given inResponseName \'" << inResponseName << "\' is invalid. return 1" << std::endl;
@@ -39,6 +39,15 @@ int validateJetResponse(const std::string inResponseName)
   for(unsigned int jI = 0; jI < jetDirList.size(); ++jI){
     std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
   }
+
+  std::string paraString = "";
+  Int_t nBayes = 1;
+  if(doParaFills){
+    paraString = "_ParaFills";
+    nBayes = 6;
+  }
+
+  
 
   cutPropagator cutProp;
   cutProp.Clean();
@@ -136,8 +145,8 @@ int validateJetResponse(const std::string inResponseName)
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
 	  RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)responseFile_p->Get((dirName + "/rooResponse_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_RecoTrunc_h").c_str());
-	  TH1D* recoJtPt_RecoTrunc_h = (TH1D*)responseFile_p->Get((dirName + "/recoJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_RecoTrunc_h").c_str());
-	  TH1D* genJtPt_h = (TH1D*)responseFile_p->Get((dirName + "/genJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str());
+	  TH1D* recoJtPt_RecoTrunc_h = (TH1D*)responseFile_p->Get((dirName + "/recoJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_RecoTrunc" + paraString + "_h").c_str());
+	  TH1D* genJtPt_h = (TH1D*)responseFile_p->Get((dirName + "/genJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + paraString + "_h").c_str());
 
 	  recoJtPt_RecoTrunc_h->GetXaxis()->SetTitleFont(43);
 	  recoJtPt_RecoTrunc_h->GetYaxis()->SetTitleFont(43);
@@ -158,123 +167,131 @@ int validateJetResponse(const std::string inResponseName)
 	  genJtPt_h->GetYaxis()->SetTitleSize(14);
 	  genJtPt_h->GetXaxis()->SetLabelSize(14);
 	  genJtPt_h->GetYaxis()->SetLabelSize(14);
-	  
-	  TCanvas* canv_p = new TCanvas("canv_p", "", 450*nX, 450*nY);
-	  canv_p->SetTopMargin(0.01);
-	  canv_p->SetBottomMargin(0.01);
-	  canv_p->SetLeftMargin(0.01);
-	  canv_p->SetRightMargin(0.01);
-	  
-	  gStyle->SetOptStat(0);
-	  	  
-	  TPad* pads_p[nPad];
-	  for(Int_t pI = 0; pI < nPad; ++pI){
-	    canv_p->cd();
-	    pads_p[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", padXLow[pI], padYLow[pI], padXHi[pI], padYHi[pI]);
-	    canv_p->cd();
-	    pads_p[pI]->Draw("SAME");
-	    gStyle->SetOptStat(0);
-	    pads_p[pI]->SetLeftMargin(leftMargin[pI]);
-	    pads_p[pI]->SetRightMargin(rightMargin[pI]);
-	    pads_p[pI]->SetTopMargin(topMargin[pI]);
-	    pads_p[pI]->SetBottomMargin(bottomMargin[pI]);
+
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    TCanvas* canv_p = new TCanvas("canv_p", "", 450*nX, 450*nY);
+	    canv_p->SetTopMargin(0.01);
+	    canv_p->SetBottomMargin(0.01);
+	    canv_p->SetLeftMargin(0.01);
+	    canv_p->SetRightMargin(0.01);
 	    
-	    std::cout << "Creating pad " << pI << "..." << std::endl;
-	    std::cout << " Dimensions: x " << padXLow[pI] << "-" << padXHi[pI] << ", y " << padYLow[pI] << "-" << padYHi[pI] << std::endl;
-	    std::cout << " Margins: left " << leftMargin[pI] << ", right " << rightMargin[pI] << ", top " << topMargin[pI] << ", bottom " << bottomMargin[pI] << std::endl;
-	  }
+	    gStyle->SetOptStat(0);
+	    
+	    TPad* pads_p[nPad];
+	    for(Int_t pI = 0; pI < nPad; ++pI){
+	      canv_p->cd();
+	      pads_p[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", padXLow[pI], padYLow[pI], padXHi[pI], padYHi[pI]);
+	      canv_p->cd();
+	      pads_p[pI]->Draw("SAME");
+	      gStyle->SetOptStat(0);
+	      pads_p[pI]->SetLeftMargin(leftMargin[pI]);
+	      pads_p[pI]->SetRightMargin(rightMargin[pI]);
+	      pads_p[pI]->SetTopMargin(topMargin[pI]);
+	      pads_p[pI]->SetBottomMargin(bottomMargin[pI]);
+	      
+	      std::cout << "Creating pad " << pI << "..." << std::endl;
+	      std::cout << " Dimensions: x " << padXLow[pI] << "-" << padXHi[pI] << ", y " << padYLow[pI] << "-" << padYHi[pI] << std::endl;
+	      std::cout << " Margins: left " << leftMargin[pI] << ", right " << rightMargin[pI] << ", top " << topMargin[pI] << ", bottom " << bottomMargin[pI] << std::endl;
+	    }
+	    
+	    canv_p->cd();
+	    pads_p[0]->cd();
+	    
+	    recoJtPt_RecoTrunc_h->SetMarkerColor(colors[0]);
+	    recoJtPt_RecoTrunc_h->SetLineColor(colors[0]);
+	    recoJtPt_RecoTrunc_h->SetMarkerStyle(styles[0]);
+	    recoJtPt_RecoTrunc_h->SetMarkerSize(0.8);
+	    
+	    genJtPt_h->SetMarkerColor(colors[1]);
+	    genJtPt_h->SetLineColor(colors[1]);
+	    genJtPt_h->SetMarkerStyle(styles[1]);
+	    genJtPt_h->SetMarkerSize(0.8);
+	    
+	    recoJtPt_RecoTrunc_h->GetXaxis()->SetNdivisions(505);
+	    recoJtPt_RecoTrunc_h->GetYaxis()->SetNdivisions(505);
+	    
 	  
-	  canv_p->cd();
-	  pads_p[0]->cd();
+	    Double_t maxVal = 0.0;
+	    Double_t minVal = 999999.;
+	    
+	    for(Int_t bI = 0; bI < recoJtPt_RecoTrunc_h->GetNbinsX(); ++bI){
+	      if(recoJtPt_RecoTrunc_h->GetBinContent(bI+1) > maxVal) maxVal = recoJtPt_RecoTrunc_h->GetBinContent(bI+1);
+	      if(genJtPt_h->GetBinContent(bI+1) > maxVal) maxVal = genJtPt_h->GetBinContent(bI+1);
+	      
+	      if(recoJtPt_RecoTrunc_h->GetBinContent(bI+1) < minVal && recoJtPt_RecoTrunc_h->GetBinContent(bI+1) > 0) minVal = recoJtPt_RecoTrunc_h->GetBinContent(bI+1);
+	      if(genJtPt_h->GetBinContent(bI+1) < minVal && genJtPt_h->GetBinContent(bI+1) > 0) minVal = genJtPt_h->GetBinContent(bI+1);
+	    }
 	  
-	  recoJtPt_RecoTrunc_h->SetMarkerColor(colors[0]);
-	  recoJtPt_RecoTrunc_h->SetLineColor(colors[0]);
-	  recoJtPt_RecoTrunc_h->SetMarkerStyle(styles[0]);
-	  recoJtPt_RecoTrunc_h->SetMarkerSize(0.8);
-	  
-	  genJtPt_h->SetMarkerColor(colors[1]);
-	  genJtPt_h->SetLineColor(colors[1]);
-	  genJtPt_h->SetMarkerStyle(styles[1]);
-	  genJtPt_h->SetMarkerSize(0.8);
+	    maxVal *= 5.;
+	    minVal /= 5.;
+	    
+	    recoJtPt_RecoTrunc_h->SetMaximum(maxVal);
+	    recoJtPt_RecoTrunc_h->SetMinimum(minVal);
+	    
+	    bool doLogX = false;
+	    if(recoJtPt_RecoTrunc_h->GetBinWidth(1)*3 < recoJtPt_RecoTrunc_h->GetBinWidth(recoJtPt_RecoTrunc_h->GetNbinsX()-1)) doLogX = true;
 
-	  recoJtPt_RecoTrunc_h->GetXaxis()->SetNdivisions(505);
-	  recoJtPt_RecoTrunc_h->GetYaxis()->SetNdivisions(505);
-	  
-	  
-	  Double_t maxVal = 0.0;
-	  Double_t minVal = 999999.;
-	  
-	  for(Int_t bI = 0; bI < recoJtPt_RecoTrunc_h->GetNbinsX(); ++bI){
-	    if(recoJtPt_RecoTrunc_h->GetBinContent(bI+1) > maxVal) maxVal = recoJtPt_RecoTrunc_h->GetBinContent(bI+1);
-	    if(genJtPt_h->GetBinContent(bI+1) > maxVal) maxVal = genJtPt_h->GetBinContent(bI+1);
+	    recoJtPt_RecoTrunc_h->DrawCopy("HIST E1 P");
+	    genJtPt_h->DrawCopy("HIST E1 P SAME");
+	    
+	    gPad->SetLogy();
+	    if(doLogX) gPad->SetLogx();
 
-	    if(recoJtPt_RecoTrunc_h->GetBinContent(bI+1) < minVal && recoJtPt_RecoTrunc_h->GetBinContent(bI+1) > 0) minVal = recoJtPt_RecoTrunc_h->GetBinContent(bI+1);
-	    if(genJtPt_h->GetBinContent(bI+1) < minVal && genJtPt_h->GetBinContent(bI+1) > 0) minVal = genJtPt_h->GetBinContent(bI+1);
-	  }
+	    canv_p->cd();
+	    pads_p[1]->cd();
+	    
+	    RooUnfoldBayes bayes(rooRes_p, recoJtPt_RecoTrunc_h, 1+bI, false, "name");
+	    bayes.SetVerbose(0);
 	  
-	  maxVal *= 5.;
-	  minVal /= 5.;
+	    TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);
 	  
-	  recoJtPt_RecoTrunc_h->SetMaximum(maxVal);
-	  recoJtPt_RecoTrunc_h->SetMinimum(minVal);
-	  
-	  recoJtPt_RecoTrunc_h->DrawCopy("HIST E1 P");
-	  genJtPt_h->DrawCopy("HIST E1 P SAME");
-	  
-	  gPad->SetLogy();
-	  
-	  canv_p->cd();
-	  pads_p[1]->cd();
-	  
-	  RooUnfoldBayes bayes(rooRes_p, recoJtPt_RecoTrunc_h, 1, false, "name");
-	  bayes.SetVerbose(0);
-	  
-	  TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);
-	  
-	  unfold_h->SetMarkerColor(colors[2]);
-	  unfold_h->SetLineColor(colors[2]);
-	  unfold_h->SetMarkerStyle(styles[2]);
-	  unfold_h->SetMarkerSize(0.8);
-	  
-	  unfold_h->GetXaxis()->SetNdivisions(505);
-	  unfold_h->GetYaxis()->SetNdivisions(505);
-	  centerTitles(unfold_h);
-	  setSumW2(unfold_h);
-	  unfold_h->SetTitle("");
-	  
-	  unfold_h->GetXaxis()->SetTitleFont(43);
-	  unfold_h->GetYaxis()->SetTitleFont(43);
-	  unfold_h->GetXaxis()->SetLabelFont(43);
-	  unfold_h->GetYaxis()->SetLabelFont(43);
-	  
-	  unfold_h->GetXaxis()->SetTitleSize(14);
-	  unfold_h->GetYaxis()->SetTitleSize(14);
-	  unfold_h->GetXaxis()->SetLabelSize(14);
-	  unfold_h->GetYaxis()->SetLabelSize(14);
-	  
-	  unfold_h->SetMaximum(maxVal);
-	  unfold_h->SetMinimum(minVal);
-	  
-	  unfold_h->DrawCopy("HIST E1 P");
-	  genJtPt_h->DrawCopy("HIST E1 P SAME");
-	  
-	  gPad->SetLogy();
-	  
-	  canv_p->cd();
-	  pads_p[2]->cd();
-	  
-	  unfold_h->Divide(genJtPt_h);
-	  unfold_h->SetMaximum(1.25);
-	  unfold_h->SetMinimum(0.75);
-	  unfold_h->DrawCopy("HIST E1 P");
-	  
-	  canv_p->SaveAs(("pdfDir/" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
-	  
-	  for(Int_t pI = 0; pI < nPad; ++pI){
-	    delete pads_p[pI];
-	  }
+	    unfold_h->SetMarkerColor(colors[2]);
+	    unfold_h->SetLineColor(colors[2]);
+	    unfold_h->SetMarkerStyle(styles[2]);
+	    unfold_h->SetMarkerSize(0.8);
+	    
+	    unfold_h->GetXaxis()->SetNdivisions(505);
+	    unfold_h->GetYaxis()->SetNdivisions(505);
+	    centerTitles(unfold_h);
+	    setSumW2(unfold_h);
+	    unfold_h->SetTitle("");
+	    
+	    unfold_h->GetXaxis()->SetTitleFont(43);
+	    unfold_h->GetYaxis()->SetTitleFont(43);
+	    unfold_h->GetXaxis()->SetLabelFont(43);
+	    unfold_h->GetYaxis()->SetLabelFont(43);
+	    
+	    unfold_h->GetXaxis()->SetTitleSize(14);
+	    unfold_h->GetYaxis()->SetTitleSize(14);
+	    unfold_h->GetXaxis()->SetLabelSize(14);
+	    unfold_h->GetYaxis()->SetLabelSize(14);
+	    
+	    unfold_h->SetMaximum(maxVal);
+	    unfold_h->SetMinimum(minVal);
+	    
+	    unfold_h->DrawCopy("HIST E1 P");
+	    genJtPt_h->DrawCopy("HIST E1 P SAME");
+	    
+	    gPad->SetLogy();
+	    if(doLogX) gPad->SetLogx();
 
-	  delete canv_p;
+	    canv_p->cd();
+	    pads_p[2]->cd();
+	    
+	    unfold_h->Divide(genJtPt_h);
+	    unfold_h->SetMaximum(1.25);
+	    unfold_h->SetMinimum(0.75);
+	    unfold_h->DrawCopy("HIST E1 P");
+	    if(doLogX) gPad->SetLogx();
+
+	    canv_p->SaveAs(("pdfDir/" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_Bayes" + std::to_string(bI+1) + paraString + "_" + dateStr + ".pdf").c_str());
+	  
+	    for(Int_t pI = 0; pI < nPad; ++pI){
+	      delete pads_p[pI];
+	    }
+	    
+	    delete canv_p;
+	  }
 	}
       }
     }
@@ -294,6 +311,7 @@ int main(int argc, char* argv[])
   }
 
   int retVal = 0;
-  retVal += validateJetResponse(argv[1]);
+  retVal += validateJetResponse(argv[1], false);
+  retVal += validateJetResponse(argv[1], true);
   return retVal;
 }
