@@ -742,6 +742,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
   cutProp.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
   cutProp.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
+  cutProp.SetNPthats(pthats.size());
   cutProp.SetPthats(pthats);
   cutProp.SetPthatWeights(pthatWeights);
   cutProp.SetNCentBins(nCentBins);

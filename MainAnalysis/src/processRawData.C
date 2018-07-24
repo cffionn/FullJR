@@ -28,7 +28,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> jetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
-  std::vector<std::string> cutDirList = returnRootFileContentsList(responseFile_p, "TNamed", "");
 
   std::cout << "Validating " << jetDirList.size() << " jets..." << std::endl;
   for(unsigned int jI = 0; jI < jetDirList.size(); ++jI){
@@ -196,7 +195,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     std::cout << " " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      std::string centStr = "PP";
+      if(!isDataPP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
       
       for(Int_t idI = 0; idI < nID; ++idI){
 	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
@@ -409,7 +409,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
 
-
   cutPropagator cutPropOut;
   cutPropOut.Clean();
   cutPropOut.SetIsPP(isDataPP);
@@ -419,6 +418,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetNJtAbsEtaBins(nJtAbsEtaBins);
   cutPropOut.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
   cutPropOut.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
+  cutPropOut.SetNPthats(0);
   cutPropOut.SetPthats({});
   cutPropOut.SetPthatWeights({});
   cutPropOut.SetNCentBins(nCentBins);
