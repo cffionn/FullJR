@@ -471,7 +471,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
     }
 
-    const Int_t nEntries = jetTrees_p[0]->GetEntries();
+    const Int_t nEntries = TMath::Min((Int_t)10000000, (Int_t)jetTrees_p[0]->GetEntries());
     const Int_t printInterval = TMath::Max(1, nEntries/20);
 
     for(Int_t entry = 0; entry < nEntries; ++entry){
@@ -659,6 +659,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     inFile_p = NULL;
   }
 
+  //std::cout << __LINE__ << std::endl;
+
   outFile_p->cd();
   generalDir_p->cd();
   pthat_h->Write("", TObject::kOverwrite);
@@ -674,6 +676,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     centralityFullRatio_h->Divide(centralityFullWeighted_h, centralityWeighted_h);
     centralityFullRatio_h->Write("", TObject::kOverwrite);
   }
+
+  //std::cout << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     outFile_p->cd();
@@ -707,6 +711,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     }
   }
 
+  //std::cout << __LINE__ << std::endl;
+
   delete pthat_h;
   delete pthatWeighted_h;
   delete pthatFullWeighted_h;
@@ -718,6 +724,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     delete centralityFullWeighted_h;
     delete centralityFullRatio_h;
   }
+
+  //std::cout << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -752,6 +760,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
 
+  //std::cout << __LINE__ << std::endl;
+
   cutPropagator cutProp;
   cutProp.SetIsPP(isPP);
   cutProp.SetJtAbsEtaMax(jtAbsEtaMax);
@@ -772,11 +782,29 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetJtPfCHMFCutHi(nID, jtPfCHMFCutHi);
   cutProp.SetJtPfMUMFCutLow(nID, jtPfMUMFCutLow);
   cutProp.SetJtPfMUMFCutHi(nID, jtPfMUMFCutHi);
+  cutProp.SetJtPfNHFCutLow(nID, jtPfNHFCutLow);
+  cutProp.SetJtPfNHFCutHi(nID, jtPfNHFCutHi);
+  cutProp.SetJtPfNEFCutLow(nID, jtPfNEFCutLow);
+  cutProp.SetJtPfNEFCutHi(nID, jtPfNEFCutHi);
+  cutProp.SetJtPfMUFCutLow(nID, jtPfMUFCutLow);
+  cutProp.SetJtPfMUFCutHi(nID, jtPfMUFCutHi);
+  cutProp.SetJtPfCHFCutLow(nID, jtPfCHFCutLow);
+  cutProp.SetJtPfCHFCutHi(nID, jtPfCHFCutHi);
+  cutProp.SetJtPfCEFCutLow(nID, jtPfCEFCutLow);
+  cutProp.SetJtPfCEFCutHi(nID, jtPfCEFCutHi);
+  cutProp.SetJtPfMinMult(nID, jtPfMinMult);
+  cutProp.SetJtPfMinChgMult(nID, jtPfMinChgMult);
+
+  //std::cout << __LINE__ << std::endl;
 
   if(!cutProp.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
+  //std::cout << __LINE__ << std::endl;
+
   outFile_p->Close();
   delete outFile_p;
+
+  //std::cout << __LINE__ << std::endl;
 
   delete randGen_p;
 

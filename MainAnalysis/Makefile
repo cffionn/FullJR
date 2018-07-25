@@ -16,7 +16,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/deriveDijetWeights.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -48,8 +48,14 @@ bin/makeMuonFakeCheck.exe: src/makeMuonFakeCheck.C
 bin/checkGoodJetBadJetPF.exe: src/checkGoodJetBadJetPF.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkGoodJetBadJetPF.exe src/checkGoodJetBadJetPF.C
 
+bin/checkGenHydSpectra.exe: src/checkGenHydSpectra.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkGenHydSpectra.exe src/checkGenHydSpectra.C
+
 bin/processRawData.exe: src/processRawData.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/processRawData.exe src/processRawData.C
+
+bin/unfoldRawData.exe: src/unfoldRawData.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldRawData.exe src/unfoldRawData.C
 
 bin/deriveDijetWeights.exe: src/deriveDijetWeights.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe src/deriveDijetWeights.C

@@ -20,6 +20,7 @@
 #include "MainAnalysis/include/cutPropagator.h"
 
 //Non-local FullJR dependencies (Utility, etc.)
+#include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/mntToXRootdFileString.h"
@@ -35,10 +36,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   delete date;
 
   vanGoghPalette vg;
-  const Int_t nStyles = 3;
-  const Int_t styles[nStyles] = {20, 21, 34};
-  const Int_t colors[nStyles] = {1, vg.getColor(0), vg.getColor(1)};
-  const Double_t yPadFrac = 0.35;
+  const Int_t nStyles = 5;
+  const Int_t styles[nStyles] = {21, 20, 34, 33, 25};
+  const Int_t colors[nStyles] = {1, vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(3)};
+  const Double_t yPadFrac = 0.4;
+  const Double_t marg = 0.12;
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> jetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
@@ -72,6 +74,18 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<double> jtPfCHMFCutHi = cutProp.GetJtPfCHMFCutHi();
   std::vector<double> jtPfMUMFCutLow = cutProp.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutProp.GetJtPfMUMFCutHi();
+  std::vector<double> jtPfNHFCutLow = cutProp.GetJtPfNHFCutLow();
+  std::vector<double> jtPfNHFCutHi = cutProp.GetJtPfNHFCutHi();
+  std::vector<double> jtPfNEFCutLow = cutProp.GetJtPfNEFCutLow();
+  std::vector<double> jtPfNEFCutHi = cutProp.GetJtPfNEFCutHi();
+  std::vector<double> jtPfMUFCutLow = cutProp.GetJtPfMUFCutLow();
+  std::vector<double> jtPfMUFCutHi = cutProp.GetJtPfMUFCutHi();
+  std::vector<double> jtPfCHFCutLow = cutProp.GetJtPfCHFCutLow();
+  std::vector<double> jtPfCHFCutHi = cutProp.GetJtPfCHFCutHi();
+  std::vector<double> jtPfCEFCutLow = cutProp.GetJtPfCEFCutLow();
+  std::vector<double> jtPfCEFCutHi = cutProp.GetJtPfCEFCutHi();
+  std::vector<int> jtPfMinMult = cutProp.GetJtPfMinMult();
+  std::vector<int> jtPfMinChgMult = cutProp.GetJtPfMinChgMult();
 
   if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;
@@ -202,6 +216,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TH1D* jtPtRaw_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
   TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
+  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
+  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
+  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
+
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
     tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
@@ -217,6 +235,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	  jtPtRaw_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
 	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+
+	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
+	    const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jIter], 1, true) + "to" + prettyString(jtPtBins[jIter+1], 1, true);
+
+	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
+	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Fail_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
+
+	    setSumW2({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
+	    centerTitles({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
+	  }
 
 	  setSumW2({jtPtRaw_h[jI][cI][idI][aI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]});
 	  centerTitles({jtPtRaw_h[jI][cI][idI][aI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]});
@@ -241,6 +270,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   Float_t jtphi_[nDataJet][nMaxJet];
   Float_t jtPfCHMF_[nDataJet][nMaxJet];
   Float_t jtPfMUMF_[nDataJet][nMaxJet];
+  Float_t jtPfNHF_[nDataJet][nMaxJet];
+  Float_t jtPfNEF_[nDataJet][nMaxJet];
+  Float_t jtPfMUF_[nDataJet][nMaxJet];
+  Float_t jtPfCHF_[nDataJet][nMaxJet];
+  Float_t jtPfCEF_[nDataJet][nMaxJet];
+  Int_t jtPfNHM_[nDataJet][nMaxJet];
+  Int_t jtPfNEM_[nDataJet][nMaxJet];
+  Int_t jtPfMUM_[nDataJet][nMaxJet];
+  Int_t jtPfCHM_[nDataJet][nMaxJet];
+  Int_t jtPfCEM_[nDataJet][nMaxJet];
 
   Float_t vz_;
   Float_t hiHF_;
@@ -276,6 +315,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       jetTrees_p[jI]->SetBranchStatus("jteta", 1);
       jetTrees_p[jI]->SetBranchStatus("jtPfCHMF", 1);
       jetTrees_p[jI]->SetBranchStatus("jtPfMUMF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfNHF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfNEF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfMUF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfCHF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfCEF", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfNHM", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfNEM", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfMUM", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfCHM", 1);
+      jetTrees_p[jI]->SetBranchStatus("jtPfCEM", 1);
 
       jetTrees_p[jI]->SetBranchAddress("nref", &(nref_[jI]));
       jetTrees_p[jI]->SetBranchAddress("jtpt", jtpt_[jI]);
@@ -283,6 +332,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       jetTrees_p[jI]->SetBranchAddress("jteta", jteta_[jI]);
       jetTrees_p[jI]->SetBranchAddress("jtPfCHMF", jtPfCHMF_[jI]);
       jetTrees_p[jI]->SetBranchAddress("jtPfMUMF", jtPfMUMF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfNHF", jtPfNHF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfNEF", jtPfNEF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfMUF", jtPfMUF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfCHF", jtPfCHF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfCEF", jtPfCEF_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfNHM", jtPfNHM_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfNEM", jtPfNEM_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfMUM", jtPfMUM_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfCHM", jtPfCHM_[jI]);
+      jetTrees_p[jI]->SetBranchAddress("jtPfCEM", jtPfCEM_[jI]);
     }
     
     hiTree_p->SetBranchStatus("*", 0);
@@ -356,6 +415,52 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       
 
       for(Int_t tI = 0; tI < nDataJet; ++tI){
+	Double_t tempLeadingPt_ = -999;
+	Double_t tempLeadingPhi_ = -999;
+	std::vector<Double_t> tempSubleadingPt_;
+	std::vector<Double_t> tempSubleadingPhi_;
+	Int_t tempLeadingPos_ = -1;
+	Int_t tempLeadingFillPos_ = -1;
+
+	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
+
+	  if(jtpt_[tI][jI] > tempLeadingPt_){
+	    tempLeadingPt_ = jtpt_[tI][jI];
+	    tempLeadingPhi_ = jtphi_[tI][jI];
+	    tempLeadingPos_ = jI;
+	  }
+	}
+
+	if(tempLeadingPt_ > jtPtBins[0]){
+	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+	    if(jtPtBins[jI] <= tempLeadingPt_ && tempLeadingPt_ < jtPtBins[jI+1]){
+	      tempLeadingFillPos_ = jI;
+	      break;
+	    }
+	  }
+	  if(tempLeadingFillPos_ < 0) tempLeadingFillPos_ = nJtPtBins-1;
+
+	  for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	    if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
+	    if(TMath::Abs(getDPHI(tempLeadingPhi_, jtphi_[tI][jI])) < 5.*TMath::Pi()/8.) continue;
+
+	    tempSubleadingPt_.push_back(jtpt_[tI][jI]);
+	    tempSubleadingPhi_.push_back(jtphi_[tI][jI]);
+	  }
+
+	  if(tempSubleadingPt_.size() == 0){
+	    tempSubleadingPt_.push_back(30.);
+	    if(tempLeadingPhi_ > 0) tempSubleadingPhi_.push_back(tempLeadingPhi_ - TMath::Pi());
+	    else tempSubleadingPhi_.push_back(tempLeadingPhi_ + TMath::Pi());
+	  }
+	}
+	else tempLeadingPos_ = -1;
+
+	Int_t leadID[nID];
+	for(Int_t idI = 0; idI < nID; ++idI){
+	  leadID[idI] = false;
+	}
 
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
@@ -373,14 +478,37 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  */
 
 	  std::vector<int> idPoses;
+	  //	  bool passesLast = false;
+
 	  for(Int_t idI = 0; idI < nID; ++idI){
 	    if(jtPfCHMFCutLow.at(idI) > jtPfCHMF_[tI][jI]) continue;
-	    if(jtPfCHMFCutHi.at(idI) <= jtPfCHMF_[tI][jI]) continue;
+	    if(jtPfCHMFCutHi.at(idI) < jtPfCHMF_[tI][jI]) continue;
 	    if(jtPfMUMFCutLow.at(idI) > jtPfMUMF_[tI][jI]) continue;
-	    if(jtPfMUMFCutHi.at(idI) <= jtPfMUMF_[tI][jI]) continue;
+	    if(jtPfMUMFCutHi.at(idI) < jtPfMUMF_[tI][jI]) continue;
+            if(jtPfNHF_[tI][jI] < jtPfNHFCutLow.at(idI)) continue;
+            if(jtPfNHF_[tI][jI] > jtPfNHFCutHi.at(idI)) continue;
+            if(jtPfNEF_[tI][jI] < jtPfNEFCutLow.at(idI)) continue;
+            if(jtPfNEF_[tI][jI] > jtPfNEFCutHi.at(idI)) continue;
+            if(jtPfMUF_[tI][jI] < jtPfMUFCutLow.at(idI)) continue;
+            if(jtPfMUF_[tI][jI] > jtPfMUFCutHi.at(idI)) continue;
+            if(jtPfCHF_[tI][jI] < jtPfCHFCutLow.at(idI)) continue;
+            if(jtPfCHF_[tI][jI] > jtPfCHFCutHi.at(idI)) continue;
+            if(jtPfCEF_[tI][jI] < jtPfCEFCutLow.at(idI)) continue;
+            if(jtPfCEF_[tI][jI] > jtPfCEFCutHi.at(idI)) continue;
+
+            if(jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] < jtPfMinMult.at(idI)) continue;
+            if(jtPfCHM_[tI][jI] < jtPfMinChgMult.at(idI)) continue;
+
+	    //	    if(idI == nID-1) passesLast = true;
+
+	    if(tempLeadingPos_ == jI) leadID[idI] = true;
 
 	    idPoses.push_back(idI);
 	  }
+      
+	  //	  if(dataTreeList.at(tI).find("ak4PF") != std::string::npos && !passesLast && jtpt_[tI][jI] > 600.){
+	  //std::cout << "Jet fail: " << entry << ", " << jtpt_[tI][jI] << std::endl;
+	  //	  }
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
@@ -392,8 +520,30 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 		if(goodRecoTrunc) jtPtRaw_RecoTrunc_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
 	      }
 	    }
-	  }
 
+	    if(tempLeadingPos_ == jI){
+	      double axis = tempLeadingPhi_;
+	      if(axis > 0) axis -= TMath::Pi();
+	      else axis += TMath::Pi();
+	      double projSub = 0;
+	      for(unsigned int pI = 0; pI < tempSubleadingPt_.size(); ++pI){
+		projSub += tempSubleadingPt_.at(pI)*TMath::Cos(TMath::Abs(getDPHI(axis, tempSubleadingPhi_.at(pI))));
+	      }
+
+	      double aj = (tempLeadingPt_ - projSub)/(tempLeadingPt_ + projSub);
+
+	      for(Int_t idI = 0; idI < nID; ++idI){
+		multijetAJ_All_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
+		if(leadID[idI]) multijetAJ_Pass_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
+		else multijetAJ_Fail_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
+	      }
+	    
+	      if(aI == 0 && aj > 0.8 && leadID[nID-1] && dataTreeList.at(tI).find("ak4PF") != std::string::npos){
+		std::cout << "Jet fail: " << entry << ", " << tempLeadingPt_ << ", " << tempSubleadingPt_.size() << std::endl;
+		if(tempSubleadingPt_.size() != 0) std::cout << " " << tempSubleadingPt_.at(0) << std::endl;
+	      }	   
+	    }
+	  }      
 	}
       }
     }
@@ -423,26 +573,34 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	
 	TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
 	canv_p->SetTopMargin(0.01);
-	canv_p->SetRightMargin(0.01);
+	canv_p->SetRightMargin(0.002);
 	canv_p->SetLeftMargin(0.01);
 	canv_p->SetBottomMargin(0.01);
 	
-	TPad* pads[2];
+	TPad* pads[3];
 	canv_p->cd();
 	pads[0] = new TPad("pad0", "", 0.0, yPadFrac, 1.0, 1.0);
-	pads[0]->SetLeftMargin(0.12);
+	pads[0]->SetLeftMargin(marg);
 	pads[0]->SetTopMargin(0.01);
 	pads[0]->SetBottomMargin(0.001);
-	pads[0]->SetRightMargin(0.01);
+	pads[0]->SetRightMargin(0.002);
 	pads[0]->Draw();
 
 	canv_p->cd();
-	pads[1] = new TPad("pad1", "", 0.0, 0.0, 1.0, yPadFrac);
+	pads[1] = new TPad("pad1", "", 0.0, yPadFrac - (yPadFrac - marg)/2., 1.0, yPadFrac);
 	pads[1]->Draw();
-	pads[1]->SetLeftMargin(0.12);
+	pads[1]->SetLeftMargin(marg);
 	pads[1]->SetTopMargin(0.001);
-	pads[1]->SetBottomMargin(0.12/yPadFrac);
-	pads[1]->SetRightMargin(0.01);
+	pads[1]->SetBottomMargin(0.001);
+	pads[1]->SetRightMargin(0.002);
+
+	canv_p->cd();
+	pads[2] = new TPad("pad2", "", 0.0, 0.0, 1.0, yPadFrac - (yPadFrac - marg)/2.);
+	pads[2]->Draw();
+	pads[2]->SetLeftMargin(marg);
+	pads[2]->SetTopMargin(0.001);
+	pads[2]->SetBottomMargin(marg/(yPadFrac - (yPadFrac - marg)/2.));
+	pads[2]->SetRightMargin(0.002);
 
 	canv_p->cd();
 	pads[0]->cd();
@@ -499,7 +657,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  if(idI == 0) jtPtRaw_h[jI][cI][idI][aI]->DrawCopy("HIST E1 P");
 	  else jtPtRaw_h[jI][cI][idI][aI]->DrawCopy("HIST E1 P SAME");
 	}
-
+	
 	TLatex* label_p = new TLatex();
 	label_p->SetTextFont(43);
 	label_p->SetTextSize(14);
@@ -519,6 +677,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	gPad->SetLogy();
 	if(doLogX) gPad->SetLogx();
 	gStyle->SetOptStat(0);
+
+	gPad->SetTicks(1, 2);
+	gPad->RedrawAxis();
 
 	canv_p->cd();
 	pads[1]->cd();
@@ -545,16 +706,47 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
           if(idI == 1) clone_p->DrawCopy("HIST E1 P");
           else clone_p->DrawCopy("HIST E1 P SAME");
 
+
 	  delete clone_p;
         }
 
 	if(doLogX) gPad->SetLogx();
 	gStyle->SetOptStat(0);
 
+	gPad->SetTicks(1, 2);
+	gPad->RedrawAxis();
+
+
+	canv_p->cd();
+	pads[2]->cd();
+
+	for(Int_t idI = 1; idI < nID; ++idI){
+	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
+	  setSumW2(clone_p);
+	  centerTitles(clone_p);
+
+	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
+          clone_p->SetMaximum(1.02);
+          clone_p->SetMinimum(0.98);
+
+	  clone_p->GetYaxis()->SetTitle("Ratio (Zoom)");
+
+          if(idI == 1) clone_p->DrawCopy("HIST E1 P");
+          else clone_p->DrawCopy("HIST E1 P SAME");
+	  delete clone_p;
+        }
+
+	if(doLogX) gPad->SetLogx();
+	gStyle->SetOptStat(0);
+
+	gPad->SetTicks(1, 2);
+	gPad->RedrawAxis();
+
 	canv_p->SaveAs(("pdfDir/jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
 
 	delete pads[0];
 	delete pads[1];
+	delete pads[2];
 	delete canv_p;
 	delete leg_p;
       }
@@ -575,6 +767,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  
 	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
 	  delete jtPtRaw_RecoTrunc_h[jI][cI][idI][aI];
+
+	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
+	    multijetAJ_All_h[jI][cI][idI][aI][jIter]->Write("", TObject::kOverwrite);
+	    delete multijetAJ_All_h[jI][cI][idI][aI][jIter];
+	    
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter]->Write("", TObject::kOverwrite);
+	    delete multijetAJ_Pass_h[jI][cI][idI][aI][jIter];
+	    
+	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter]->Write("", TObject::kOverwrite);
+	    delete multijetAJ_Fail_h[jI][cI][idI][aI][jIter];
+	  }
 	}
       }
     }
@@ -604,6 +807,18 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetJtPfCHMFCutHi(jtPfCHMFCutHi);
   cutPropOut.SetJtPfMUMFCutLow(jtPfMUMFCutLow);
   cutPropOut.SetJtPfMUMFCutHi(jtPfMUMFCutHi);
+  cutPropOut.SetJtPfNHFCutLow(jtPfNHFCutLow);
+  cutPropOut.SetJtPfNHFCutHi(jtPfNHFCutHi);
+  cutPropOut.SetJtPfNEFCutLow(jtPfNEFCutLow);
+  cutPropOut.SetJtPfNEFCutHi(jtPfNEFCutHi);
+  cutPropOut.SetJtPfMUFCutLow(jtPfMUFCutLow);
+  cutPropOut.SetJtPfMUFCutHi(jtPfMUFCutHi);
+  cutPropOut.SetJtPfCHFCutLow(jtPfCHFCutLow);
+  cutPropOut.SetJtPfCHFCutHi(jtPfCHFCutHi);
+  cutPropOut.SetJtPfCEFCutLow(jtPfCEFCutLow);
+  cutPropOut.SetJtPfCEFCutHi(jtPfCEFCutHi);
+  cutPropOut.SetJtPfMinMult(jtPfMinMult);
+  cutPropOut.SetJtPfMinChgMult(jtPfMinChgMult);
 
   if(!cutPropOut.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
