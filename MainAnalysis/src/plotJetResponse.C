@@ -10,6 +10,9 @@
 #include "TDatime.h"
 #include "TStyle.h"
 
+//Local dependencies                                                                                                                             
+#include "MainAnalysis/include/cutPropagator.h"
+
 //Non-local FullJR (Utility, etc.) dependencies                                                                                                      
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/returnRootFileContentsList.h"
@@ -92,104 +95,44 @@ void getPadsXY(const Int_t nPlots, Int_t *nPadX, Int_t *nPadY)
 }
 
 
-int validateJetResponse(const std::string inFileName)
+int plotJetResponse(const std::string inResponseName)
 {
-  TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
-  std::vector<std::string> jetDirList = returnRootFileContentsList(inFile_p, "TDirectoryFile", "JetAnalyzer");
-  std::vector<std::string> cutDirList = returnRootFileContentsList(inFile_p, "TNamed", "");
+  TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
+  std::vector<std::string> jetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
 
   std::cout << "Validating " << jetDirList.size() << " jets..." << std::endl;
   for(unsigned int jI = 0; jI < jetDirList.size(); ++jI){
     std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
   }
 
-  Bool_t isPP = false;
+  cutPropagator cutProp;
+  cutProp.Clean();
+  cutProp.GetAllVarFromFile(responseFile_p); 
 
-  Int_t nCentBins = -1;
-  std::vector<Int_t> centBinsLow;
-  std::vector<Int_t> centBinsHi;
+  Bool_t isPP = cutProp.GetIsPP();
 
-  Int_t nJtPtBinsTemp = -1;
-  std::vector<Double_t> jtPtBinsTemp;
+  Int_t nCentBins = cutProp.GetNCentBins();
+  std::vector<Int_t> centBinsLow = cutProp.GetCentBinsLow();
+  std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
-  Int_t nJtAbsEtaBinsTemp = -1;
-  std::vector<Double_t> jtAbsEtaBinsLowTemp;
-  std::vector<Double_t> jtAbsEtaBinsHiTemp;
+  Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
+  std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
 
-  Int_t nIDTemp = -1;
-  std::vector<std::string> idStrTemp;
+  Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
+  std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
+  std::vector<Double_t> jtAbsEtaBinsHiTemp = cutProp.GetJtAbsEtaBinsHi();
 
-  std::cout << "Using cuts: " << std::endl;
-  for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
-    std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
-
-    std::string tempStr = cutDirList.at(cI);
-    while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
-
-    if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isPP = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("nCentBins") != std::string::npos && tempStr.size() == std::string("nCentBins").size()) nCentBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("centBinsLow") != std::string::npos && tempStr.size() == std::string("centBinsLow").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	centBinsLow.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) centBinsLow.push_back(std::stoi(tempStr2));
-    }
-    else if(tempStr.find("centBinsHi") != std::string::npos && tempStr.size() == std::string("centBinsHi").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	centBinsHi.push_back(std::stoi(tempStr2.substr(0, tempStr2.find(","))));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
-    }
-    else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBinsTemp = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBinsTemp = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	jtPtBinsTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtPtBinsTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtAbsEtaBinsLow") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsLow").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtAbsEtaBinsLowTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("jtAbsEtaBinsHi") != std::string::npos && tempStr.size() == std::string("jtAbsEtaBinsHi").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) jtAbsEtaBinsHiTemp.push_back(std::stod(tempStr2));
-    }
-    else if(tempStr.find("nID") != std::string::npos && tempStr.size() == std::string("nID").size()) nIDTemp = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(tempStr.find("idStr") != std::string::npos && tempStr.size() == std::string("idStr").size()){
-      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
-      while(tempStr2.find(",") != std::string::npos){
-	idStrTemp.push_back(tempStr2.substr(0, tempStr2.find(",")));
-	tempStr2.replace(0, tempStr2.find(",")+1, "");
-      }
-      if(tempStr2.size() != 0) idStrTemp.push_back(tempStr2);
-    }
-  }
+  Int_t nIDTemp = cutProp.GetNID();
+  std::vector<std::string> idStrTemp = cutProp.GetIdStr();
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nIDTemp less than 0. please check input file. return 1" << std::endl;
-
   
   if(nCentBins < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || nIDTemp < 0){
-    inFile_p->Close();
-    delete inFile_p;
+    responseFile_p->Close();
+    delete responseFile_p;
     return 1;
   }
 
@@ -236,16 +179,18 @@ int validateJetResponse(const std::string inFileName)
     dirName = dirName.substr(0, dirName.find("/"));
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-      if(isPP) centStr = "PP";
+      std::string centStr = "PP";
+      if(!isPP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 
-      for(Int_t iI = 0; iI < nID; ++iI){
-	
+      for(Int_t iI = 0; iI < nID; ++iI){	
 	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);	
 	  
 	  for(Int_t mI = 0; mI < nManip; ++mI){
-	    TH2D* response_h = (TH2D*)inFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
+	    TH2D* response_h = (TH2D*)responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
+
+	    bool doLogX = false;
+            if(response_h->GetXaxis()->GetBinWidth(1)*3 < response_h->GetXaxis()->GetBinWidth(response_h->GetNbinsX()-1)) doLogX = true;
 	    
 	    TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
 	    canv_p->SetTopMargin(0.01);
@@ -291,6 +236,10 @@ int validateJetResponse(const std::string inFileName)
 	    response_h->DrawCopy("COLZ TEXT");
 	    gStyle->SetPaintTextFormat("1.3f");
 	    gPad->SetLogz();
+	    if(doLogX){
+	      gPad->SetLogx();
+	      gPad->SetLogy();
+	    }
 	    
 	    std::string renormStr = "renormX";
 	    if(!renormX[mI]) renormStr = "renormY";
@@ -316,7 +265,7 @@ int validateJetResponse(const std::string inFileName)
 	    recoJtPtPerGenPtBin_p->cd();
 	    recoJtPtPerGenPtBin_p->cd(jI+1);
 	    
-	    TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str());
+	    TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str());
 	  
 	    temp_p->DrawCopy("HIST E1 P");
 	  }
@@ -339,7 +288,7 @@ int validateJetResponse(const std::string inFileName)
 	    recoJtPtPerGenPtBinWeighted_p->cd(jI+1);
 	    
 	    
-	    TH1D* temp_p = (TH1D*)inFile_p->Get((dirName + "/recoJtPtPerGenPtBin" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str());
+	    TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str());
 	    
 	    temp_p->DrawCopy("HIST E1 P");
 	  }
@@ -352,8 +301,8 @@ int validateJetResponse(const std::string inFileName)
     }
   }
   
-  inFile_p->Close();
-  delete inFile_p;
+  responseFile_p->Close();
+  delete responseFile_p;
 
   return 0;
 }
@@ -361,11 +310,11 @@ int validateJetResponse(const std::string inFileName)
 int main(int argc, char* argv[])
 {
   if(argc != 2){
-    std::cout << "Usage: ./bin/validateJetResponse.exe <inFileName>" << std::endl;
+    std::cout << "Usage: ./bin/plotJetResponse.exe <inResponseName>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += validateJetResponse(argv[1]);
+  retVal += plotJetResponse(argv[1]);
   return retVal;
 }

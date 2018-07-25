@@ -38,11 +38,23 @@ class cutPropagator
   std::vector<double> jtPfCHMFCutHi;
   std::vector<double> jtPfMUMFCutLow;
   std::vector<double> jtPfMUMFCutHi;
+  std::vector<double> jtPfNHFCutLow;
+  std::vector<double> jtPfNHFCutHi;
+  std::vector<double> jtPfNEFCutLow;
+  std::vector<double> jtPfNEFCutHi;
+  std::vector<double> jtPfMUFCutLow;
+  std::vector<double> jtPfMUFCutHi;
+  std::vector<double> jtPfCHFCutLow;
+  std::vector<double> jtPfCHFCutHi;
+  std::vector<double> jtPfCEFCutLow;
+  std::vector<double> jtPfCEFCutHi;
+  std::vector<int> jtPfMinMult;
+  std::vector<int> jtPfMinChgMult;
 
   void Clean();
   bool GetAllVarFromFile(TFile* inFile_p);
   bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p);
-  bool CheckPropagatorMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb);
+  bool CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb);
 
   bool GetIsPP(){return isPP;}
 
@@ -67,7 +79,18 @@ class cutPropagator
   std::vector<double> GetJtPfCHMFCutHi(){return jtPfCHMFCutHi;}
   std::vector<double> GetJtPfMUMFCutLow(){return jtPfMUMFCutLow;}
   std::vector<double> GetJtPfMUMFCutHi(){return jtPfMUMFCutHi;}
-
+  std::vector<double> GetJtPfNHFCutLow(){return jtPfNHFCutLow;}
+  std::vector<double> GetJtPfNHFCutHi(){return jtPfNHFCutHi;}
+  std::vector<double> GetJtPfNEFCutLow(){return jtPfNEFCutLow;}
+  std::vector<double> GetJtPfNEFCutHi(){return jtPfNEFCutHi;}
+  std::vector<double> GetJtPfMUFCutLow(){return jtPfMUFCutLow;}
+  std::vector<double> GetJtPfMUFCutHi(){return jtPfMUFCutHi;}
+  std::vector<double> GetJtPfCHFCutLow(){return jtPfCHFCutLow;}
+  std::vector<double> GetJtPfCHFCutHi(){return jtPfCHFCutHi;}
+  std::vector<double> GetJtPfCEFCutLow(){return jtPfCEFCutLow;}
+  std::vector<double> GetJtPfCEFCutHi(){return jtPfCEFCutHi;}
+  std::vector<int> GetJtPfMinMult(){return jtPfMinMult;}
+  std::vector<int> GetJtPfMinChgMult(){return jtPfMinChgMult;}
 
   void SetIsPP(bool inIsPP){isPP = inIsPP; return;}
 
@@ -104,6 +127,30 @@ class cutPropagator
   void SetJtPfMUMFCutLow(int inN, const Double_t inJtPfMUMFCutLow[]);
   void SetJtPfMUMFCutHi(std::vector<double> inJtPfMUMFCutHi){jtPfMUMFCutHi = inJtPfMUMFCutHi; return;}
   void SetJtPfMUMFCutHi(int inN, const Double_t inJtPfMUMFCutHi[]);
+  void SetJtPfNHFCutLow(std::vector<double> inJtPfNHFCutLow){jtPfNHFCutLow = inJtPfNHFCutLow; return;}
+  void SetJtPfNHFCutLow(int inN, const Double_t inJtPfNHFCutLow[]);
+  void SetJtPfNHFCutHi(std::vector<double> inJtPfNHFCutHi){jtPfNHFCutHi = inJtPfNHFCutHi; return;}
+  void SetJtPfNHFCutHi(int inN, const Double_t inJtPfNHFCutHi[]);
+  void SetJtPfNEFCutLow(std::vector<double> inJtPfNEFCutLow){jtPfNEFCutLow = inJtPfNEFCutLow; return;}
+  void SetJtPfNEFCutLow(int inN, const Double_t inJtPfNEFCutLow[]);
+  void SetJtPfNEFCutHi(std::vector<double> inJtPfNEFCutHi){jtPfNEFCutHi = inJtPfNEFCutHi; return;}
+  void SetJtPfNEFCutHi(int inN, const Double_t inJtPfNEFCutHi[]);
+  void SetJtPfMUFCutLow(std::vector<double> inJtPfMUFCutLow){jtPfMUFCutLow = inJtPfMUFCutLow; return;}
+  void SetJtPfMUFCutLow(int inN, const Double_t inJtPfMUFCutLow[]);
+  void SetJtPfMUFCutHi(std::vector<double> inJtPfMUFCutHi){jtPfMUFCutHi = inJtPfMUFCutHi; return;}
+  void SetJtPfMUFCutHi(int inN, const Double_t inJtPfMUFCutHi[]);
+  void SetJtPfCHFCutLow(std::vector<double> inJtPfCHFCutLow){jtPfCHFCutLow = inJtPfCHFCutLow; return;}
+  void SetJtPfCHFCutLow(int inN, const Double_t inJtPfCHFCutLow[]);
+  void SetJtPfCHFCutHi(std::vector<double> inJtPfCHFCutHi){jtPfCHFCutHi = inJtPfCHFCutHi; return;}
+  void SetJtPfCHFCutHi(int inN, const Double_t inJtPfCHFCutHi[]);
+  void SetJtPfCEFCutLow(std::vector<double> inJtPfCEFCutLow){jtPfCEFCutLow = inJtPfCEFCutLow; return;}
+  void SetJtPfCEFCutLow(int inN, const Double_t inJtPfCEFCutLow[]);
+  void SetJtPfCEFCutHi(std::vector<double> inJtPfCEFCutHi){jtPfCEFCutHi = inJtPfCEFCutHi; return;}
+  void SetJtPfCEFCutHi(int inN, const Double_t inJtPfCEFCutHi[]);
+  void SetJtPfMinMult(std::vector<int> inJtPfMinMult){jtPfMinMult = inJtPfMinMult; return;}
+  void SetJtPfMinMult(int inN, const Int_t inJtPfMinMult[]);
+  void SetJtPfMinChgMult(std::vector<int> inJtPfMinChgMult){jtPfMinChgMult = inJtPfMinChgMult; return;}
+  void SetJtPfMinChgMult(int inN, const Int_t inJtPfMinChgMult[]);
 
   std::string to_string_with_precision(double a_value, const int n);
 };
@@ -134,6 +181,18 @@ void cutPropagator::Clean()
   jtPfCHMFCutHi.clear();
   jtPfMUMFCutLow.clear();
   jtPfMUMFCutHi.clear();
+  jtPfNHFCutLow.clear();
+  jtPfNHFCutHi.clear();
+  jtPfNEFCutLow.clear();
+  jtPfNEFCutHi.clear();
+  jtPfMUFCutLow.clear();
+  jtPfMUFCutHi.clear();
+  jtPfCHFCutLow.clear();
+  jtPfCHFCutHi.clear();
+  jtPfCEFCutLow.clear();
+  jtPfCEFCutHi.clear();
+  jtPfMinMult.clear();
+  jtPfMinChgMult.clear();
 
   return;
 }
@@ -178,6 +237,23 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("isPP") != std::string::npos && tempStr.size() == std::string("isPP").size()) isPP = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("nPthats") != std::string::npos && tempStr.size() == std::string("nPthats").size()) nPthats = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("pthats") != std::string::npos && tempStr.size() == std::string("pthats").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        pthats.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) pthats.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("pthatWeights") != std::string::npos && tempStr.size() == std::string("pthatWeights").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        pthatWeights.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) pthatWeights.push_back(std::stod(tempStr2));
+    }
     else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
       std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
       while(tempStr2.find(",") != std::string::npos){
@@ -243,6 +319,102 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
       }
       if(tempStr2.size() != 0) jtPfMUMFCutHi.push_back(std::stod(tempStr2));
     }
+    else if(tempStr.find("jtPfNHFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfNHFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfNHFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfNHFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfNHFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfNHFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfNHFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfNHFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfNEFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfNEFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfNEFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfNEFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfNEFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfNEFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfNEFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfNEFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfMUFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMUFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfMUFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMUFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMUFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCHFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfCHFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCHFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfCHFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCHFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCHFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCEFCutLow") != std::string::npos && tempStr.size() == std::string("jtPfCEFCutLow").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCEFCutLow.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCEFCutLow.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfCEFCutHi") != std::string::npos && tempStr.size() == std::string("jtPfCEFCutHi").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfCEFCutHi.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfCEFCutHi.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMinMult") != std::string::npos && tempStr.size() == std::string("jtPfMinMult").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMinMult.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMinMult.push_back(std::stod(tempStr2));
+    }
+    else if(tempStr.find("jtPfMinChgMult") != std::string::npos && tempStr.size() == std::string("jtPfMinChgMult").size()){
+      std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+      while(tempStr2.find(",") != std::string::npos){
+        jtPfMinChgMult.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        tempStr2.replace(0, tempStr2.find(",")+1, "");
+      }
+      if(tempStr2.size() != 0) jtPfMinChgMult.push_back(std::stod(tempStr2));
+    }
   }
 
   return true;
@@ -279,6 +451,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
     jtAbsEtaBinsHiStr = jtAbsEtaBinsHiStr + std::to_string(jtAbsEtaBinsHi.at(jI)) + ",";
   }
 
+  std::string nPthatsStr = std::to_string(nPthats);
   std::string pthatsStr = "";
   for(unsigned int jI = 0; jI < pthats.size(); ++jI){
     pthatsStr = pthatsStr + std::to_string(pthats.at(jI)) + ",";
@@ -306,6 +479,18 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   std::string jtPfCHMFCutHiStr = "";
   std::string jtPfMUMFCutLowStr = "";
   std::string jtPfMUMFCutHiStr = "";
+  std::string jtPfNHFCutLowStr = "";
+  std::string jtPfNHFCutHiStr = "";
+  std::string jtPfNEFCutLowStr = "";
+  std::string jtPfNEFCutHiStr = "";
+  std::string jtPfMUFCutLowStr = "";
+  std::string jtPfMUFCutHiStr = "";
+  std::string jtPfCHFCutLowStr = "";
+  std::string jtPfCHFCutHiStr = "";
+  std::string jtPfCEFCutLowStr = "";
+  std::string jtPfCEFCutHiStr = "";
+  std::string jtPfMinMultStr = "";
+  std::string jtPfMinChgMultStr = "";
 
   for(int iI = 0; iI < nID; ++iI){
     idStr2 = idStr2 + idStr.at(iI) + ",";
@@ -313,6 +498,18 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
     jtPfCHMFCutHiStr = jtPfCHMFCutHiStr + std::to_string(jtPfCHMFCutHi.at(iI)) + ",";
     jtPfMUMFCutLowStr = jtPfMUMFCutLowStr + std::to_string(jtPfMUMFCutLow.at(iI)) + ",";
     jtPfMUMFCutHiStr = jtPfMUMFCutHiStr + std::to_string(jtPfMUMFCutHi.at(iI)) + ",";
+    jtPfNHFCutLowStr = jtPfNHFCutLowStr + std::to_string(jtPfNHFCutLow.at(iI)) + ",";
+    jtPfNHFCutHiStr = jtPfNHFCutHiStr + std::to_string(jtPfNHFCutHi.at(iI)) + ",";
+    jtPfNEFCutLowStr = jtPfNEFCutLowStr + std::to_string(jtPfNEFCutLow.at(iI)) + ",";
+    jtPfNEFCutHiStr = jtPfNEFCutHiStr + std::to_string(jtPfNEFCutHi.at(iI)) + ",";
+    jtPfMUFCutLowStr = jtPfMUFCutLowStr + std::to_string(jtPfMUFCutLow.at(iI)) + ",";
+    jtPfMUFCutHiStr = jtPfMUFCutHiStr + std::to_string(jtPfMUFCutHi.at(iI)) + ",";
+    jtPfCHFCutLowStr = jtPfCHFCutLowStr + std::to_string(jtPfCHFCutLow.at(iI)) + ",";
+    jtPfCHFCutHiStr = jtPfCHFCutHiStr + std::to_string(jtPfCHFCutHi.at(iI)) + ",";
+    jtPfCEFCutLowStr = jtPfCEFCutLowStr + std::to_string(jtPfCEFCutLow.at(iI)) + ",";
+    jtPfCEFCutHiStr = jtPfCEFCutHiStr + std::to_string(jtPfCEFCutHi.at(iI)) + ",";
+    jtPfMinMultStr = jtPfMinMultStr + std::to_string(jtPfMinMult.at(iI)) + ",";
+    jtPfMinChgMultStr = jtPfMinChgMultStr + std::to_string(jtPfMinChgMult.at(iI)) + ",";
   }
 
   TNamed isPPName("isPP", std::to_string(isPP));
@@ -322,6 +519,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   TNamed nJtAbsEtaBinsName("nJtAbsEtaBins", std::to_string(nJtAbsEtaBins).c_str());
   TNamed jtAbsEtaBinsLowName("jtAbsEtaBinsLow", jtAbsEtaBinsLowStr.c_str());
   TNamed jtAbsEtaBinsHiName("jtAbsEtaBinsHi", jtAbsEtaBinsHiStr.c_str());
+  TNamed nPthatsName("nPthats", nPthatsStr.c_str());
   TNamed pthatsName("pthats", pthatsStr.c_str());
   TNamed pthatWeightsName("pthatWeights", pthatWeightsStr.c_str());
   TNamed nCentBinsName("nCentBins", std::to_string(nCentBins).c_str());
@@ -333,6 +531,18 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   TNamed jtPfCHMFCutHiName("jtPfCHMFCutHi", jtPfCHMFCutHiStr.c_str());
   TNamed jtPfMUMFCutLowName("jtPfMUMFCutLow", jtPfMUMFCutLowStr.c_str());
   TNamed jtPfMUMFCutHiName("jtPfMUMFCutHi", jtPfMUMFCutHiStr.c_str());
+  TNamed jtPfNHFCutLowName("jtPfNHFCutLow", jtPfNHFCutLowStr.c_str());
+  TNamed jtPfNHFCutHiName("jtPfNHFCutHi", jtPfNHFCutHiStr.c_str());
+  TNamed jtPfNEFCutLowName("jtPfNEFCutLow", jtPfNEFCutLowStr.c_str());
+  TNamed jtPfNEFCutHiName("jtPfNEFCutHi", jtPfNEFCutHiStr.c_str());
+  TNamed jtPfMUFCutLowName("jtPfMUFCutLow", jtPfMUFCutLowStr.c_str());
+  TNamed jtPfMUFCutHiName("jtPfMUFCutHi", jtPfMUFCutHiStr.c_str());
+  TNamed jtPfCHFCutLowName("jtPfCHFCutLow", jtPfCHFCutLowStr.c_str());
+  TNamed jtPfCHFCutHiName("jtPfCHFCutHi", jtPfCHFCutHiStr.c_str());
+  TNamed jtPfCEFCutLowName("jtPfCEFCutLow", jtPfCEFCutLowStr.c_str());
+  TNamed jtPfCEFCutHiName("jtPfCEFCutHi", jtPfCEFCutHiStr.c_str());
+  TNamed jtPfMinMultName("jtPfMinMult", jtPfMinMultStr.c_str());
+  TNamed jtPfMinChgMultName("jtPfMinChgMult", jtPfMinChgMultStr.c_str());
 
   isPPName.Write("", TObject::kOverwrite);
   jtAbsEtaMaxName.Write("", TObject::kOverwrite);
@@ -341,6 +551,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   nJtAbsEtaBinsName.Write("", TObject::kOverwrite);
   jtAbsEtaBinsLowName.Write("", TObject::kOverwrite);
   jtAbsEtaBinsHiName.Write("", TObject::kOverwrite);
+  nPthatsName.Write("", TObject::kOverwrite);
   pthatsName.Write("", TObject::kOverwrite);
   pthatWeightsName.Write("", TObject::kOverwrite);
   nCentBinsName.Write("", TObject::kOverwrite);
@@ -352,6 +563,19 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p)
   jtPfCHMFCutHiName.Write("", TObject::kOverwrite);
   jtPfMUMFCutLowName.Write("", TObject::kOverwrite);
   jtPfMUMFCutHiName.Write("", TObject::kOverwrite);
+  jtPfNHFCutLowName.Write("", TObject::kOverwrite);
+  jtPfNHFCutHiName.Write("", TObject::kOverwrite);
+  jtPfNEFCutLowName.Write("", TObject::kOverwrite);
+  jtPfNEFCutHiName.Write("", TObject::kOverwrite);
+  jtPfMUFCutLowName.Write("", TObject::kOverwrite);
+  jtPfMUFCutHiName.Write("", TObject::kOverwrite);
+  jtPfCHFCutLowName.Write("", TObject::kOverwrite);
+  jtPfCHFCutHiName.Write("", TObject::kOverwrite);
+  jtPfCEFCutLowName.Write("", TObject::kOverwrite);
+  jtPfCEFCutHiName.Write("", TObject::kOverwrite);
+  jtPfCEFCutHiName.Write("", TObject::kOverwrite);
+  jtPfMinMultName.Write("", TObject::kOverwrite);
+  jtPfMinChgMultName.Write("", TObject::kOverwrite);
 
   return true;
 }
@@ -373,6 +597,18 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(jtPfCHMFCutHi.size() != inCutProp.GetJtPfCHMFCutHi().size()) return false;
   if(jtPfMUMFCutLow.size() != inCutProp.GetJtPfMUMFCutLow().size()) return false;
   if(jtPfMUMFCutHi.size() != inCutProp.GetJtPfMUMFCutHi().size()) return false;
+  if(jtPfNHFCutLow.size() != inCutProp.GetJtPfNHFCutLow().size()) return false;
+  if(jtPfNHFCutHi.size() != inCutProp.GetJtPfNHFCutHi().size()) return false;
+  if(jtPfNEFCutLow.size() != inCutProp.GetJtPfNEFCutLow().size()) return false;
+  if(jtPfNEFCutHi.size() != inCutProp.GetJtPfNEFCutHi().size()) return false;
+  if(jtPfMUFCutLow.size() != inCutProp.GetJtPfMUFCutLow().size()) return false;
+  if(jtPfMUFCutHi.size() != inCutProp.GetJtPfMUFCutHi().size()) return false;
+  if(jtPfCHFCutLow.size() != inCutProp.GetJtPfCHFCutLow().size()) return false;
+  if(jtPfCHFCutHi.size() != inCutProp.GetJtPfCHFCutHi().size()) return false;
+  if(jtPfCEFCutLow.size() != inCutProp.GetJtPfCEFCutLow().size()) return false;
+  if(jtPfCEFCutHi.size() != inCutProp.GetJtPfCEFCutHi().size()) return false;
+  if(jtPfMinMult.size() != inCutProp.GetJtPfMinMult().size()) return false;
+  if(jtPfMinChgMult.size() != inCutProp.GetJtPfMinChgMult().size()) return false;
 
   for(unsigned int i = 0; i < jtPtBins.size(); ++i){
     if(jtPtBins.at(i) - delta > inCutProp.GetJtPtBins().at(i)) return false;
@@ -412,6 +648,65 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   for(unsigned int i = 0; i < jtPfMUMFCutHi.size(); ++i){
     if(jtPfMUMFCutHi.at(i) - delta > inCutProp.GetJtPfMUMFCutHi().at(i)) return false;
     if(jtPfMUMFCutHi.at(i) + delta < inCutProp.GetJtPfMUMFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfNHFCutLow.size(); ++i){
+    if(jtPfNHFCutLow.at(i) - delta > inCutProp.GetJtPfNHFCutLow().at(i)) return false;
+    if(jtPfNHFCutLow.at(i) + delta < inCutProp.GetJtPfNHFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfNHFCutHi.size(); ++i){
+    if(jtPfNHFCutHi.at(i) - delta > inCutProp.GetJtPfNHFCutHi().at(i)) return false;
+    if(jtPfNHFCutHi.at(i) + delta < inCutProp.GetJtPfNHFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfNEFCutLow.size(); ++i){
+    if(jtPfNEFCutLow.at(i) - delta > inCutProp.GetJtPfNEFCutLow().at(i)) return false;
+    if(jtPfNEFCutLow.at(i) + delta < inCutProp.GetJtPfNEFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfNEFCutHi.size(); ++i){
+    if(jtPfNEFCutHi.at(i) - delta > inCutProp.GetJtPfNEFCutHi().at(i)) return false;
+    if(jtPfNEFCutHi.at(i) + delta < inCutProp.GetJtPfNEFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMUFCutLow.size(); ++i){
+    if(jtPfMUFCutLow.at(i) - delta > inCutProp.GetJtPfMUFCutLow().at(i)) return false;
+    if(jtPfMUFCutLow.at(i) + delta < inCutProp.GetJtPfMUFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMUFCutHi.size(); ++i){
+    if(jtPfMUFCutHi.at(i) - delta > inCutProp.GetJtPfMUFCutHi().at(i)) return false;
+    if(jtPfMUFCutHi.at(i) + delta < inCutProp.GetJtPfMUFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfCHFCutLow.size(); ++i){
+    if(jtPfCHFCutLow.at(i) - delta > inCutProp.GetJtPfCHFCutLow().at(i)) return false;
+    if(jtPfCHFCutLow.at(i) + delta < inCutProp.GetJtPfCHFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfCHFCutHi.size(); ++i){
+    if(jtPfCHFCutHi.at(i) - delta > inCutProp.GetJtPfCHFCutHi().at(i)) return false;
+    if(jtPfCHFCutHi.at(i) + delta < inCutProp.GetJtPfCHFCutHi().at(i)) return false;
+  }
+
+
+  for(unsigned int i = 0; i < jtPfCEFCutLow.size(); ++i){
+    if(jtPfCEFCutLow.at(i) - delta > inCutProp.GetJtPfCEFCutLow().at(i)) return false;
+    if(jtPfCEFCutLow.at(i) + delta < inCutProp.GetJtPfCEFCutLow().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfCEFCutHi.size(); ++i){
+    if(jtPfCEFCutHi.at(i) - delta > inCutProp.GetJtPfCEFCutHi().at(i)) return false;
+    if(jtPfCEFCutHi.at(i) + delta < inCutProp.GetJtPfCEFCutHi().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMinMult.size(); ++i){
+    if(jtPfMinMult.at(i) != inCutProp.GetJtPfMinMult().at(i)) return false;
+  }
+
+  for(unsigned int i = 0; i < jtPfMinChgMult.size(); ++i){
+    if(jtPfMinChgMult.at(i) != inCutProp.GetJtPfMinChgMult().at(i)) return false;
   }
 
   if(doBothMCOrBothData){
@@ -559,6 +854,115 @@ void cutPropagator::SetJtPfMUMFCutHi(int inN, const Double_t inJtPfMUMFCutHi[])
 {
   for(int i = 0; i < inN; ++i){
     jtPfMUMFCutHi.push_back(inJtPfMUMFCutHi[i]);
+  }
+
+  return;
+}
+
+
+void cutPropagator::SetJtPfNHFCutLow(int inN, const Double_t inJtPfNHFCutLow[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfNHFCutLow.push_back(inJtPfNHFCutLow[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfNHFCutHi(int inN, const Double_t inJtPfNHFCutHi[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfNHFCutHi.push_back(inJtPfNHFCutHi[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfNEFCutLow(int inN, const Double_t inJtPfNEFCutLow[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfNEFCutLow.push_back(inJtPfNEFCutLow[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfNEFCutHi(int inN, const Double_t inJtPfNEFCutHi[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfNEFCutHi.push_back(inJtPfNEFCutHi[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfMUFCutLow(int inN, const Double_t inJtPfMUFCutLow[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfMUFCutLow.push_back(inJtPfMUFCutLow[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfMUFCutHi(int inN, const Double_t inJtPfMUFCutHi[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfMUFCutHi.push_back(inJtPfMUFCutHi[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfCHFCutLow(int inN, const Double_t inJtPfCHFCutLow[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfCHFCutLow.push_back(inJtPfCHFCutLow[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfCHFCutHi(int inN, const Double_t inJtPfCHFCutHi[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfCHFCutHi.push_back(inJtPfCHFCutHi[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfCEFCutLow(int inN, const Double_t inJtPfCEFCutLow[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfCEFCutLow.push_back(inJtPfCEFCutLow[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfCEFCutHi(int inN, const Double_t inJtPfCEFCutHi[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfCEFCutHi.push_back(inJtPfCEFCutHi[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfMinMult(int inN, const Int_t inJtPfMinMult[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfMinMult.push_back(inJtPfMinMult[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetJtPfMinChgMult(int inN, const Int_t inJtPfMinChgMult[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtPfMinChgMult.push_back(inJtPfMinChgMult[i]);
   }
 
   return;

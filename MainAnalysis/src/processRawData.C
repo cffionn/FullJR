@@ -10,21 +10,35 @@
 #include "TH1D.h"
 #include "TDatime.h"
 #include "TDirectory.h"
+#include "TCanvas.h"
+#include "TPad.h"
+#include "TStyle.h"
+#include "TLatex.h"
+#include "TLegend.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
 
 //Non-local FullJR dependencies (Utility, etc.)
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/histDefUtility.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/vanGoghPalette.h"
+
 
 int processRawData(const std::string inDataFileName, const std::string inResponseName, bool isDataPP = false)
 {
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
+
+  vanGoghPalette vg;
+  const Int_t nStyles = 3;
+  const Int_t styles[nStyles] = {20, 21, 34};
+  const Int_t colors[nStyles] = {1, vg.getColor(0), vg.getColor(1)};
+  const Double_t yPadFrac = 0.35;
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> jetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
@@ -203,6 +217,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	  jtPtRaw_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
 	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+
+	  setSumW2({jtPtRaw_h[jI][cI][idI][aI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]});
+	  centerTitles({jtPtRaw_h[jI][cI][idI][aI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]});
 	}
       }
     }
@@ -387,6 +404,163 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 
   outFile_p->cd();
+
+  for(Int_t jI = 0; jI < nDataJet; ++jI){
+    std::string tempStr = dataTreeList.at(jI);
+    tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+
+    for(Int_t cI = 0; cI < nCentBins; ++cI){
+      std::string centStr = "PP";
+      std::string centStr2 = "PP";
+      if(!isDataPP){
+	centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+	centStr2 =  std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+      }
+
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, true) + "<|#eta|<" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	
+	TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+	canv_p->SetTopMargin(0.01);
+	canv_p->SetRightMargin(0.01);
+	canv_p->SetLeftMargin(0.01);
+	canv_p->SetBottomMargin(0.01);
+	
+	TPad* pads[2];
+	canv_p->cd();
+	pads[0] = new TPad("pad0", "", 0.0, yPadFrac, 1.0, 1.0);
+	pads[0]->SetLeftMargin(0.12);
+	pads[0]->SetTopMargin(0.01);
+	pads[0]->SetBottomMargin(0.001);
+	pads[0]->SetRightMargin(0.01);
+	pads[0]->Draw();
+
+	canv_p->cd();
+	pads[1] = new TPad("pad1", "", 0.0, 0.0, 1.0, yPadFrac);
+	pads[1]->Draw();
+	pads[1]->SetLeftMargin(0.12);
+	pads[1]->SetTopMargin(0.001);
+	pads[1]->SetBottomMargin(0.12/yPadFrac);
+	pads[1]->SetRightMargin(0.01);
+
+	canv_p->cd();
+	pads[0]->cd();
+
+	double max = -1;
+	double min = 10000000;
+
+	double maxRat = -1;
+	double minRat = 10000000;
+
+	for(Int_t idI = 0; idI < nID; ++idI){
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMarkerColor(colors[idI]);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetLineColor(colors[idI]);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMarkerStyle(styles[idI]);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMarkerSize(1.);	  
+
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetTitleFont(43);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetTitleSize(14);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetTitleFont(43);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetTitleSize(14);
+
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetLabelFont(43);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetLabelSize(14);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetLabelFont(43);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetLabelSize(14);
+
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetNdivisions(505);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetNdivisions(505);
+
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetTitleOffset(3.0);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetTitleOffset(2.0);
+
+	  for(Int_t bIX = 0; bIX < jtPtRaw_h[jI][cI][idI][aI]->GetNbinsX(); ++bIX){
+	    if(jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1) > max) max = jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1);
+	    if(jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1) < min && jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1) > 0) min = jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1);
+
+	    if(jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1)/jtPtRaw_h[jI][cI][0][aI]->GetBinContent(bIX+1) > maxRat) maxRat = jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1)/jtPtRaw_h[jI][cI][0][aI]->GetBinContent(bIX+1);
+	    if(jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1)/jtPtRaw_h[jI][cI][0][aI]->GetBinContent(bIX+1) < minRat) minRat = jtPtRaw_h[jI][cI][idI][aI]->GetBinContent(bIX+1)/jtPtRaw_h[jI][cI][0][aI]->GetBinContent(bIX+1);
+	  }
+	}
+
+	TLegend* leg_p = new TLegend(0.55, 0.6, 0.9, 0.8);
+	leg_p->SetBorderSize(0.0);
+	leg_p->SetFillStyle(0);
+	leg_p->SetFillColor(0);
+
+	for(Int_t idI = 0; idI < nID; ++idI){
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMaximum(max*5.);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMinimum(min/5.);
+
+	  std::string id = idStr.at(idI) + ", N=" + std::to_string((int)(jtPtRaw_h[jI][cI][idI][aI]->GetEntries()));
+	  leg_p->AddEntry(jtPtRaw_h[jI][cI][idI][aI], id.c_str(), "P L");
+
+	  if(idI == 0) jtPtRaw_h[jI][cI][idI][aI]->DrawCopy("HIST E1 P");
+	  else jtPtRaw_h[jI][cI][idI][aI]->DrawCopy("HIST E1 P SAME");
+	}
+
+	TLatex* label_p = new TLatex();
+	label_p->SetTextFont(43);
+	label_p->SetTextSize(14);
+	label_p->SetNDC();
+
+	label_p->DrawLatex(0.5, 0.94, tempStr.c_str());
+	label_p->DrawLatex(0.5, 0.88, centStr2.c_str());
+	label_p->DrawLatex(0.5, 0.82, jtAbsEtaStr2.c_str());
+	
+	leg_p->Draw("SAME");
+
+	delete label_p;
+
+	bool doLogX = false;
+	if(jtPtRaw_h[jI][cI][0][aI]->GetBinWidth(1)*3 < jtPtRaw_h[jI][cI][0][aI]->GetBinWidth(jtPtRaw_h[jI][cI][0][aI]->GetNbinsX()-1)) doLogX = true;
+
+	gPad->SetLogy();
+	if(doLogX) gPad->SetLogx();
+	gStyle->SetOptStat(0);
+
+	canv_p->cd();
+	pads[1]->cd();
+
+	for(Int_t idI = 1; idI < nID; ++idI){
+	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
+	  setSumW2(clone_p);
+	  centerTitles(clone_p);
+
+	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
+
+	  if(maxRat < 1.05) maxRat = 1.05;
+	  if(minRat > 0.95) minRat = 0.95;
+
+	  double interval = maxRat - minRat;
+	  maxRat += interval/5.;
+	  minRat -= interval/5.;
+
+          clone_p->SetMaximum(maxRat);
+          clone_p->SetMinimum(minRat);
+
+	  clone_p->GetYaxis()->SetTitle("Ratio");
+
+          if(idI == 1) clone_p->DrawCopy("HIST E1 P");
+          else clone_p->DrawCopy("HIST E1 P SAME");
+
+	  delete clone_p;
+        }
+
+	if(doLogX) gPad->SetLogx();
+	gStyle->SetOptStat(0);
+
+	canv_p->SaveAs(("pdfDir/jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+
+	delete pads[0];
+	delete pads[1];
+	delete canv_p;
+	delete leg_p;
+      }
+    }
+  }  
+
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     outFile_p->cd();

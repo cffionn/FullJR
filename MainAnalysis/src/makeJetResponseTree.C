@@ -196,12 +196,26 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Int_t nJtPtBins = 8;
   const Double_t jtPtBins[nJtPtBins+1] = {100., 150., 200., 250., 300., 400., 600., 1000., 2000.};
 
-  const Int_t nID = 3;
-  const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID"};
-  const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00};
-  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90};
-  const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.0, 0.00};
-  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60};
+  //FULL ID taken from here https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016, FullLight and FullTight correspond to previous levels of cuts + the Loose and TightLepVeto versions, respectively
+  const Int_t nID = 5;
+  const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID", "FullLight", "FullTight"};
+  const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
+  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90, 0.90, 0.90};
+  const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
+  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60, 0.60, 0.60};
+  const Double_t jtPfNHFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfNHFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
+  const Double_t jtPfNEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfNEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
+  const Int_t jtPfMinMult[nID] = {1, 1, 1, 2, 2};
+  const Double_t jtPfMUFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfMUFCutHi[nID] = {1.0, 1.0, 1.0, 1.0, 0.8};
+  const Double_t jtPfCHFCutLow[nID] = {0.0, 0.0, 0.0, 0.0000001, 0.0000001};
+  const Double_t jtPfCHFCutHi[nID] = {1.0, 1.0, 1.0, 1.0, 1.0};
+  const Int_t jtPfMinChgMult[nID] = {0, 0, 0, 1, 1};
+  const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
+
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
   const Int_t nResponseBins = 300;
@@ -533,19 +547,18 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
 	  if(!goodReco && !goodTruth) continue;
       	
-	  //via https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
-	  bool passesTightLepVeto = jtPfCHF_[tI][jI] < 0.9 && jtPfCEF_[tI][jI] < 0.9;
-	  passesTightLepVeto = passesTightLepVeto && jtPfCHM_[tI][jI] + jtPfCEM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfMUM_[tI][jI] > 1;
-	  passesTightLepVeto = passesTightLepVeto && jtPfMUF_[tI][jI] < 0.8;
-	  passesTightLepVeto = passesTightLepVeto && jtPfCHF_[tI][jI] > 0.0;
-	  passesTightLepVeto = passesTightLepVeto && jtPfCHM_[tI][jI] > 0;
-	  passesTightLepVeto = passesTightLepVeto && jtPfCEF_[tI][jI] < 0.9;
-
-	  //	  if(!passesTightLepVeto) continue;
 	  std::vector<bool> passesID;
 	  for(Int_t iI = 0; iI < nID; ++iI){
 	    bool pass = jtPfCHMFCutLow[iI] <= jtPfCHMF_[tI][jI] && jtPfCHMF_[tI][jI] <= jtPfCHMFCutHi[iI];
 	    pass = pass && jtPfMUMFCutLow[iI] <= jtPfMUMF_[tI][jI] && jtPfMUMF_[tI][jI] <= jtPfMUMFCutHi[iI];
+	    pass = pass && jtPfNHFCutLow[iI] <= jtPfNHF_[tI][jI] && jtPfNHF_[tI][jI] <= jtPfNHFCutHi[iI];
+	    pass = pass && jtPfNEFCutLow[iI] <= jtPfNEF_[tI][jI] && jtPfNEF_[tI][jI] <= jtPfNEFCutHi[iI];
+	    pass = pass && jtPfMUFCutLow[iI] <= jtPfMUF_[tI][jI] && jtPfMUF_[tI][jI] <= jtPfMUFCutHi[iI];
+	    pass = pass && jtPfCHFCutLow[iI] <= jtPfCHF_[tI][jI] && jtPfCHF_[tI][jI] <= jtPfCHFCutHi[iI];
+	    pass = pass && jtPfCEFCutLow[iI] <= jtPfCEF_[tI][jI] && jtPfCEF_[tI][jI] <= jtPfCEFCutHi[iI];
+	    pass = pass && jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] >= jtPfMinMult[iI];
+	    pass = pass && jtPfCHM_[tI][jI] >= jtPfMinChgMult[iI];
+
 	    passesID.push_back(pass);
 	  }
 	  

@@ -190,14 +190,27 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   const Int_t nWeighted = 2;
   const std::string weightStr[nWeighted] = {"Unweighted", "Weighted"};
+
+  //FULL ID taken from here https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016, FullLight and FullTight correspond to previous levels of cuts + the Loose and TightLepVeto versions, respectively                                                                                                                
+    const Int_t nID = 5;
+  const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID", "FullLight", "FullTight"};
+  const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
+  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90, 0.90, 0.90};
+  const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
+  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60, 0.60, 0.60};
+  const Double_t jtPfNHFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfNHFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
+  const Double_t jtPfNEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfNEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
+  const Int_t jtPfMinMult[nID] = {1, 1, 1, 2, 2};
+  const Double_t jtPfMUFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfMUFCutHi[nID] = {1.0, 1.0, 1.0, 1.0, 0.8};
+  const Double_t jtPfCHFCutLow[nID] = {0.0, 0.0, 0.0, 0.0000001, 0.0000001};
+  const Double_t jtPfCHFCutHi[nID] = {1.0, 1.0, 1.0, 1.0, 1.0};
+  const Int_t jtPfMinChgMult[nID] = {0, 0, 0, 1, 1};
+  const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
   
-  const Int_t nID = 3;
-  const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID"};
-  const Double_t jtPfCHMFCutLow[nID] = {0.00, 0.00, 0.00};
-  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90};
-  const Double_t jtPfMUMFCutLow[nID] = {0.00, 0.00, 0.00};
-  const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60};
-  const Double_t jtPfCHFTimesPtCutLow[nID] = {0.0, 0.0, 0.0};
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
@@ -659,7 +672,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
       if(centPos < 0) continue;
     
-      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4]);
+      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4], entry);
     
       Double_t pthatWeight_ = -1;
       for(unsigned int pI = 0; pI < pthats.size()-1; ++pI){
@@ -698,16 +711,23 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 	  }
 
 	  for(Int_t idI = 0; idI < nID; ++idI){
-	    if(idI == 0){
-	      passesID[idI] = true;
-	      continue;
-	    }
-
  	    if(jtPfCHMF_[tI][jI] < jtPfCHMFCutLow[idI]) continue;
  	    if(jtPfCHMF_[tI][jI] > jtPfCHMFCutHi[idI]) continue;
  	    if(jtPfMUMF_[tI][jI] < jtPfMUMFCutLow[idI]) continue;
  	    if(jtPfMUMF_[tI][jI] > jtPfMUMFCutHi[idI]) continue;
-	    if(jtPfCHF_[tI][jI]*jtpt_[tI][jI] < jtPfCHFTimesPtCutLow[idI]) continue;
+ 	    if(jtPfNHF_[tI][jI] < jtPfNHFCutLow[idI]) continue;
+ 	    if(jtPfNHF_[tI][jI] > jtPfNHFCutHi[idI]) continue;
+ 	    if(jtPfNEF_[tI][jI] < jtPfNEFCutLow[idI]) continue;
+ 	    if(jtPfNEF_[tI][jI] > jtPfNEFCutHi[idI]) continue;
+ 	    if(jtPfMUF_[tI][jI] < jtPfMUFCutLow[idI]) continue;
+ 	    if(jtPfMUF_[tI][jI] > jtPfMUFCutHi[idI]) continue;
+ 	    if(jtPfCHF_[tI][jI] < jtPfCHFCutLow[idI]) continue;
+ 	    if(jtPfCHF_[tI][jI] > jtPfCHFCutHi[idI]) continue;
+ 	    if(jtPfCEF_[tI][jI] < jtPfCEFCutLow[idI]) continue;
+ 	    if(jtPfCEF_[tI][jI] > jtPfCEFCutHi[idI]) continue;
+
+	    if(jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] < jtPfMinMult[idI]) continue;
+	    if(jtPfCHM_[tI][jI] < jtPfMinChgMult[idI]) continue;
 
 	    passesID[idI] = true;
 	  }
