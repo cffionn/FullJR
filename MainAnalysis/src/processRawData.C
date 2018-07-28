@@ -239,9 +239,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
 	    const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jIter], 1, true) + "to" + prettyString(jtPtBins[jIter+1], 1, true);
 
-	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
-	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
-	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Fail_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -1.0, 1.0);
+	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
+	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Fail_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
 
 	    setSumW2({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
 	    centerTitles({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
@@ -382,7 +382,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     }
     
 
-    const Int_t nEntries = hiTree_p->GetEntries();
+    const Int_t nEntries = TMath::Min(100000000, (Int_t)hiTree_p->GetEntries());
     const Int_t printInterval = TMath::Max(1, nEntries/20);
 
     for(Int_t entry = 0; entry < nEntries; ++entry){
@@ -450,9 +450,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  }
 
 	  if(tempSubleadingPt_.size() == 0){
-	    tempSubleadingPt_.push_back(30.);
+	    tempSubleadingPt_.push_back(0.);
 	    if(tempLeadingPhi_ > 0) tempSubleadingPhi_.push_back(tempLeadingPhi_ - TMath::Pi());
 	    else tempSubleadingPhi_.push_back(tempLeadingPhi_ + TMath::Pi());
+
+	    /*
+	    if(tempSubleadingPhi_.at(tempSubleadingPhi_.size()-1) > 0) tempSubleadingPhi_.at(tempSubleadingPhi_.size()-1) += TMath::Pi()*4.9/6.;
+	    else tempSubleadingPhi_.at(tempSubleadingPhi_.size()-1) += TMath::Pi()*4.9/6.;
+	    */
 	  }
 	}
 	else tempLeadingPos_ = -1;
@@ -522,11 +527,28 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 
 	    if(tempLeadingPos_ == jI){
+	      for(unsigned int pI = 0; pI < tempSubleadingPt_.size()-1; ++pI){
+		for(unsigned int pI2 = pI+1; pI2 < tempSubleadingPt_.size(); ++pI2){
+		
+		  if(tempSubleadingPt_.at(pI) < tempSubleadingPt_.at(pI2)){
+		    Float_t tempPt = tempSubleadingPt_.at(pI);
+		    Float_t tempPhi = tempSubleadingPhi_.at(pI);
+		    
+		    tempSubleadingPt_.at(pI) = tempSubleadingPt_.at(pI2);
+		    tempSubleadingPhi_.at(pI) = tempSubleadingPhi_.at(pI2);
+
+		    tempSubleadingPt_.at(pI2) = tempPt;
+		    tempSubleadingPhi_.at(pI2) = tempPhi;
+		  }
+		}
+	      }
+
+
 	      double axis = tempLeadingPhi_;
 	      if(axis > 0) axis -= TMath::Pi();
 	      else axis += TMath::Pi();
 	      double projSub = 0;
-	      for(unsigned int pI = 0; pI < tempSubleadingPt_.size(); ++pI){
+	      for(unsigned int pI = 0; pI < TMath::Min((unsigned int)2, (unsigned int)tempSubleadingPt_.size()); ++pI){
 		projSub += tempSubleadingPt_.at(pI)*TMath::Cos(TMath::Abs(getDPHI(axis, tempSubleadingPhi_.at(pI))));
 	      }
 
@@ -539,8 +561,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      }
 	    
 	      if(aI == 0 && aj > 0.8 && leadID[nID-1] && dataTreeList.at(tI).find("ak4PF") != std::string::npos){
-		std::cout << "Jet fail: " << entry << ", " << tempLeadingPt_ << ", " << tempSubleadingPt_.size() << std::endl;
-		if(tempSubleadingPt_.size() != 0) std::cout << " " << tempSubleadingPt_.at(0) << std::endl;
+		//		std::cout << "Jet fail: " << entry << ", " << tempLeadingPt_ << ", " << tempSubleadingPt_.size() << std::endl;
+		//		if(tempSubleadingPt_.size() != 0) std::cout << " " << tempSubleadingPt_.at(0) << std::endl;
 	      }	   
 	    }
 	  }      
@@ -630,7 +652,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetNdivisions(505);
 	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetNdivisions(505);
 
-	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetTitleOffset(3.0);
+	  jtPtRaw_h[jI][cI][idI][aI]->GetXaxis()->SetTitleOffset(5.0);
 	  jtPtRaw_h[jI][cI][idI][aI]->GetYaxis()->SetTitleOffset(2.0);
 
 	  for(Int_t bIX = 0; bIX < jtPtRaw_h[jI][cI][idI][aI]->GetNbinsX(); ++bIX){
@@ -706,7 +728,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
           if(idI == 1) clone_p->DrawCopy("HIST E1 P");
           else clone_p->DrawCopy("HIST E1 P SAME");
 
-
 	  delete clone_p;
         }
 
@@ -736,6 +757,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  delete clone_p;
         }
 
+	drawWhiteBox(900, 1100, .96, .979);
+
+
 	if(doLogX) gPad->SetLogx();
 	gStyle->SetOptStat(0);
 
@@ -750,8 +774,171 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	delete canv_p;
 	delete leg_p;
       }
+
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|#eta|<" + prettyString(jtAbsEtaBinsHi[aI], 1, false);
+
+	for(Int_t jetI = 0; jetI < nJtPtBins; ++jetI){
+	  const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jetI], 1, true) + "to" + prettyString(jtPtBins[jetI+1], 1, true);
+	  const std::string jtPtStr2 =  prettyString(jtPtBins[jetI], 1, false) + "<p_{T}<" + prettyString(jtPtBins[jetI+1], 1, false);
+	
+	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+	  canv_p->SetTopMargin(0.01);
+	  canv_p->SetRightMargin(0.002);
+	  canv_p->SetLeftMargin(0.01);
+	  canv_p->SetBottomMargin(0.01);
+	  
+	  TPad* pads[2];
+	  canv_p->cd();
+	  pads[0] = new TPad("pad0", "", 0.0, yPadFrac, 1.0, 1.0);
+	  pads[0]->SetLeftMargin(marg);
+	  pads[0]->SetTopMargin(0.01);
+	  pads[0]->SetBottomMargin(0.001);
+	  pads[0]->SetRightMargin(0.002);
+	  pads[0]->Draw();
+	  
+	  canv_p->cd();
+	  pads[1] = new TPad("pad1", "", 0.0, 0.0, 1.0, yPadFrac);
+	  pads[1]->Draw();
+	  pads[1]->SetLeftMargin(marg);
+	  pads[1]->SetTopMargin(0.001);
+	  pads[1]->SetBottomMargin(marg/yPadFrac);
+	  pads[1]->SetRightMargin(0.002);
+	  
+	  canv_p->cd();
+	  pads[0]->cd();
+
+	  double max = -1;
+	  double min = 10000000;
+	  
+	  for(Int_t idI = 0; idI < nID; ++idI){
+	    Int_t passColor = vg.getColor(1);
+	    if(idI == 0) passColor = 1;
+	    Int_t failColor = vg.getColor(2);
+
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMarkerColor(passColor);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetLineColor(passColor);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMarkerStyle(styles[idI]);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMarkerSize(1.);	  
+	    
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetTitleFont(43);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetTitleSize(14);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetTitleFont(43);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetTitleSize(14);
+	    
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetLabelFont(43);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetLabelSize(14);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetLabelFont(43);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetLabelSize(14);
+	    
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetNdivisions(505);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetNdivisions(505);
+	    
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetXaxis()->SetTitleOffset(3.0);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetYaxis()->SetTitleOffset(2.0);
+
+	    multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetMarkerColor(failColor);
+            multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetLineColor(failColor);
+            multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetMarkerStyle(styles[idI]);
+            multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetMarkerSize(1.);
+
+	    
+	    for(Int_t bIX = 0; bIX < multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetNbinsX(); ++bIX){
+	      if(multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) > max) max = multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
+	      if(multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) < min && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) > 0) min = multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
+	      
+	      if(multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) > max) max = multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
+	      if(multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) < min && multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) > 0) min = multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
+	    }
+	  }
+	  
+	  TLegend* leg_p = new TLegend(0.2, 0.5, 0.9, 0.75);
+	  leg_p->SetBorderSize(0.0);
+	  leg_p->SetFillStyle(0);
+	  leg_p->SetFillColor(0);
+	  
+	  for(Int_t idI = 0; idI < nID; ++idI){
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMaximum(max*5.);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMinimum(min/5.);
+
+	    std::string id = idStr.at(idI);
+	    leg_p->AddEntry(multijetAJ_Pass_h[jI][cI][idI][aI][jetI], id.c_str(), "P L");
+
+	    if(idI == 0) multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->DrawCopy("HIST E1 P");
+	    else{
+	      multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->DrawCopy("HIST E1 P SAME");
+	      multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->DrawCopy("HIST E1 P SAME");
+	    }
+	  }
+
+	  TLatex* label_p = new TLatex();
+	  label_p->SetTextFont(43);
+	  label_p->SetTextSize(14);
+	  label_p->SetNDC();
+
+	  label_p->DrawLatex(0.2, 0.94, tempStr.c_str());
+	  label_p->DrawLatex(0.2, 0.88, centStr2.c_str());
+	  label_p->DrawLatex(0.2, 0.82, jtAbsEtaStr2.c_str());
+	  label_p->DrawLatex(0.2, 0.76, jtPtStr2.c_str());
+
+	  leg_p->Draw("SAME");
+
+	  delete label_p;
+
+	  gPad->SetLogy();
+	  gStyle->SetOptStat(0);
+	  gPad->SetTicks(1, 2);
+	  gPad->RedrawAxis();
+	  
+	  canv_p->cd();
+	  pads[1]->cd();
+   	  
+	  for(Int_t idI = 1; idI < nID; ++idI){
+	    TH1D* clone_p = (TH1D*)multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->Clone("temp");
+	    setSumW2(clone_p);
+	    centerTitles(clone_p);
+	    
+	    clone_p->Divide(multijetAJ_All_h[jI][cI][0][aI][jetI]);
+     	    	    
+	    /*
+	    for(Int_t bIX = 0; bIX < multijetAJ_All_h[jI][cI][0][aI][jetI]->GetNbinsX(); ++bIX){
+	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
+		clone_p->SetBinContent(bIX+1, 0.0000001);
+		clone_p->SetBinError(bIX+1, 0);
+	      }
+	      else if(clone_p->GetBinContent(bIX+1) > 0) clone_p->SetBinError(bIX+1, 0);
+	    }
+	    */
+
+	    clone_p->SetMaximum(1.1);
+	    clone_p->SetMinimum(-0.1);
+	    
+
+	    clone_p->GetYaxis()->SetTitle("Pass Ratio");
+	    
+	    if(idI == 1) clone_p->DrawCopy("HIST E1 P");
+	    else clone_p->DrawCopy("HIST E1 P SAME");
+	    
+	    delete clone_p;
+	  }
+
+	  gStyle->SetOptStat(0);
+	  gPad->SetTicks(1, 2);
+	  gPad->RedrawAxis();
+
+	  canv_p->SaveAs(("pdfDir/multijetAJ_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + jtPtStr + "_" + dateStr + ".pdf").c_str());
+	  
+	  delete pads[0];
+	  delete pads[1];
+	  delete canv_p;
+	  delete leg_p;	  		  
+	}
+      }
     }
   }  
+
+
 
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
@@ -785,6 +972,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
+  TDirectory* subFileDir_p = (TDirectory*)outFile_p->mkdir("cutDir/fullFiles");
 
   cutPropagator cutPropOut;
   cutPropOut.Clean();
@@ -820,7 +1008,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetJtPfMinMult(jtPfMinMult);
   cutPropOut.SetJtPfMinChgMult(jtPfMinChgMult);
 
-  if(!cutPropOut.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
+  if(!cutPropOut.WriteAllVarToFile(outFile_p, cutDir_p, subFileDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   outFile_p->Close();
   delete outFile_p;

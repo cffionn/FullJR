@@ -3,6 +3,13 @@
 
 #include <string>
 
+bool isStrSame(std::string inStr1, std::string inStr2)
+{
+  if(inStr1.size() != inStr2.size()) return false;
+  if(inStr1.find(inStr2) == std::string::npos) return false;
+  return true;
+}
+
 std::string removeAllWhiteSpace(std::string inStr)
 {
   while(inStr.find(" ") != std::string::npos){
