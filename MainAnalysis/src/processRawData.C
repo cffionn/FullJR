@@ -37,7 +37,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   vanGoghPalette vg;
   const Int_t nStyles = 5;
-  const Int_t styles[nStyles] = {21, 20, 34, 33, 25};
+  const Int_t styles[nStyles] = {21, 24, 34, 33, 25};
   const Int_t colors[nStyles] = {1, vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(3)};
   const Double_t yPadFrac = 0.4;
   const Double_t marg = 0.12;
@@ -212,6 +212,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtRaw_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
   TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
@@ -219,6 +225,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
   TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
   TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
+
+  const Int_t nMultijetAJ = 10;
+  const Double_t multijetAJ[nMultijetAJ+1] = {-0.5, -0.2, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.1};
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
@@ -239,9 +248,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
 	    const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jIter], 1, true) + "to" + prettyString(jtPtBins[jIter+1], 1, true);
 
-	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
-	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
-	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Fail_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", 40, -0.9, 1.1);
+	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", nMultijetAJ, multijetAJ);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", nMultijetAJ, multijetAJ);
+	    multijetAJ_Fail_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Fail_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", nMultijetAJ, multijetAJ);
 
 	    setSumW2({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
 	    centerTitles({multijetAJ_All_h[jI][cI][idI][aI][jIter], multijetAJ_Pass_h[jI][cI][idI][aI][jIter], multijetAJ_Fail_h[jI][cI][idI][aI][jIter]});
@@ -388,6 +397,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     for(Int_t entry = 0; entry < nEntries; ++entry){
       if(nEntries >= 50000 && entry%printInterval == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
 
+      //std::cout << __LINE__ << std::endl;
+
       hiTree_p->GetEntry(entry);
       skimTree_p->GetEntry(entry);
 
@@ -398,6 +409,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       globalSel.setPhfCoincFilter3(phfCoincFilter3_);
       globalSel.setHBHENoiseFilterResultRun2Loose(HBHENoiseFilterResultRun2Loose_);
       globalSel.setPclusterCompatibilityFilter(pclusterCompatibilityFilter_);
+
+      //std::cout << __LINE__ << std::endl;
 
       if(!globalSel.isGood()) continue;
 
@@ -412,7 +425,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       if(centPos == -1) continue;
 
       for(Int_t tI = 0; tI < nDataJet; ++tI){jetTrees_p[tI]->GetEntry(entry);}
-      
+
+      //std::cout << __LINE__ << std::endl;      
 
       for(Int_t tI = 0; tI < nDataJet; ++tI){
 	Double_t tempLeadingPt_ = -999;
@@ -421,6 +435,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	std::vector<Double_t> tempSubleadingPhi_;
 	Int_t tempLeadingPos_ = -1;
 	Int_t tempLeadingFillPos_ = -1;
+
+	//std::cout << __LINE__ << std::endl;
 
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
@@ -431,6 +447,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    tempLeadingPos_ = jI;
 	  }
 	}
+
+	//std::cout << __LINE__ << std::endl;
 
 	if(tempLeadingPt_ > jtPtBins[0]){
 	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
@@ -462,13 +480,20 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	}
 	else tempLeadingPos_ = -1;
 
+	//std::cout << __LINE__ << std::endl;
+
 	Int_t leadID[nID];
 	for(Int_t idI = 0; idI < nID; ++idI){
 	  leadID[idI] = false;
 	}
 
+	//std::cout << __LINE__ << std::endl;
+
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	  //std::cout << __LINE__ << std::endl;
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
+
+	  //std::cout << __LINE__ << std::endl;
 	  
 	  std::vector<int> jtAbsEtaPoses;
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
@@ -477,15 +502,23 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 
+	  //std::cout << __LINE__ << std::endl;
+
 	  /*
 	  std::cout << "JtAbsEtaPoses.size(): " << jtAbsEtaPoses.size() << std::endl;
 	  if(jtAbsEtaPoses.size() != 0) std::cout << " " << jtAbsEtaPoses.at(0) << ", " << jtAbsEtaPoses.at(jtAbsEtaPoses.size()-1) << std::endl;
 	  */
 
+	  //std::cout << __LINE__ << std::endl;
+
 	  std::vector<int> idPoses;
 	  //	  bool passesLast = false;
 
+	  //std::cout << __LINE__ << std::endl;
+
 	  for(Int_t idI = 0; idI < nID; ++idI){
+	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
+
 	    if(jtPfCHMFCutLow.at(idI) > jtPfCHMF_[tI][jI]) continue;
 	    if(jtPfCHMFCutHi.at(idI) < jtPfCHMF_[tI][jI]) continue;
 	    if(jtPfMUMFCutLow.at(idI) > jtPfMUMF_[tI][jI]) continue;
@@ -501,9 +534,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
             if(jtPfCEF_[tI][jI] < jtPfCEFCutLow.at(idI)) continue;
             if(jtPfCEF_[tI][jI] > jtPfCEFCutHi.at(idI)) continue;
 
+	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
+
+	    //std::cout << jtPfMinMult.size() << ", " << jtPfMinChgMult.size() << std::endl;
+
             if(jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] < jtPfMinMult.at(idI)) continue;
             if(jtPfCHM_[tI][jI] < jtPfMinChgMult.at(idI)) continue;
 
+
+	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
 	    //	    if(idI == nID-1) passesLast = true;
 
 	    if(tempLeadingPos_ == jI) leadID[idI] = true;
@@ -514,6 +553,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  //	  if(dataTreeList.at(tI).find("ak4PF") != std::string::npos && !passesLast && jtpt_[tI][jI] > 600.){
 	  //std::cout << "Jet fail: " << entry << ", " << jtpt_[tI][jI] << std::endl;
 	  //	  }
+
+	  //std::cout << __LINE__ << std::endl;
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
@@ -526,6 +567,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      }
 	    }
 
+	    //std::cout << __LINE__ << std::endl;
+	  
 	    if(tempLeadingPos_ == jI){
 	      for(unsigned int pI = 0; pI < tempSubleadingPt_.size()-1; ++pI){
 		for(unsigned int pI2 = pI+1; pI2 < tempSubleadingPt_.size(); ++pI2){
@@ -543,6 +586,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 		}
 	      }
 
+	      //std::cout << __LINE__ << std::endl;
 
 	      double axis = tempLeadingPhi_;
 	      if(axis > 0) axis -= TMath::Pi();
@@ -554,12 +598,19 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	      double aj = (tempLeadingPt_ - projSub)/(tempLeadingPt_ + projSub);
 
+	      //std::cout << __LINE__ << std::endl;
+
 	      for(Int_t idI = 0; idI < nID; ++idI){
+		if(aj < multijetAJ[0]) aj = (multijetAJ[0] + multijetAJ[1])/2.;
+		else if(aj > multijetAJ[nMultijetAJ]) aj = (multijetAJ[nMultijetAJ - 1] + multijetAJ[nMultijetAJ])/2.;
+
 		multijetAJ_All_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 		if(leadID[idI]) multijetAJ_Pass_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 		else multijetAJ_Fail_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 	      }
 	    
+	      //std::cout << __LINE__ << std::endl;
+
 	      if(aI == 0 && aj > 0.8 && leadID[nID-1] && dataTreeList.at(tI).find("ak4PF") != std::string::npos){
 		//		std::cout << "Jet fail: " << entry << ", " << tempLeadingPt_ << ", " << tempSubleadingPt_.size() << std::endl;
 		//		if(tempSubleadingPt_.size() != 0) std::cout << " " << tempSubleadingPt_.at(0) << std::endl;
@@ -570,10 +621,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
     }
 
+    //std::cout << __LINE__ << std::endl;
+
     inDataFile_p->Close();
     delete inDataFile_p;
   }
 
+  //std::cout << __LINE__ << std::endl;
 
   outFile_p->cd();
 
@@ -708,8 +762,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	for(Int_t idI = 1; idI < nID; ++idI){
 	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
-	  setSumW2(clone_p);
-	  centerTitles(clone_p);
+	  //	  setSumW2(clone_p);
+	  //	  centerTitles(clone_p);
 
 	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
 
@@ -743,8 +797,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	for(Int_t idI = 1; idI < nID; ++idI){
 	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
-	  setSumW2(clone_p);
-	  centerTitles(clone_p);
+	  //	  setSumW2(clone_p);
+	  //	  centerTitles(clone_p);
 
 	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
           clone_p->SetMaximum(1.02);
@@ -896,20 +950,24 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
    	  
 	  for(Int_t idI = 1; idI < nID; ++idI){
 	    TH1D* clone_p = (TH1D*)multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->Clone("temp");
-	    setSumW2(clone_p);
-	    centerTitles(clone_p);
+	    //	    setSumW2(clone_p);
+	    //	    centerTitles(clone_p);
 	    
 	    clone_p->Divide(multijetAJ_All_h[jI][cI][0][aI][jetI]);
      	    	    
-	    /*
+	    
 	    for(Int_t bIX = 0; bIX < multijetAJ_All_h[jI][cI][0][aI][jetI]->GetNbinsX(); ++bIX){
 	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
 		clone_p->SetBinContent(bIX+1, 0.0000001);
-		clone_p->SetBinError(bIX+1, 0);
+		clone_p->SetBinError(bIX+1, 0.0000001);
 	      }
-	      else if(clone_p->GetBinContent(bIX+1) > 0) clone_p->SetBinError(bIX+1, 0);
+	      else if(multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
+		clone_p->SetBinContent(bIX+1, -100.);
+		clone_p->SetBinError(bIX+1, 0.0000001);
+	      }
+	      //	      else if(clone_p->GetBinContent(bIX+1) > 0) clone_p->SetBinError(bIX+1, 0);
 	    }
-	    */
+	    
 
 	    clone_p->SetMaximum(1.1);
 	    clone_p->SetMinimum(-0.1);

@@ -172,6 +172,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
 
   const Int_t nBayes = 20;
   TDirectory* dir_p[nDataJet];

@@ -527,7 +527,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
     }
 
-    const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[0]->GetEntries());
+    const Int_t nEntries = TMath::Min((Int_t)10000, (Int_t)jetTrees_p[0]->GetEntries());
     const Int_t printInterval = TMath::Max(1, nEntries/20);
 
     nFileLoopEvt += nEntries;
