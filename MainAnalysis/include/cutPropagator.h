@@ -328,7 +328,7 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("jtPfCEFCutLow", tempStr)) jtPfCEFCutLow = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jtPfCEFCutHi", tempStr)) jtPfCEFCutHi = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jtPfMinMult", tempStr)) jtPfMinMult = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
-    else if(isStrSame("jtPfMinChgMult", tempStr)) jtPfMinMult = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("jtPfMinChgMult", tempStr)) jtPfMinChgMult = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nSyst", tempStr)) nSyst = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("systStr", tempStr)) systStr = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else{
@@ -584,8 +584,6 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(jtPfCEFCutHi.size() != inCutProp.GetJtPfCEFCutHi().size()) return false;
   if(jtPfMinMult.size() != inCutProp.GetJtPfMinMult().size()) return false;
   if(jtPfMinChgMult.size() != inCutProp.GetJtPfMinChgMult().size()) return false;
-  if(nSyst != inCutProp.GetNSyst()) return false;
-  if(systStr.size() != inCutProp.GetSystStr().size()) return false;
 
   for(unsigned int i = 0; i < jtPtBins.size(); ++i){
     if(jtPtBins.at(i) - delta > inCutProp.GetJtPtBins().at(i)) return false;
@@ -686,13 +684,16 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
     if(jtPfMinChgMult.at(i) != inCutProp.GetJtPfMinChgMult().at(i)) return false;
   }
 
-  for(unsigned int i = 0; i < systStr.size(); ++i){
-    if(systStr.at(i).size() != inCutProp.GetSystStr().at(i).size()) return false;
-    if(systStr.at(i).find(inCutProp.GetSystStr().at(i)) == std::string::npos) return false;
-  }
-
 
   if(doBothMCOrBothData){
+    if(nSyst != inCutProp.GetNSyst()) return false;
+    if(systStr.size() != inCutProp.GetSystStr().size()) return false;
+
+    for(unsigned int i = 0; i < systStr.size(); ++i){
+      if(systStr.at(i).size() != inCutProp.GetSystStr().at(i).size()) return false;
+      if(systStr.at(i).find(inCutProp.GetSystStr().at(i)) == std::string::npos) return false;
+    }
+
     if(rcDiffFileName.size() != inCutProp.GetRCDiffFileName().size()) return false;
     if(rcDiffFileName.find(inCutProp.GetRCDiffFileName()) == std::string::npos) return false;
 
