@@ -313,5 +313,7 @@ int main(int argc, char* argv[])
   int retVal = 0;
   retVal += validateJetResponse(argv[1], false);
   retVal += validateJetResponse(argv[1], true);
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
 }

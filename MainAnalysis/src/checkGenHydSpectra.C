@@ -273,5 +273,7 @@ int main(int argc, char* argv[])
 
   int retVal = 0;
   retVal += checkGenHydSpectra(argv[1]);
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
 }

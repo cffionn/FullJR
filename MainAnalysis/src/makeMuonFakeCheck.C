@@ -368,5 +368,7 @@ int main(int argc, char* argv[])
   int retVal = 0; 
   if(argc == 2) retVal += makeMuonFakeCheck(argv[1]);
   else if(argc == 3) retVal += makeMuonFakeCheck(argv[1], std::stoi(argv[2]));
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
 }

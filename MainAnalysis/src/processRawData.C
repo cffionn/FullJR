@@ -1029,5 +1029,7 @@ int main(int argc, char* argv[])
   int retVal = 0;
   if(argc == 3) retVal += processRawData(argv[1], argv[2]);
   else retVal += processRawData(argv[1], argv[2], std::stoi(argv[3]));
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
 }

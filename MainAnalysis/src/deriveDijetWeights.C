@@ -250,5 +250,9 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  return deriveDijetWeights(argv[1], std::stoi(argv[2]));
+  int retVal = 0;
+  retVal = deriveDijetWeights(argv[1], std::stoi(argv[2]));
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
+  return retVal;
 }

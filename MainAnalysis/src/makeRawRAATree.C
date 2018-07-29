@@ -511,5 +511,7 @@ int main(int argc, char* argv[])
   int retVal = 0;
   if(argc == 2) retVal += makeRawRAATree(argv[1]);
   else if(argc == 3) retVal += makeRawRAATree(argv[1], argv[2]);
+
+  std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
 }
