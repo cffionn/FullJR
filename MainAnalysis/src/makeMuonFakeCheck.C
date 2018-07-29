@@ -100,6 +100,13 @@ int makeMuonFakeCheck(const std::string inName, bool isPP = false)
   const Double_t jtPtBins[nJtPtBins+1] = {300., 400., 500., 600., 700., 800., 900., 1000., 1100.};
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
+
   TH1D* recoJtPt_Raw_h = new TH1D("recoJtPt_Raw_h", ";Reco. Jet p_{T};Counts (Weighted)", nJtPtBins, jtPtBins);
   TH1D* recoJtPt_RawWithRef_h = new TH1D("recoJtPt_RawWithRef_h", ";Reco. Jet p_{T};Counts (Weighted)", nJtPtBins, jtPtBins);
 

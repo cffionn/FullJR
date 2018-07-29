@@ -213,6 +213,12 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
 
   TH1D* jtPt_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
   TH1D* jtPt_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];

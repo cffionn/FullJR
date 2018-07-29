@@ -74,10 +74,15 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
   if(outFileName.size() == 0) outFileName = "output/" + inToOutFileString(inFileName, "RawRAAHIST_NJet" + std::to_string(inJetTreeList_.size()));
   else outFileName = "output/" + inToOutFileString(outFileName, "RawRAAHIST_NJet" + std::to_string(inJetTreeList_.size()));
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
 
   std::map<ULong64_t, Int_t> runLumiMap;
   
-
   inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   bool hasHLT = returnRootFileContentsList(inFile_p, "TTree", "hltanalysis").size() > 0;
 

@@ -762,9 +762,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	for(Int_t idI = 1; idI < nID; ++idI){
 	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
-	  //	  setSumW2(clone_p);
-	  //	  centerTitles(clone_p);
-
 	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
 
 	  if(maxRat < 1.05) maxRat = 1.05;
@@ -797,9 +794,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	for(Int_t idI = 1; idI < nID; ++idI){
 	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
-	  //	  setSumW2(clone_p);
-	  //	  centerTitles(clone_p);
-
 	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
           clone_p->SetMaximum(1.02);
           clone_p->SetMinimum(0.98);
@@ -938,8 +932,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	  leg_p->Draw("SAME");
 
-	  delete label_p;
-
 	  gPad->SetLogy();
 	  gStyle->SetOptStat(0);
 	  gPad->SetTicks(1, 2);
@@ -950,12 +942,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
    	  
 	  for(Int_t idI = 1; idI < nID; ++idI){
 	    TH1D* clone_p = (TH1D*)multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->Clone("temp");
-	    //	    setSumW2(clone_p);
-	    //	    centerTitles(clone_p);
-	    
 	    clone_p->Divide(multijetAJ_All_h[jI][cI][0][aI][jetI]);
-     	    	    
-	    
+	    double totalFail = 0;
+	    for(Int_t bIX = 0; bIX < multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX(); ++bIX){
+	      totalFail += multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
+	    }
+	    double highFail = multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX());
+
 	    for(Int_t bIX = 0; bIX < multijetAJ_All_h[jI][cI][0][aI][jetI]->GetNbinsX(); ++bIX){
 	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
 		clone_p->SetBinContent(bIX+1, 0.0000001);
@@ -965,18 +958,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 		clone_p->SetBinContent(bIX+1, -100.);
 		clone_p->SetBinError(bIX+1, 0.0000001);
 	      }
-	      //	      else if(clone_p->GetBinContent(bIX+1) > 0) clone_p->SetBinError(bIX+1, 0);
 	    }
-	    
 
 	    clone_p->SetMaximum(1.1);
 	    clone_p->SetMinimum(-0.1);
-	    
 
 	    clone_p->GetYaxis()->SetTitle("Pass Ratio");
 	    
 	    if(idI == 1) clone_p->DrawCopy("HIST E1 P");
 	    else clone_p->DrawCopy("HIST E1 P SAME");
+
+	    label_p->DrawLatex(0.2, 0.94 - 0.06*(idI-1), (idStr.at(idI) + ": " + std::to_string((int)highFail) + "/" + std::to_string((int)totalFail) + ", " + prettyString(highFail/totalFail, 3, false)).c_str());
 	    
 	    delete clone_p;
 	  }
@@ -991,6 +983,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  delete pads[1];
 	  delete canv_p;
 	  delete leg_p;	  		  
+	  delete label_p;
 	}
       }
     }
