@@ -67,7 +67,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   const Int_t isDataPP = cutPropData.GetIsPP();
   const Int_t isResponsePP = cutPropResponse.GetIsPP();
+
+  const Int_t nSyst = cutPropResponse.GetNSyst();
+  std::vector<std::string> systStr = cutPropResponse.GetSystStr();
   
+  const Int_t nResponseMod = cutPropResponse.GetNResponseMod();
+  std::vector<double> responseMod = cutPropResponse.GetResponseMod();
+
   const Int_t nCentBins = cutPropData.GetNCentBins();
   std::vector<Int_t> centBinsLow = cutPropData.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropData.GetCentBinsHi();
@@ -169,8 +175,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   const Int_t nBayes = 20;
   TDirectory* dir_p[nDataJet];
-  TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nBayes];
-  TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nBayes];
+  TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataJetDirList.at(jI);
@@ -182,14 +188,23 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
       if(!isDataPP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
       
       for(Int_t idI = 0; idI < nID; ++idI){
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
-	  for(Int_t bI = 0; bI < nBayes; ++bI){
-	    std::string bayesStr = "Bayes" + std::to_string(bI+1);
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){
+          const std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 2, true);
 
-	    jtPtUnfolded_h[jI][cI][idI][aI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
-	    jtPtUnfolded_RecoTrunc_h[jI][cI][idI][aI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+
+	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	      const std::string tempSystStr = systStr[sI] + "_";
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		std::string bayesStr = "Bayes" + std::to_string(bI+1);
+		
+		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	      }
+	    }
 	  }
 	}
       }
@@ -197,7 +212,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
   responseFile_p = new TFile(inResponseName.c_str(), "READ");
-  RooUnfoldResponse* rooResponse_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
+  RooUnfoldResponse* rooResponse_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataJetDirList.at(jI);
@@ -208,10 +223,18 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
       if(!isResponsePP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 
       for(Int_t idI = 0; idI < nID; ++idI){
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	  const std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 2, true);
 
-	  rooResponse_RecoTrunc_h[jI][cI][idI][aI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_RecoTrunc_h").c_str());
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	    
+	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	      const std::string tempSystStr = systStr[sI] + "_";
+	     
+	      rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoTrunc_h").c_str());
+	    }
+	  }
 	}
       }
     }
@@ -242,15 +265,20 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t idI = 0; idI < nID; ++idI){
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	  for(Int_t bI = 0; bI < nBayes; ++bI){	    
-	    RooUnfoldBayes bayes(rooResponse_RecoTrunc_h[jI][cI][idI][aI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 1+bI, false, "name");
-	    bayes.SetVerbose(0);	    
-	    TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){	 
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
-	    for(Int_t bIX = 0; bIX < unfold_h->GetNbinsX(); ++bIX){
-	      jtPtUnfolded_RecoTrunc_h[jI][cI][idI][aI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
-	      jtPtUnfolded_RecoTrunc_h[jI][cI][idI][aI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
+	      for(Int_t bI = 0; bI < nBayes; ++bI){	    
+		RooUnfoldBayes bayes(rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 1+bI, false, "name");
+		bayes.SetVerbose(0);	    
+		TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
+		
+		for(Int_t bIX = 0; bIX < unfold_h->GetNbinsX(); ++bIX){
+		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
+		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
+		}
+	      }
 	    }	    
 	  }
 	}
@@ -272,15 +300,18 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t idI = 0; idI < nID; ++idI){
-
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-
-	  for(Int_t bI = 0; bI < nBayes; ++bI){
-	    jtPtUnfolded_h[jI][cI][idI][aI][bI]->Write("", TObject::kOverwrite);
-	    delete jtPtUnfolded_h[jI][cI][idI][aI][bI];
-	    
-	    jtPtUnfolded_RecoTrunc_h[jI][cI][idI][aI][bI]->Write("", TObject::kOverwrite);
-	    delete jtPtUnfolded_RecoTrunc_h[jI][cI][idI][aI][bI];
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){	
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	    	    
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
+		delete jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI];
+		
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
+		delete jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI];
+	      }
+	    }
 	  }
 	}
       }
@@ -289,7 +320,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
-  if(!cutPropData.WriteAllVarToFile(outFile_p, cutDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
+  TDirectory* subDir_p = (TDirectory*)cutDir_p->mkdir("subDir");
+
+  if(!cutPropData.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   outFile_p->Close();
   delete outFile_p;
