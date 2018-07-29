@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 
 //ROOT dependencies
 #include "TFile.h"
@@ -24,6 +25,7 @@
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/cppWatch.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
@@ -31,8 +33,10 @@
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
 #include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/scaleErrorTool.h"
 #include "Utility/include/specialHYDJETEventExclude.h"
 #include "Utility/include/stringUtil.h"
+
 
 template <typename T>
 std::string to_string_with_precision(const T a_value, const int n)
@@ -44,7 +48,9 @@ std::string to_string_with_precision(const T a_value, const int n)
 
 int makeJetResponseTree(const std::string inName, bool isPP = false)
 {
-  TRandom3* randGen_p = new TRandom3(0);
+  cppWatch totalRunWatch;
+  cppWatch fileLoopWatch;
+  totalRunWatch.start();
 
   std::vector<std::string> fileList;
   std::vector<double> pthats;
@@ -107,6 +113,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     std::cout << "Given inName \'" << inName << "\' contains no pthatWeights list. return 1" << std::endl;
     return 1;
   }
+
+
+  //Post possible returns, start your random number generator
+  TRandom3* randGen_p = new TRandom3(0);
 
   std::cout << "Pthats and weights: " << std::endl;
   for(unsigned int pI = 0; pI < pthats.size(); ++pI){
@@ -172,6 +182,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const std::string dateStr = std::to_string(date->GetDate()) + "_" + std::to_string(date->GetHour());
   delete date;
 
+  const std::string fullPath = std::getenv("FULLJRDIR");
+
+  const std::string rcDiffFileName = "MainAnalysis/tables/rcDifferences_20180418.txt";
+  scaleErrorTool scaleErr((fullPath + "/" + rcDiffFileName).c_str());
+  scaleErr.Init();
+
   std::string outFileName = inName;
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
@@ -190,7 +206,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   const Int_t nResponseMod = 2;
   const Double_t responseMod[nResponseMod] = {0.00, 0.10};
-  const Double_t scaleFactor[nResponseMod] = {0.15, 0.10};
+  const Double_t responseError[nResponseMod] = {0.15, 0.10};
+
+  const Double_t jecVarMC = 0.02;
+  const Double_t jerVarMC = 0.07;
 
   /*
   const Int_t nJtPtBins = 10;
@@ -220,8 +239,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
-  const Int_t nSyst = 6;
-  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JERMC", "JERData", "Fake"};
+  const Int_t nSyst = 8;
+  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JERMC", "JERData", "Fake"};
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
@@ -286,7 +305,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       for(Int_t iI = 0; iI < nID; ++iI){
 
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){
-	  std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 1, true);
+	  std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 2, true);
 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
@@ -342,6 +361,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   specialHYDJETEventExclude specialSel;
 
+  Int_t nFileLoopEvt = 0;
+  fileLoopWatch.start();
+  
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
 
@@ -487,8 +509,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
     }
 
-    const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[0]->GetEntries());
+    const Int_t nEntries = TMath::Min((Int_t)10000, (Int_t)jetTrees_p[0]->GetEntries());
     const Int_t printInterval = TMath::Max(1, nEntries/20);
+
+    nFileLoopEvt += nEntries;
 
     for(Int_t entry = 0; entry < nEntries; ++entry){
       if(nEntries >= 50000 && entry%printInterval == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
@@ -552,9 +576,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	centralityFullWeighted_h->Fill(hiBin_/2., fullWeight_);
       }
 
+      Int_t scaleHiBin = 160;
+      if(!isPP) scaleHiBin = hiBin_/2;
+
       Bool_t isPara = randGen_p->Uniform(0., 1.) < fracParaFills;
 
       for(Int_t tI = 0; tI < nTrees; ++tI){
+	const Int_t rVal = getRVal(jetTrees_p[tI]->GetName());
+	
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 	  bool goodTruth = (refpt_[tI][jI] >= jtPtBins[0] && refpt_[tI][jI] < jtPtBins[nJtPtBins]);
@@ -567,10 +596,18 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	  
 	      jtPtFillVal[sI] = jtpt_[tI][jI] + (jtpt_[tI][jI] - refpt_[tI][jI])*responseMod[mI];
 
-	      if(isStrSame(systStr[sI], "JECUpMC")) jtPtFillVal[sI] += jtPtFillVal[sI]*.02;
-	      else if(isStrSame(systStr[sI], "JECDownMC")) jtPtFillVal[sI] -= jtPtFillVal[sI]*.02;
-	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*.07;
-	      else if(isStrSame(systStr[sI], "JERData")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*scaleFactor[mI];
+	      if(isStrSame(systStr[sI], "JECUpMC")) jtPtFillVal[sI] += jtPtFillVal[sI]*jecVarMC;
+	      else if(isStrSame(systStr[sI], "JECDownMC")) jtPtFillVal[sI] -= jtPtFillVal[sI]*jecVarMC;
+	      else if(isStrSame(systStr[sI], "JECUpData") || isStrSame(systStr[sI], "JECDownData") ){
+		Float_t tempScale =  jtPtFillVal[sI]/refpt_[tI][jI];
+		Float_t tempRawPt = rawpt_[tI][jI];
+		if(isStrSame(systStr[sI], "JECUpData")) tempRawPt += TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
+		else tempRawPt -= TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
+
+		jtPtFillVal[sI] = tempRawPt*tempScale;
+	      }
+	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarMC;
+	      else if(isStrSame(systStr[sI], "JERData")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*responseError[mI];
 	      
 	      goodReco[sI] = (jtPtFillVal[sI] >= jtPtBins[0] && jtPtFillVal[sI] < jtPtBins[nJtPtBins]);
 	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= jtPtBins[1] && jtPtFillVal[sI] < jtPtBins[nJtPtBins-1]);
@@ -680,6 +717,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     delete inFile_p;
     inFile_p = NULL;
   }
+
+  fileLoopWatch.stop();
 
   //std::cout << __LINE__ << std::endl;
 
@@ -799,10 +838,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetInFileNames({inName});
   cutProp.SetInFullFileNames(fileList);
   cutProp.SetIsPP(isPP);
+  cutProp.SetRCDiffFileName(rcDiffFileName);
   cutProp.SetJtAbsEtaMax(jtAbsEtaMax);
+  cutProp.SetJECVarMC(jecVarMC);
+  cutProp.SetJERVarMC(jerVarMC);
   cutProp.SetNResponseMod(nResponseMod);
   cutProp.SetResponseMod(nResponseMod, responseMod);
-  cutProp.SetScaleFactor(nResponseMod, scaleFactor);
+  cutProp.SetResponseError(nResponseMod, responseError);
   cutProp.SetNJtPtBins(nJtPtBins);
   cutProp.SetJtPtBins(nJtPtBins+1, jtPtBins);
   cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
@@ -847,6 +889,20 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   //std::cout << __LINE__ << std::endl;
 
   delete randGen_p;
+
+  totalRunWatch.stop();
+  const double fileLoopWatchTotal = fileLoopWatch.total();
+  const double totalRunWatchTotal = totalRunWatch.total();
+  const double nJetTrees = responseTrees.size();
+
+  std::cout << "File loop watch: " << fileLoopWatch.total() << std::endl;
+  std::cout << " Per event: " << fileLoopWatchTotal/nFileLoopEvt << std::endl;
+  std::cout << " Per jetTree: " << fileLoopWatchTotal/nJetTrees << std::endl;
+  std::cout << " Per event x jetTree: " << fileLoopWatchTotal/(nJetTrees*nFileLoopEvt) << std::endl;
+
+  std::cout << "Total run watch: " << totalRunWatch.total() << std::endl;
+  std::cout << " File loop fraction: " << fileLoopWatchTotal/totalRunWatchTotal << std::endl;
+  std::cout << " Non-file loop num: " << totalRunWatch.total() - fileLoopWatch.total() << std::endl;
 
   return 0;
 }

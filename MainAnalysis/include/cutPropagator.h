@@ -21,9 +21,14 @@ class cutPropagator
   bool isPP;
 
   double jtAbsEtaMax;
+
+  std::string rcDiffFileName;
+  double jecVarMC;
+  double jerVarMC;
+
   int nResponseMod;
   std::vector<double> responseMod;
-  std::vector<double> scaleFactor;
+  std::vector<double> responseError;
 
   int nJtPtBins;
   std::vector<double> jtPtBins;
@@ -73,9 +78,14 @@ class cutPropagator
 
   double GetJtAbsEtaMax(){return jtAbsEtaMax;}
 
+  std::string GetRCDiffFileName(){return rcDiffFileName;}
+
+  double GetJECVarMC(){return jecVarMC;}
+  double GetJERVarMC(){return jerVarMC;}
+
   int GetNResponseMod(){return nResponseMod;}
   std::vector<double> GetResponseMod(){return responseMod;}
-  std::vector<double> GetScaleFactor(){return scaleFactor;}
+  std::vector<double> GetResponseError(){return responseError;}
 
   int GetNJtPtBins(){return nJtPtBins;}
   std::vector<double> GetJtPtBins(){return jtPtBins;}
@@ -120,11 +130,16 @@ class cutPropagator
 
   void SetJtAbsEtaMax(double inJtAbsEtaMax){jtAbsEtaMax = inJtAbsEtaMax; return;}
 
+  void SetRCDiffFileName(std::string inRCDiffFileName){rcDiffFileName = inRCDiffFileName; return;}
+  
+  void SetJECVarMC(double inJECVarMC){jecVarMC = inJECVarMC; return;}
+  void SetJERVarMC(double inJERVarMC){jerVarMC = inJERVarMC; return;}
+
   void SetNResponseMod(int inNResponseMod){nResponseMod = inNResponseMod; return;}
   void SetResponseMod(std::vector<double> inResponseMod){responseMod = inResponseMod; return;}
   void SetResponseMod(int inN, const Double_t inResponseMod[]);
-  void SetScaleFactor(std::vector<double> inScaleFactor){scaleFactor = inScaleFactor; return;}
-  void SetScaleFactor(int inN, const Double_t inScaleFactor[]);
+  void SetResponseError(std::vector<double> inResponseError){responseError = inResponseError; return;}
+  void SetResponseError(int inN, const Double_t inResponseError[]);
 
   void SetNJtPtBins(int inNJtPtBins){nJtPtBins = inNJtPtBins; return;}
   void SetJtPtBins(std::vector<double> inJtPtBins){jtPtBins = inJtPtBins; return;}
@@ -200,9 +215,14 @@ void cutPropagator::Clean()
 
   jtAbsEtaMax = -99;
 
+  rcDiffFileName = "";
+
+  jecVarMC = -99;
+  jerVarMC = -99;
+
   nResponseMod = -1;
   responseMod.clear();
-  scaleFactor.clear();
+  responseError.clear();
 
   nJtPtBins = -1;
   jtPtBins.clear();
@@ -280,6 +300,9 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
       if(tempStr2.size() != 0) centBinsHi.push_back(std::stoi(tempStr2));
     }
     else if(tempStr.find("jtAbsEtaMax") != std::string::npos && tempStr.size() == std::string("jtAbsEtaMax").size()) jtAbsEtaMax = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("rcDiffFileName") != std::string::npos && tempStr.size() == std::string("rcDiffFileName").size()) rcDiffFileName = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+    else if(tempStr.find("jecVarMC") != std::string::npos && tempStr.size() == std::string("jecVarMC").size()) jecVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(tempStr.find("jerVarMC") != std::string::npos && tempStr.size() == std::string("jerVarMC").size()) jerVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("nResponseMod") != std::string::npos && tempStr.size() == std::string("nResponseMod").size()) nResponseMod = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("nJtPtBins") != std::string::npos && tempStr.size() == std::string("nJtPtBins").size()) nJtPtBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("nJtAbsEtaBins") != std::string::npos && tempStr.size() == std::string("nJtAbsEtaBins").size()) nJtAbsEtaBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
@@ -321,13 +344,13 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
       }
       if(tempStr2.size() != 0) responseMod.push_back(std::stod(tempStr2));
     }
-    else if(tempStr.find("scaleFactor") != std::string::npos && tempStr.size() == std::string("scaleFactor").size()){
+    else if(tempStr.find("responseError") != std::string::npos && tempStr.size() == std::string("responseError").size()){
       std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
       while(tempStr2.find(",") != std::string::npos){
-        scaleFactor.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
+        responseError.push_back(std::stod(tempStr2.substr(0, tempStr2.find(","))));
         tempStr2.replace(0, tempStr2.find(",")+1, "");
       }
-      if(tempStr2.size() != 0) scaleFactor.push_back(std::stod(tempStr2));
+      if(tempStr2.size() != 0) responseError.push_back(std::stod(tempStr2));
     }
     else if(tempStr.find("jtPtBins") != std::string::npos && tempStr.size() == std::string("jtPtBins").size()){
       std::string tempStr2 = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
@@ -533,10 +556,10 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   }
 
   std::string responseModStr = "";
-  std::string scaleFactorStr = "";
+  std::string responseErrorStr = "";
   for(int jI = 0; jI < nResponseMod; ++jI){
     responseModStr = responseModStr + std::to_string(responseMod.at(jI)) + ",";
-    scaleFactorStr = scaleFactorStr + std::to_string(scaleFactor.at(jI)) + ",";
+    responseErrorStr = responseErrorStr + std::to_string(responseError.at(jI)) + ",";
   }
 
   std::string jtPtBinsStr = "";
@@ -622,9 +645,12 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed inFileNamesName("inFileNames", inFileNames2.c_str());
   TNamed isPPName("isPP", std::to_string(isPP));
   TNamed jtAbsEtaMaxName("jtAbsEtaMax", std::to_string(jtAbsEtaMax).c_str());
+  TNamed rcDiffFileNameName("rcDiffFileName", rcDiffFileName);
+  TNamed jecVarMCName("jecVarMC", std::to_string(jecVarMC).c_str());
+  TNamed jerVarMCName("jerVarMC", std::to_string(jerVarMC).c_str());
   TNamed nResponseModName("nResponseMod", std::to_string(nResponseMod).c_str());
   TNamed responseModName("responseMod", responseModStr.c_str());
-  TNamed scaleFactorName("scaleFactor", scaleFactorStr.c_str());
+  TNamed responseErrorName("responseError", responseErrorStr.c_str());
   TNamed nJtPtBinsName("nJtPtBins", std::to_string(nJtPtBins).c_str());
   TNamed jtPtBinsName("jtPtBins", jtPtBinsStr.c_str());
   TNamed nJtAbsEtaBinsName("nJtAbsEtaBins", std::to_string(nJtAbsEtaBins).c_str());
@@ -660,9 +686,12 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   inFileNamesName.Write("", TObject::kOverwrite);
   isPPName.Write("", TObject::kOverwrite);
   jtAbsEtaMaxName.Write("", TObject::kOverwrite);
+  rcDiffFileNameName.Write("", TObject::kOverwrite);
+  jecVarMCName.Write("", TObject::kOverwrite);
+  jerVarMCName.Write("", TObject::kOverwrite);
   nResponseModName.Write("", TObject::kOverwrite);
   responseModName.Write("", TObject::kOverwrite);
-  scaleFactorName.Write("", TObject::kOverwrite);
+  responseErrorName.Write("", TObject::kOverwrite);
   nJtPtBinsName.Write("", TObject::kOverwrite);
   jtPtBinsName.Write("", TObject::kOverwrite);
   nJtAbsEtaBinsName.Write("", TObject::kOverwrite);
@@ -852,9 +881,19 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
 
 
   if(doBothMCOrBothData){
+    if(rcDiffFileName.size() != inCutProp.GetRCDiffFileName().size()) return false;
+    if(rcDiffFileName.find(inCutProp.GetRCDiffFileName()) == std::string::npos) return false;
+
+    if(jecVarMC - delta > inCutProp.GetJECVarMC()) return false;
+    if(jecVarMC + delta < inCutProp.GetJECVarMC()) return false;
+
+    if(jerVarMC - delta > inCutProp.GetJERVarMC()) return false;
+    if(jerVarMC + delta < inCutProp.GetJERVarMC()) return false;
+
+
     if(nResponseMod != inCutProp.GetNResponseMod()) return false;
     if(responseMod.size() != inCutProp.GetResponseMod().size()) return false;
-    if(scaleFactor.size() != inCutProp.GetScaleFactor().size()) return false;
+    if(responseError.size() != inCutProp.GetResponseError().size()) return false;
     if(nPthats != inCutProp.GetNPthats()) return false;
     if(pthats.size() != inCutProp.GetPthats().size()) return false;
     if(pthatWeights.size() != inCutProp.GetPthatWeights().size()) return false;
@@ -864,9 +903,9 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
       if(responseMod.at(i) + delta < inCutProp.GetResponseMod().at(i)) return false;
     }
 
-    for(unsigned int i = 0; i < scaleFactor.size(); ++i){
-      if(scaleFactor.at(i) - delta > inCutProp.GetScaleFactor().at(i)) return false;
-      if(scaleFactor.at(i) + delta < inCutProp.GetScaleFactor().at(i)) return false;
+    for(unsigned int i = 0; i < responseError.size(); ++i){
+      if(responseError.at(i) - delta > inCutProp.GetResponseError().at(i)) return false;
+      if(responseError.at(i) + delta < inCutProp.GetResponseError().at(i)) return false;
     }
 
     for(unsigned int i = 0; i < pthats.size(); ++i){
@@ -908,10 +947,10 @@ void cutPropagator::SetResponseMod(int inN, const Double_t inResponseMod[])
   return;
 }
 
-void cutPropagator::SetScaleFactor(int inN, const Double_t inScaleFactor[])
+void cutPropagator::SetResponseError(int inN, const Double_t inResponseError[])
 {
   for(int i = 0; i < inN; ++i){
-    scaleFactor.push_back(inScaleFactor[i]);
+    responseError.push_back(inResponseError[i]);
   }
 
   return;
