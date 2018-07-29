@@ -49,6 +49,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 {
   cppWatch totalRunWatch;
   cppWatch fileLoopWatch;
+  cppWatch writeLoopWatch;
+  cppWatch deleteLoopWatch;
   totalRunWatch.start();
 
   std::vector<std::string> fileList;
@@ -126,6 +128,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
+  
+  //For testing, uncomment to exclude all but R=0.4 trees
+  /*
+  unsigned int pos = 0;
+  while(responseTrees.size() > pos){
+    if(responseTrees.at(pos).find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+    else ++pos;
+  }
+  */
 
   inFile_p->Close();
   delete inFile_p;
@@ -138,6 +149,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     std::cout << " " << jI << "/" << nTrees << ": " << responseTrees.at(jI) << std::endl;
 
     if(responseTrees.at(jI).find("akCs4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
+    else if(responseTrees.at(jI).find("ak4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
   }
   const Int_t posR4 = posR4Temp;
 
@@ -248,6 +260,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   getLinBins(0., 9., nResponseBins, responseBins);
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
+
   TDirectory* generalDir_p = (TDirectory*)outFile_p->mkdir("generalHistDir");
   generalDir_p->cd();
   TH1D* pthat_h = new TH1D("pthat_h", ";p_{T} Hat;Counts (Unweighted)", nPthatBins, pthatBins);
@@ -508,7 +527,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
     }
 
-    const Int_t nEntries = TMath::Min((Int_t)10000, (Int_t)jetTrees_p[0]->GetEntries());
+    const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[0]->GetEntries());
     const Int_t printInterval = TMath::Max(1, nEntries/20);
 
     nFileLoopEvt += nEntries;
@@ -719,7 +738,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   fileLoopWatch.stop();
 
-  //std::cout << __LINE__ << std::endl;
+  writeLoopWatch.start();
 
   outFile_p->cd();
   generalDir_p->cd();
@@ -776,7 +795,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     }
   }
 
+  writeLoopWatch.stop();
+
+  deleteLoopWatch.start();
+
   //std::cout << __LINE__ << std::endl;
+
+  outFile_p->cd();
+  generalDir_p->cd();
 
   delete pthat_h;
   delete pthatWeighted_h;
@@ -793,6 +819,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   //std::cout << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
+    outFile_p->cd();
+    dir_p[dI]->cd();
+
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t iI = 0; iI < nID; ++iI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){
@@ -825,6 +854,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       }
     }
   }    
+
+  deleteLoopWatch.stop();
 
   outFile_p->cd();
 
@@ -892,6 +923,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   totalRunWatch.stop();
   const double fileLoopWatchTotal = fileLoopWatch.total();
   const double totalRunWatchTotal = totalRunWatch.total();
+  const double writeLoopWatchTotal = writeLoopWatch.total();
+  const double deleteLoopWatchTotal = deleteLoopWatch.total();
+  const double nonFileLoopTotal = totalRunWatch.total() - fileLoopWatch.total();
   const double nJetTrees = responseTrees.size();
 
   std::cout << "File loop watch: " << fileLoopWatch.total() << std::endl;
@@ -902,6 +936,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   std::cout << "Total run watch: " << totalRunWatch.total() << std::endl;
   std::cout << " File loop fraction: " << fileLoopWatchTotal/totalRunWatchTotal << std::endl;
   std::cout << " Non-file loop num: " << totalRunWatch.total() - fileLoopWatch.total() << std::endl;
+  std::cout << " Write loop num: " << writeLoopWatch.total() << std::endl;
+  std::cout << "  Fraction of non-file loop: " << writeLoopWatchTotal/nonFileLoopTotal << std::endl;
+  std::cout << " Delete loop num: " << deleteLoopWatch.total() << std::endl;
+  std::cout << "  Fraction of non-file loop: " << deleteLoopWatchTotal/nonFileLoopTotal << std::endl;
 
   return 0;
 }
