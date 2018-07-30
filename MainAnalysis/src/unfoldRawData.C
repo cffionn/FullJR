@@ -166,9 +166,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
-  
-  while(outFileName.size() > 20){outFileName = outFileName.substr(0,outFileName.size()-1);}
-  while(outFileName2.size() > 20){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
+  const Int_t sizeToTruncName = 40;
+  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
+  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
@@ -268,7 +268,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     }
   }
 
+  std::cout << "Start Unfolding..." << std::endl;
   for(Int_t jI = 0; jI < nDataJet; ++jI){
+    std::string tempStr = dataJetDirList.at(jI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+
+    std::cout << " Unfolding " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
+
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t idI = 0; idI < nID; ++idI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){	 
@@ -291,6 +297,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
       }
     }
   }
+
+  std::cout << "Unfolding complete." << std::endl;
 
   dataFile_p->Close();
   delete dataFile_p;

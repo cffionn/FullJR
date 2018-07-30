@@ -19,7 +19,6 @@ std::string removeAllWhiteSpace(std::string inStr)
   return inStr;
 }
 
-
 std::string returnAllCapsString(std::string inStr)
 {
   const std::string lowStr = "abcdefghijklmnopqrstuvwxyz";
@@ -73,5 +72,31 @@ bool strToTrueOrFalse(std::string inStr)
   std::cout << "Call to strToTrueOrFalse is invalid; \'" << inStr << "\' neither true or false str. return false but you really ought to fix this" << std::endl;
   return false;
 }
+
+int getRVal(const std::string inStr)
+{
+  Int_t rVal = -1;
+  if(inStr.find("ak1PF") != std::string::npos) rVal = 1;
+  else if(inStr.find("ak2PF") != std::string::npos) rVal = 2;
+  else if(inStr.find("ak3PF") != std::string::npos) rVal = 3;
+  else if(inStr.find("ak4PF") != std::string::npos) rVal = 4;
+  else if(inStr.find("ak5PF") != std::string::npos) rVal = 5;
+  else if(inStr.find("ak6PF") != std::string::npos) rVal = 6;
+  else if(inStr.find("ak8PF") != std::string::npos) rVal = 8;
+  else if(inStr.find("ak10PF") != std::string::npos) rVal = 10;
+  else if(inStr.find("akCs1P") != std::string::npos) rVal = 1;
+  else if(inStr.find("akCs2P") != std::string::npos) rVal = 2;
+  else if(inStr.find("akCs3P") != std::string::npos) rVal = 3;
+  else if(inStr.find("akCs4P") != std::string::npos) rVal = 4;
+  else if(inStr.find("akCs5P") != std::string::npos) rVal = 5;
+  else if(inStr.find("akCs6P") != std::string::npos) rVal = 6;
+  else if(inStr.find("akCs8P") != std::string::npos) rVal = 8;
+  else if(inStr.find("akCs10P") != std::string::npos) rVal = 10;
+  else if(inStr.find("akPu3P") != std::string::npos) rVal = 3;
+  else if(inStr.find("akPu4P") != std::string::npos) rVal = 4;
+
+  return rVal;
+}
+
 
 #endif

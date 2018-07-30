@@ -12,6 +12,7 @@
 
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/stringUtil.h"
+#include "Utility/include/plotUtilities.h"
 
 class cutPropagator
 {
@@ -30,6 +31,12 @@ class cutPropagator
   int nResponseMod;
   std::vector<double> responseMod;
   std::vector<double> responseError;
+
+  int nJtAlgos;
+  std::vector<std::string> jtAlgos;
+  std::vector<double> minJtPtCut;
+  std::vector<double> multiJtPtCut;
+  std::vector<int> recoTruncPos;
 
   int nJtPtBins;
   std::vector<double> jtPtBins;
@@ -88,6 +95,13 @@ class cutPropagator
   std::vector<double> GetResponseMod(){return responseMod;}
   std::vector<double> GetResponseError(){return responseError;}
 
+  int GetNJtAlgos(){return nJtAlgos;}
+  std::vector<std::string> GetJtAlgos(){return jtAlgos;}
+  std::vector<double> GetMinJtPtCut(){return minJtPtCut;}
+  std::vector<double> GetMultiJtPtCut(){return multiJtPtCut;}
+  std::vector<int> GetRecoTruncPos(){return recoTruncPos;}
+
+
   int GetNJtPtBins(){return nJtPtBins;}
   std::vector<double> GetJtPtBins(){return jtPtBins;}
   int GetNJtAbsEtaBins(){return nJtAbsEtaBins;}
@@ -141,6 +155,16 @@ class cutPropagator
   void SetResponseMod(int inN, const Double_t inResponseMod[]);
   void SetResponseError(std::vector<double> inResponseError){responseError = inResponseError; return;}
   void SetResponseError(int inN, const Double_t inResponseError[]);
+
+  void SetNJtAlgos(int inNJtAlgos){nJtAlgos = inNJtAlgos; return;}
+  void SetJtAlgos(std::vector<std::string> inJtAlgos){jtAlgos = inJtAlgos; return;}
+  void SetJtAlgos(int inN, std::string inJtAlgos[]);
+  void SetMinJtPtCut(std::vector<double> inMinJtPtCut){minJtPtCut = inMinJtPtCut; return;}
+  void SetMinJtPtCut(int inN, double inMinJtPtCut[]);
+  void SetMultiJtPtCut(std::vector<double> inMultiJtPtCut){multiJtPtCut = inMultiJtPtCut; return;}
+  void SetMultiJtPtCut(int inN, double inMultiJtPtCut[]);
+  void SetRecoTruncPos(std::vector<int> inRecoTruncPos){recoTruncPos = inRecoTruncPos; return;}
+  void SetRecoTruncPos(int inN, int inRecoTruncPos[]);
 
   void SetNJtPtBins(int inNJtPtBins){nJtPtBins = inNJtPtBins; return;}
   void SetJtPtBins(std::vector<double> inJtPtBins){jtPtBins = inJtPtBins; return;}
@@ -229,6 +253,12 @@ void cutPropagator::Clean()
   responseMod.clear();
   responseError.clear();
 
+  nJtAlgos = -1;
+  jtAlgos.clear();
+  minJtPtCut.clear();
+  multiJtPtCut.clear();
+  recoTruncPos.clear();
+
   nJtPtBins = -1;
   jtPtBins.clear();
   nJtAbsEtaBins = -1;
@@ -295,6 +325,11 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("jecVarMC", tempStr)) jecVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jerVarMC", tempStr)) jerVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nResponseMod", tempStr)) nResponseMod = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nJtAlgos", tempStr)) nJtAlgos = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("jtAlgos", tempStr)) jtAlgos = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("minJtPtCut", tempStr)) minJtPtCut = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("multiJtPtCut", tempStr)) multiJtPtCut = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("recoTruncPos", tempStr)) recoTruncPos = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nJtPtBins", tempStr)) nJtPtBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nJtAbsEtaBins", tempStr)) nJtAbsEtaBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("inFileNames", tempStr)) inFileNames = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
@@ -377,6 +412,18 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   std::string jtPtBinsStr = "";
   for(int jI = 0; jI < nJtPtBins+1; ++jI){
     jtPtBinsStr = jtPtBinsStr + std::to_string(jtPtBins.at(jI)) + ",";
+  }
+
+  std::string jtAlgosStr = "";
+  std::string minJtPtCutStr = "";
+  std::string multiJtPtCutStr = "";
+  std::string recoTruncPosStr = "";
+
+  for(int jI = 0; jI < nJtAlgos; ++jI){
+    jtAlgosStr = jtAlgosStr + jtAlgos.at(jI) + ",";
+    minJtPtCutStr = minJtPtCutStr + prettyString(minJtPtCut.at(jI), 1, false) + ",";
+    multiJtPtCutStr = multiJtPtCutStr + prettyString(multiJtPtCut.at(jI), 1, false) + ",";
+    recoTruncPosStr = recoTruncPosStr + std::to_string((int)(recoTruncPos.at(jI))) + ",";
   }
 
   std::string jtAbsEtaBinsLowStr = "";
@@ -463,6 +510,11 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed nResponseModName("nResponseMod", std::to_string(nResponseMod).c_str());
   TNamed responseModName("responseMod", responseModStr.c_str());
   TNamed responseErrorName("responseError", responseErrorStr.c_str());
+  TNamed nJtAlgosName("nJtAlgos", std::to_string(nJtAlgos).c_str());
+  TNamed jtAlgosName("jtAlgos", jtAlgosStr.c_str());
+  TNamed minJtPtCutName("minJtPtCut", minJtPtCutStr.c_str());
+  TNamed multiJtPtCutName("multiJtPtCut", multiJtPtCutStr.c_str());
+  TNamed recoTruncPosName("recoTruncPos", recoTruncPosStr.c_str());
   TNamed nJtPtBinsName("nJtPtBins", std::to_string(nJtPtBins).c_str());
   TNamed jtPtBinsName("jtPtBins", jtPtBinsStr.c_str());
   TNamed nJtAbsEtaBinsName("nJtAbsEtaBins", std::to_string(nJtAbsEtaBins).c_str());
@@ -504,6 +556,11 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   nResponseModName.Write("", TObject::kOverwrite);
   responseModName.Write("", TObject::kOverwrite);
   responseErrorName.Write("", TObject::kOverwrite);
+  nJtAlgosName.Write("", TObject::kOverwrite);
+  jtAlgosName.Write("", TObject::kOverwrite);
+  minJtPtCutName.Write("", TObject::kOverwrite);
+  multiJtPtCutName.Write("", TObject::kOverwrite);
+  recoTruncPosName.Write("", TObject::kOverwrite);
   nJtPtBinsName.Write("", TObject::kOverwrite);
   jtPtBinsName.Write("", TObject::kOverwrite);
   nJtAbsEtaBinsName.Write("", TObject::kOverwrite);
@@ -733,10 +790,34 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   }
 
   if(doBothPPOrBothPbPb){
+    if(nJtAlgos != inCutProp.GetNJtAlgos()) return false;
+    if(jtAlgos.size() != inCutProp.GetJtAlgos().size()) return false;
+    if(minJtPtCut.size() != inCutProp.GetMinJtPtCut().size()) return false;
+    if(multiJtPtCut.size() != inCutProp.GetMultiJtPtCut().size()) return false;
+    if(recoTruncPos.size() != inCutProp.GetRecoTruncPos().size()) return false;
+
     if(isPP != inCutProp.GetIsPP()) return false;
     if(nCentBins != inCutProp.GetNCentBins()) return false;
     if(centBinsLow.size() != inCutProp.GetCentBinsLow().size()) return false;
     if(centBinsHi.size() != inCutProp.GetCentBinsHi().size()) return false;
+
+    for(unsigned int i = 0; i < jtAlgos.size(); ++i){
+      if(!isStrSame(jtAlgos.at(i), inCutProp.GetJtAlgos().at(i))) return false;
+    }
+
+    for(unsigned int i = 0; i < minJtPtCut.size(); ++i){
+      if(minJtPtCut.at(i) - delta > inCutProp.GetMinJtPtCut().at(i)) return false;
+      if(minJtPtCut.at(i) + delta < inCutProp.GetMinJtPtCut().at(i)) return false;
+    }
+
+    for(unsigned int i = 0; i < multiJtPtCut.size(); ++i){
+      if(multiJtPtCut.at(i) - delta > inCutProp.GetMultiJtPtCut().at(i)) return false;
+      if(multiJtPtCut.at(i) + delta < inCutProp.GetMultiJtPtCut().at(i)) return false;
+    }
+
+    for(unsigned int i = 0; i < recoTruncPos.size(); ++i){
+      if(recoTruncPos.at(i) != inCutProp.GetRecoTruncPos().at(i)) return false;
+    }
 
     for(unsigned int i = 0; i < centBinsLow.size(); ++i){
       if(centBinsLow.at(i) != inCutProp.GetCentBinsLow().at(i)) return false;
@@ -768,6 +849,43 @@ void cutPropagator::SetResponseError(int inN, const Double_t inResponseError[])
 
   return;
 }
+
+void cutPropagator::SetJtAlgos(int inN, std::string inJtAlgos[])
+{
+  for(int i = 0; i < inN; ++i){
+    jtAlgos.push_back(inJtAlgos[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetMinJtPtCut(int inN, Double_t inMinJtPtCut[])
+{
+  for(int i = 0; i < inN; ++i){
+    minJtPtCut.push_back(inMinJtPtCut[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetMultiJtPtCut(int inN, Double_t inMultiJtPtCut[])
+{
+  for(int i = 0; i < inN; ++i){
+    multiJtPtCut.push_back(inMultiJtPtCut[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetRecoTruncPos(int inN, Int_t inRecoTruncPos[])
+{
+  for(int i = 0; i < inN; ++i){
+    recoTruncPos.push_back(inRecoTruncPos[i]);
+  }
+
+  return;
+}
+
 
 void cutPropagator::SetJtPtBins(int inN, const Double_t inJtPtBins[])
 {

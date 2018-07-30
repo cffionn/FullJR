@@ -33,6 +33,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 {
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
+  const std::string dateStr2 = std::to_string(date->GetYear()) + "." + std::to_string(date->GetMonth()) + "." + std::to_string(date->GetDay());
   delete date;
 
   vanGoghPalette vg;
@@ -58,6 +59,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
   Float_t jtAbsEtaMaxTemp = cutProp.GetJtAbsEtaMax();
+
+  const Int_t nJtAlgos = cutProp.GetNJtAlgos();
+  std::vector<std::string> jtAlgos = cutProp.GetJtAlgos();
+  std::vector<double> minJtPtCutTemp = cutProp.GetMinJtPtCut();
+  std::vector<double> multiJtPtCutTemp = cutProp.GetMultiJtPtCut();
+  std::vector<int> recoTruncPosTemp = cutProp.GetRecoTruncPos();
 
   Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
   std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
@@ -207,8 +214,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
   
-  while(outFileName.size() > 20){outFileName = outFileName.substr(0,outFileName.size()-1);}
-  while(outFileName2.size() > 20){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
+  const Int_t sizeToTruncName = 40;
+  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
+  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
@@ -226,8 +234,35 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
   TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
 
-  const Int_t nMultijetAJ = 10;
-  const Double_t multijetAJ[nMultijetAJ+1] = {-0.5, -0.2, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.1};
+  Double_t minJtPtCut[nDataJet];
+  Double_t multiJtPtCut[nDataJet];
+  Int_t recoTruncPos[nDataJet];
+  for(Int_t jI = 0; jI < nDataJet; ++jI){
+    int pos = -1;
+    std::string treeStr1 = dataTreeList.at(jI);
+    while(treeStr1.find("/") != std::string::npos){treeStr1.replace(treeStr1.find("/"), treeStr1.size(), "");}
+
+    for(Int_t jI2 = 0; jI2 < nJtAlgos; ++jI2){
+      std::string treeStr2 = jtAlgos.at(jI2);
+      while(treeStr2.find("/") != std::string::npos){treeStr2.replace(treeStr2.find("/"), treeStr2.size(), "");}
+
+      if(isStrSame(treeStr1, treeStr2)){
+	pos = jI2;
+	break;
+      }
+    }
+
+    multiJtPtCut[jI] = multiJtPtCutTemp.at(pos);
+    minJtPtCut[jI] = minJtPtCutTemp.at(pos);
+    recoTruncPos[jI] = recoTruncPosTemp.at(pos);
+  }
+
+  const Int_t nMultijetAJ = 9;
+  const Double_t multijetAJ[nMultijetAJ+1] = {-0.5, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.1};
+  Double_t multijetAJFactors[nMultijetAJ];
+  for(Int_t mI = 0; mI < nMultijetAJ; ++mI){
+    multijetAJFactors[mI] = (multijetAJ[mI+1] - multijetAJ[mI])/0.10;
+  }
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
@@ -450,7 +485,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	//std::cout << __LINE__ << std::endl;
 
-	if(tempLeadingPt_ > jtPtBins[0]){
+	if(/*tempLeadingPt_ > jtPtBins[0] && */tempLeadingPt_ > minJtPtCut[tI]){
 	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
 	    if(jtPtBins[jI] <= tempLeadingPt_ && tempLeadingPt_ < jtPtBins[jI+1]){
 	      tempLeadingFillPos_ = jI;
@@ -460,8 +495,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  if(tempLeadingFillPos_ < 0) tempLeadingFillPos_ = nJtPtBins-1;
 
 	  for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	    if(jI == tempLeadingPos_) continue;
 	    if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
-	    if(TMath::Abs(getDPHI(tempLeadingPhi_, jtphi_[tI][jI])) < 5.*TMath::Pi()/8.) continue;
+	    if(jtpt_[tI][jI] < multiJtPtCut[jI]) continue;
+	    if(TMath::Abs(getDPHI(tempLeadingPhi_, jtphi_[tI][jI])) < 3.*TMath::Pi()/4.) continue;
+	    //	    if(TMath::Abs(getDPHI(tempLeadingPhi_, jtphi_[tI][jI])) < 5.*TMath::Pi()/8. && TMath::Abs(getDPHI(tempLeadingPhi_, jtphi_[tI][jI])) > 3.*TMath::Pi()/8.) continue;
 
 	    tempSubleadingPt_.push_back(jtpt_[tI][jI]);
 	    tempSubleadingPhi_.push_back(jtphi_[tI][jI]);
@@ -558,8 +596,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
-	      bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]);
-	      bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[1] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
+	      bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]) && jtpt_[tI][jI] > minJtPtCut[tI];
+	      bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[recoTruncPos[tI]] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
 	      
 	      if(goodReco){
 		jtPtRaw_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
@@ -603,33 +641,25 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      for(Int_t idI = 0; idI < nID; ++idI){
 		if(aj < multijetAJ[0]) aj = (multijetAJ[0] + multijetAJ[1])/2.;
 		else if(aj > multijetAJ[nMultijetAJ]) aj = (multijetAJ[nMultijetAJ - 1] + multijetAJ[nMultijetAJ])/2.;
-
+		
 		multijetAJ_All_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 		if(leadID[idI]) multijetAJ_Pass_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 		else multijetAJ_Fail_h[tI][centPos][idI][jtAbsEtaPoses.at(aI)][tempLeadingFillPos_]->Fill(aj);
 	      }
-	    
-	      //std::cout << __LINE__ << std::endl;
-
-	      if(aI == 0 && aj > 0.8 && leadID[nID-1] && dataTreeList.at(tI).find("ak4PF") != std::string::npos){
-		//		std::cout << "Jet fail: " << entry << ", " << tempLeadingPt_ << ", " << tempSubleadingPt_.size() << std::endl;
-		//		if(tempSubleadingPt_.size() != 0) std::cout << " " << tempSubleadingPt_.at(0) << std::endl;
-	      }	   
 	    }
 	  }      
 	}
       }
     }
 
-    //std::cout << __LINE__ << std::endl;
-
     inDataFile_p->Close();
     delete inDataFile_p;
   }
 
-  //std::cout << __LINE__ << std::endl;
-
   outFile_p->cd();
+
+  std::vector<std::string> spectraNames;
+  std::vector<std::vector<std::string> > multijetNames;
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
@@ -745,8 +775,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	
 	leg_p->Draw("SAME");
 
-	delete label_p;
-
 	bool doLogX = false;
 	if(jtPtRaw_h[jI][cI][0][aI]->GetBinWidth(1)*3 < jtPtRaw_h[jI][cI][0][aI]->GetBinWidth(jtPtRaw_h[jI][cI][0][aI]->GetNbinsX()-1)) doLogX = true;
 
@@ -795,8 +823,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	for(Int_t idI = 1; idI < nID; ++idI){
 	  TH1D* clone_p = (TH1D*)jtPtRaw_h[jI][cI][idI][aI]->Clone("temp");
 	  clone_p->Divide(jtPtRaw_h[jI][cI][0][aI]);
-          clone_p->SetMaximum(1.02);
-          clone_p->SetMinimum(0.98);
+          clone_p->SetMaximum(1.015);
+          clone_p->SetMinimum(0.965);
 
 	  clone_p->GetYaxis()->SetTitle("Ratio (Zoom)");
 
@@ -805,8 +833,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  delete clone_p;
         }
 
-	drawWhiteBox(900, 1100, .96, .979);
+	drawWhiteBox(900, 1100, .93, .9649);
 
+	label_p->SetNDC(0);
+	label_p->DrawLatex(100, .955, "100");
+	label_p->DrawLatex(200, .955, "200");
+	label_p->DrawLatex(400, .955, "400");
+	label_p->DrawLatex(600, .955, "600");
+	label_p->DrawLatex(1000, .955, "1000");
+	label_p->DrawLatex(2000, .955, "2000");
 
 	if(doLogX) gPad->SetLogx();
 	gStyle->SetOptStat(0);
@@ -814,20 +849,28 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	gPad->SetTicks(1, 2);
 	gPad->RedrawAxis();
 
-	canv_p->SaveAs(("pdfDir/jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	std::string spectraName = "jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf";
+	spectraNames.push_back(spectraName);
+
+	canv_p->SaveAs(("pdfDir/" + spectraName).c_str());
 
 	delete pads[0];
 	delete pads[1];
 	delete pads[2];
 	delete canv_p;
 	delete leg_p;
+	delete label_p;
       }
 
       for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|#eta|<" + prettyString(jtAbsEtaBinsHi[aI], 1, false);
 
+	multijetNames.push_back({});
+
 	for(Int_t jetI = 0; jetI < nJtPtBins; ++jetI){
+	  if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetEntries() == 0) continue;
+
 	  const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jetI], 1, true) + "to" + prettyString(jtPtBins[jetI+1], 1, true);
 	  const std::string jtPtStr2 =  prettyString(jtPtBins[jetI], 1, false) + "<p_{T}<" + prettyString(jtPtBins[jetI+1], 1, false);
 	
@@ -864,6 +907,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    Int_t passColor = vg.getColor(1);
 	    if(idI == 0) passColor = 1;
 	    Int_t failColor = vg.getColor(2);
+
+	    for(Int_t bIX = 0; bIX < multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetNbinsX(); ++bIX){
+	      multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetBinContent(bIX+1, multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1)/multijetAJFactors[bIX]);
+	      multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetBinError(bIX+1, multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinError(bIX+1)/multijetAJFactors[bIX]);
+	    }
 
 	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMarkerColor(passColor);
 	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetLineColor(passColor);
@@ -940,6 +988,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  canv_p->cd();
 	  pads[1]->cd();
    	  
+	  label_p->SetTextSize(10);
+
 	  for(Int_t idI = 1; idI < nID; ++idI){
 	    TH1D* clone_p = (TH1D*)multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->Clone("temp");
 	    clone_p->Divide(multijetAJ_All_h[jI][cI][0][aI][jetI]);
@@ -968,7 +1018,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    if(idI == 1) clone_p->DrawCopy("HIST E1 P");
 	    else clone_p->DrawCopy("HIST E1 P SAME");
 
-	    label_p->DrawLatex(0.2, 0.94 - 0.06*(idI-1), (idStr.at(idI) + ": " + std::to_string((int)highFail) + "/" + std::to_string((int)totalFail) + ", " + prettyString(highFail/totalFail, 3, false)).c_str());
+	    std::string labelStr = idStr.at(idI) + ": " + std::to_string((int)highFail) + "/" + std::to_string((int)totalFail);
+	    if(((int)totalFail) > 0) labelStr = labelStr + ", " + prettyString(highFail/totalFail, 3, false);
+
+	    label_p->DrawLatex(0.15, 0.78 - 0.08*(idI-1), labelStr.c_str());
 	    
 	    delete clone_p;
 	  }
@@ -976,8 +1029,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  gStyle->SetOptStat(0);
 	  gPad->SetTicks(1, 2);
 	  gPad->RedrawAxis();
-
-	  canv_p->SaveAs(("pdfDir/multijetAJ_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + jtPtStr + "_" + dateStr + ".pdf").c_str());
+	
+	  std::string multijetName = "multijetAJ_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + jtPtStr + "_" + dateStr + ".pdf";
+	  multijetNames.at(multijetNames.size()-1).push_back(multijetName);
+	  canv_p->SaveAs(("pdfDir/" + multijetName).c_str());
 	  
 	  delete pads[0];
 	  delete pads[1];
@@ -989,7 +1044,107 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     }
   }  
 
+  //  spectraNames
+  //  multijetNames
 
+  const std::string textWidth = "0.22";
+  std::string texFileName = outFileName;
+  texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
+  texFileName.replace(0, std::string("output").size(), "pdfDir");
+  
+  std::ofstream texFile(texFileName.c_str());
+
+  texFile << "\\RequirePackage{xspace}" << std::endl;
+  texFile << "\\RequirePackage{amsmath}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\documentclass[xcolor=dvipsnames]{beamer}" << std::endl;
+  texFile << "\\usetheme{Warsaw}" << std::endl;
+  texFile << "\\setbeamercolor{structure}{fg=NavyBlue!90!NavyBlue}" << std::endl;
+  texFile << "\\setbeamercolor{footlinecolor}{fg=white,bg=lightgray}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\newcommand{\\pt}{\\ensuremath{p_{\\mathrm{T}}}\\xspace}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamersize{text margin left=5pt,text margin right=5pt}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamertemplate{frametitle}" << std::endl;
+  texFile << "{" << std::endl;
+  texFile << "    \\nointerlineskip" << std::endl;
+  texFile << "    \\begin{beamercolorbox}[sep=0.3cm, ht=1.8em, wd=\\paperwidth]{frametitle}" << std::endl;
+  texFile << "        \\vbox{}\\vskip-2ex%" << std::endl;
+  texFile << "        \\strut\\insertframetitle\\strut" << std::endl;
+  texFile << "        \\vskip-0.8ex%" << std::endl;
+  texFile << "    \\end{beamercolorbox}" << std::endl;
+  texFile << "}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamertemplate{footline}{%" << std::endl;
+  texFile << "  \\begin{beamercolorbox}[sep=.8em,wd=\\paperwidth,leftskip=0.5cm,rightskip=0.5cm]{footlinecolor}" << std::\
+    endl;
+  texFile << "    \\hspace{0.3cm}%" << std::endl;
+  texFile << "    \\hfill\\insertauthor \\hfill\\insertpagenumber" << std::endl;
+  texFile << "  \\end{beamercolorbox}%" << std::endl;
+  texFile << "}" << std::endl;
+  texFile << "\\setbeamertemplate{navigation symbols}{}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamertemplate{itemize item}[circle]" << std::endl;
+  texFile << "\\setbeamertemplate{itemize subitem}[circle]" << std::endl;
+  texFile << "\\setbeamertemplate{itemize subsubitem}[circle]" << std::endl;
+  texFile << "\\setbeamercolor{itemize item}{fg=black}" << std::endl;
+  texFile << "\\setbeamercolor{itemize subitem}{fg=black}" << std::endl;
+  texFile << "\\setbeamercolor{itemize subsubitem}{fg=black}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\definecolor{links}{HTML}{00BFFF}" << std::endl;
+  texFile << "\\hypersetup{colorlinks,linkcolor=,urlcolor=links}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\author[CM]{Placeholder}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\begin{document}" << std::endl;
+  texFile << "\\begin{frame}" << std::endl;
+  texFile << "\\frametitle{\\centerline{JEC Validation (" << dateStr2 << ")}}" << std::endl;
+  texFile << " \\begin{itemize}" << std::endl;
+  texFile << "  \\fontsize{10}{10}\\selectfont" << std::endl;
+  texFile << "  \\item{Placeholder}" << std::endl;
+  texFile << "  \\begin{itemize}" << std::endl;
+  texFile << "   \\fontsize{10}{10}\\selectfont" << std::endl;
+  texFile << "   \\item{Placeholder}" << std::endl;
+  texFile << "  \\end{itemize}" << std::endl;
+  texFile << " \\end{itemize}" << std::endl;
+  texFile << "\\end{frame}" << std::endl;
+
+
+  for(unsigned int spI = 0; spI < spectraNames.size(); ++spI){
+    if(spectraNames.at(spI).find("AbsEta0p0to2p0") == std::string::npos) continue;
+
+    texFile << "\\begin{frame}" << std::endl;
+    texFile << "\\frametitle{\\centerline{Placeholder}}" << std::endl;
+    texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << spectraNames.at(spI) << "}" << std::endl;
+    
+    for(unsigned int mI = 0; mI < multijetNames.at(spI).size(); ++mI){    
+      texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << multijetNames.at(spI).at(mI) << "}";
+      if(mI == 3) texFile << "\\\\";
+      texFile << std::endl;
+    }
+
+    texFile << "\\begin{itemize}" << std::endl;
+    texFile << "\\fontsize{8}{8}\\selectfont" << std::endl;
+    texFile << "\\item{test}" << std::endl;
+    texFile << "\\end{itemize}" << std::endl;
+    texFile << "\\end{frame}" << std::endl;
+  }
+
+  texFile << "\\end{document}" << std::endl;
+  texFile << std::endl;
+
+
+  texFile.close();
 
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
@@ -1029,6 +1184,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.Clean();
   cutPropOut.SetIsPP(isDataPP);
   cutPropOut.SetJtAbsEtaMax(jtAbsEtaMax);
+  cutPropOut.SetNJtAlgos(nDataJet);
+  cutPropOut.SetJtAlgos(dataTreeList);
+  cutPropOut.SetMinJtPtCut(nDataJet, minJtPtCut);
+  cutPropOut.SetMultiJtPtCut(nDataJet, multiJtPtCut);
+  cutPropOut.SetRecoTruncPos(nDataJet, recoTruncPos);
   cutPropOut.SetNJtPtBins(nJtPtBins);
   cutPropOut.SetJtPtBins(nJtPtBins+1, jtPtBins);
   cutPropOut.SetNJtAbsEtaBins(nJtAbsEtaBins);

@@ -8,6 +8,7 @@
 #include "TDirectory.h"
 #include "TTree.h"
 #include "TNamed.h"
+#include "TH1.h"
 
 #include "Utility/include/returnFileList.h"
 #include "Utility/include/doGlobalDebug.h"

@@ -129,14 +129,31 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
   
-  //For testing, uncomment to exclude all but R=0.4 trees
-  /*
+  
   unsigned int pos = 0;
   while(responseTrees.size() > pos){
-    if(responseTrees.at(pos).find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-    else ++pos;
+    //For testing, uncomment to exclude all but R=0.4 trees
+    //    if(responseTrees.at(pos).find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+
+    if(isPP){
+      if(responseTrees.at(pos).find("akCs") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akPu") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else ++pos;
+    }
+    else{
+      if(responseTrees.at(pos).find("akCs3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos); 
+      else if(responseTrees.at(pos).find("akPu3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akPu4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs3PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs4PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs6PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs8PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees.at(pos).find("akCs10PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else ++pos;
+    }
   }
-  */
+  
 
   inFile_p->Close();
   delete inFile_p;
@@ -144,6 +161,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   Int_t posR4Temp = -1;
   const Int_t nTrees = responseTrees.size();
+
   std::cout << "Making response matrices for the following " << nTrees << " jet trees: " << std::endl;
   for(int jI = 0; jI < nTrees; ++jI){
     std::cout << " " << jI << "/" << nTrees << ": " << responseTrees.at(jI) << std::endl;
@@ -229,6 +247,33 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
   const Int_t nJtPtBins = 8;
   const Double_t jtPtBins[nJtPtBins+1] = {100., 150., 200., 250., 300., 400., 600., 1000., 2000.};
+
+
+  Int_t bigJetRecoTrunc = -1;
+  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+    Double_t val = (jtPtBins[jI] + jtPtBins[jI+1])/2.;
+    if(val > 200.){
+      bigJetRecoTrunc = jI+1;
+      break;
+    }
+  }
+
+  Double_t minJtPtCut[nTrees];
+  Double_t multiJtPtCut[nTrees];
+  Int_t recoTruncPos[nTrees];
+
+  for(Int_t jI = 0; jI < nTrees; ++jI){
+    multiJtPtCut[jI] = 50.;
+    minJtPtCut[jI] = 100.;
+    recoTruncPos[jI] = 1;
+
+    bool isBigJt = responseTrees.at(jI).find("ak8") != std::string::npos || responseTrees.at(jI).find("ak10") != std::string::npos || responseTrees.at(jI).find("akCs8") != std::string::npos || responseTrees.at(jI).find("akCs10") != std::string::npos;
+    if(isBigJt){
+      multiJtPtCut[jI] = 100;
+      minJtPtCut[jI] = 200.;
+      recoTruncPos[jI] = bigJetRecoTrunc;
+    }
+  }
 
   //FULL ID taken from here https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016, FullLight and FullTight correspond to previous levels of cuts + the Loose and TightLepVeto versions, respectively
   const Int_t nID = 5;
@@ -875,6 +920,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetNResponseMod(nResponseMod);
   cutProp.SetResponseMod(nResponseMod, responseMod);
   cutProp.SetResponseError(nResponseMod, responseError);
+  cutProp.SetNJtAlgos(nTrees);
+  cutProp.SetJtAlgos(responseTrees);
+  cutProp.SetMinJtPtCut(nTrees, minJtPtCut);
+  cutProp.SetMultiJtPtCut(nTrees, multiJtPtCut);
+  cutProp.SetRecoTruncPos(nTrees, recoTruncPos);
   cutProp.SetNJtPtBins(nJtPtBins);
   cutProp.SetJtPtBins(nJtPtBins+1, jtPtBins);
   cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
