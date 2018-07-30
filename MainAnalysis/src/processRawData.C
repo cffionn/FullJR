@@ -259,10 +259,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   const Int_t nMultijetAJ = 9;
   const Double_t multijetAJ[nMultijetAJ+1] = {-0.5, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.1};
-  Double_t multijetAJFactors[nMultijetAJ];
-  for(Int_t mI = 0; mI < nMultijetAJ; ++mI){
-    multijetAJFactors[mI] = (multijetAJ[mI+1] - multijetAJ[mI])/0.10;
-  }
+  //  Double_t multijetAJFactors[nMultijetAJ];
+  //  for(Int_t mI = 0; mI < nMultijetAJ; ++mI){
+  //    multijetAJFactors[mI] = (multijetAJ[mI+1] - multijetAJ[mI])/0.10;
+  //  }
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
@@ -432,8 +432,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     for(Int_t entry = 0; entry < nEntries; ++entry){
       if(nEntries >= 50000 && entry%printInterval == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
 
-      //std::cout << __LINE__ << std::endl;
-
       hiTree_p->GetEntry(entry);
       skimTree_p->GetEntry(entry);
 
@@ -444,8 +442,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       globalSel.setPhfCoincFilter3(phfCoincFilter3_);
       globalSel.setHBHENoiseFilterResultRun2Loose(HBHENoiseFilterResultRun2Loose_);
       globalSel.setPclusterCompatibilityFilter(pclusterCompatibilityFilter_);
-
-      //std::cout << __LINE__ << std::endl;
 
       if(!globalSel.isGood()) continue;
 
@@ -461,8 +457,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
       for(Int_t tI = 0; tI < nDataJet; ++tI){jetTrees_p[tI]->GetEntry(entry);}
 
-      //std::cout << __LINE__ << std::endl;      
-
       for(Int_t tI = 0; tI < nDataJet; ++tI){
 	Double_t tempLeadingPt_ = -999;
 	Double_t tempLeadingPhi_ = -999;
@@ -470,8 +464,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	std::vector<Double_t> tempSubleadingPhi_;
 	Int_t tempLeadingPos_ = -1;
 	Int_t tempLeadingFillPos_ = -1;
-
-	//std::cout << __LINE__ << std::endl;
 
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
@@ -482,8 +474,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    tempLeadingPos_ = jI;
 	  }
 	}
-
-	//std::cout << __LINE__ << std::endl;
 
 	if(/*tempLeadingPt_ > jtPtBins[0] && */tempLeadingPt_ > minJtPtCut[tI]){
 	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
@@ -518,21 +508,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	}
 	else tempLeadingPos_ = -1;
 
-	//std::cout << __LINE__ << std::endl;
-
 	Int_t leadID[nID];
 	for(Int_t idI = 0; idI < nID; ++idI){
 	  leadID[idI] = false;
 	}
 
-	//std::cout << __LINE__ << std::endl;
-
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
-	  //std::cout << __LINE__ << std::endl;
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 
-	  //std::cout << __LINE__ << std::endl;
-	  
 	  std::vector<int> jtAbsEtaPoses;
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
@@ -540,23 +523,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 
-	  //std::cout << __LINE__ << std::endl;
-
-	  /*
-	  std::cout << "JtAbsEtaPoses.size(): " << jtAbsEtaPoses.size() << std::endl;
-	  if(jtAbsEtaPoses.size() != 0) std::cout << " " << jtAbsEtaPoses.at(0) << ", " << jtAbsEtaPoses.at(jtAbsEtaPoses.size()-1) << std::endl;
-	  */
-
-	  //std::cout << __LINE__ << std::endl;
-
 	  std::vector<int> idPoses;
 	  //	  bool passesLast = false;
 
-	  //std::cout << __LINE__ << std::endl;
-
 	  for(Int_t idI = 0; idI < nID; ++idI){
-	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
-
 	    if(jtPfCHMFCutLow.at(idI) > jtPfCHMF_[tI][jI]) continue;
 	    if(jtPfCHMFCutHi.at(idI) < jtPfCHMF_[tI][jI]) continue;
 	    if(jtPfMUMFCutLow.at(idI) > jtPfMUMF_[tI][jI]) continue;
@@ -572,15 +542,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
             if(jtPfCEF_[tI][jI] < jtPfCEFCutLow.at(idI)) continue;
             if(jtPfCEF_[tI][jI] > jtPfCEFCutHi.at(idI)) continue;
 
-	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
-
 	    //std::cout << jtPfMinMult.size() << ", " << jtPfMinChgMult.size() << std::endl;
 
             if(jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] < jtPfMinMult.at(idI)) continue;
             if(jtPfCHM_[tI][jI] < jtPfMinChgMult.at(idI)) continue;
 
-
-	    //std::cout << __LINE__ << ", idI: " << idI << "/" << nID << std::endl;
 	    //	    if(idI == nID-1) passesLast = true;
 
 	    if(tempLeadingPos_ == jI) leadID[idI] = true;
@@ -591,8 +557,6 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  //	  if(dataTreeList.at(tI).find("ak4PF") != std::string::npos && !passesLast && jtpt_[tI][jI] > 600.){
 	  //std::cout << "Jet fail: " << entry << ", " << jtpt_[tI][jI] << std::endl;
 	  //	  }
-
-	  //std::cout << __LINE__ << std::endl;
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
@@ -605,13 +569,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      }
 	    }
 
-	    //std::cout << __LINE__ << std::endl;
-	  
 	    if(tempLeadingPos_ == jI){
+	      double axis = tempLeadingPhi_;
+	      if(axis > 0) axis -= TMath::Pi();
+	      else axis += TMath::Pi();
+
 	      for(unsigned int pI = 0; pI < tempSubleadingPt_.size()-1; ++pI){
 		for(unsigned int pI2 = pI+1; pI2 < tempSubleadingPt_.size(); ++pI2){
 		
-		  if(tempSubleadingPt_.at(pI) < tempSubleadingPt_.at(pI2)){
+		  if(tempSubleadingPt_.at(pI)*TMath::Cos(TMath::Abs(getDPHI(axis, tempSubleadingPhi_.at(pI)))) < tempSubleadingPt_.at(pI2)*TMath::Cos(TMath::Abs(getDPHI(axis, tempSubleadingPhi_.at(pI2)))) ){
 		    Float_t tempPt = tempSubleadingPt_.at(pI);
 		    Float_t tempPhi = tempSubleadingPhi_.at(pI);
 		    
@@ -624,19 +590,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 		}
 	      }
 
-	      //std::cout << __LINE__ << std::endl;
-
-	      double axis = tempLeadingPhi_;
-	      if(axis > 0) axis -= TMath::Pi();
-	      else axis += TMath::Pi();
 	      double projSub = 0;
 	      for(unsigned int pI = 0; pI < TMath::Min((unsigned int)2, (unsigned int)tempSubleadingPt_.size()); ++pI){
 		projSub += tempSubleadingPt_.at(pI)*TMath::Cos(TMath::Abs(getDPHI(axis, tempSubleadingPhi_.at(pI))));
 	      }
 
 	      double aj = (tempLeadingPt_ - projSub)/(tempLeadingPt_ + projSub);
-
-	      //std::cout << __LINE__ << std::endl;
 
 	      for(Int_t idI = 0; idI < nID; ++idI){
 		if(aj < multijetAJ[0]) aj = (multijetAJ[0] + multijetAJ[1])/2.;
@@ -748,14 +707,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  }
 	}
 
-	TLegend* leg_p = new TLegend(0.55, 0.6, 0.9, 0.8);
+	TLegend* leg_p = new TLegend(0.10, 0.1, 0.5, 0.5);
 	leg_p->SetBorderSize(0.0);
 	leg_p->SetFillStyle(0);
 	leg_p->SetFillColor(0);
+	leg_p->SetTextFont(43);
+	leg_p->SetTextSize(14);
 
 	for(Int_t idI = 0; idI < nID; ++idI){
-	  jtPtRaw_h[jI][cI][idI][aI]->SetMaximum(max*5.);
-	  jtPtRaw_h[jI][cI][idI][aI]->SetMinimum(min/5.);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMaximum(max*20.);
+	  jtPtRaw_h[jI][cI][idI][aI]->SetMinimum(min/20.);
 
 	  std::string id = idStr.at(idI) + ", N=" + std::to_string((int)(jtPtRaw_h[jI][cI][idI][aI]->GetEntries()));
 	  leg_p->AddEntry(jtPtRaw_h[jI][cI][idI][aI], id.c_str(), "P L");
@@ -909,8 +870,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    Int_t failColor = vg.getColor(2);
 
 	    for(Int_t bIX = 0; bIX < multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetNbinsX(); ++bIX){
+	      /*
+	      multijetAJ_All_h[jI][cI][idI][aI][jetI]->SetBinContent(bIX+1, multijetAJ_All_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1)/multijetAJFactors[bIX]);
+	      multijetAJ_All_h[jI][cI][idI][aI][jetI]->SetBinError(bIX+1, multijetAJ_All_h[jI][cI][idI][aI][jetI]->GetBinError(bIX+1)/multijetAJFactors[bIX]);
+
 	      multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetBinContent(bIX+1, multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1)/multijetAJFactors[bIX]);
 	      multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetBinError(bIX+1, multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinError(bIX+1)/multijetAJFactors[bIX]);
+
+	      multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetBinContent(bIX+1, multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1)/multijetAJFactors[bIX]);
+	      multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->SetBinError(bIX+1, multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinError(bIX+1)/multijetAJFactors[bIX]);
+	      */
 	    }
 
 	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMarkerColor(passColor);
@@ -949,14 +918,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 	  
-	  TLegend* leg_p = new TLegend(0.2, 0.5, 0.9, 0.75);
+	  TLegend* leg_p = new TLegend(0.6, 0.75, 0.9, 0.95);
 	  leg_p->SetBorderSize(0.0);
 	  leg_p->SetFillStyle(0);
 	  leg_p->SetFillColor(0);
-	  
+	  leg_p->SetTextFont(43);
+	  leg_p->SetTextSize(14);
+
 	  for(Int_t idI = 0; idI < nID; ++idI){
-	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMaximum(max*5.);
-	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMinimum(min/5.);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMaximum(max*20.);
+	    multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->SetMinimum(min/20.);
 
 	    std::string id = idStr.at(idI);
 	    leg_p->AddEntry(multijetAJ_Pass_h[jI][cI][idI][aI][jetI], id.c_str(), "P L");
@@ -988,7 +959,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  canv_p->cd();
 	  pads[1]->cd();
    	  
-	  label_p->SetTextSize(10);
+	  label_p->SetTextSize(12);
 
 	  for(Int_t idI = 1; idI < nID; ++idI){
 	    TH1D* clone_p = (TH1D*)multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->Clone("temp");
@@ -998,16 +969,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      totalFail += multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
 	    }
 	    double highFail = multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX());
+	    std::cout << "High fail 1: " << highFail << std::endl;
+	    //	    highFail *= multijetAJFactors[multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX()-1];
+	    std::cout << " " << highFail << std::endl;
 
 	    for(Int_t bIX = 0; bIX < multijetAJ_All_h[jI][cI][0][aI][jetI]->GetNbinsX(); ++bIX){
-	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
-		clone_p->SetBinContent(bIX+1, 0.0000001);
-		clone_p->SetBinError(bIX+1, 0.0000001);
-	      }
-	      else if(multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0){
-		clone_p->SetBinContent(bIX+1, -100.);
-		clone_p->SetBinError(bIX+1, 0.0000001);
-	      }
+	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0) clone_p->SetBinContent(bIX+1, 0.0000001);
+	      else if(multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0) clone_p->SetBinContent(bIX+1, -100.);
+	      clone_p->SetBinError(bIX+1, 0.0000001);
 	    }
 
 	    clone_p->SetMaximum(1.1);
@@ -1021,7 +990,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    std::string labelStr = idStr.at(idI) + ": " + std::to_string((int)highFail) + "/" + std::to_string((int)totalFail);
 	    if(((int)totalFail) > 0) labelStr = labelStr + ", " + prettyString(highFail/totalFail, 3, false);
 
-	    label_p->DrawLatex(0.15, 0.78 - 0.08*(idI-1), labelStr.c_str());
+	    label_p->DrawLatex(0.15, 0.8 - 0.09*(idI-1), labelStr.c_str());
 	    
 	    delete clone_p;
 	  }
@@ -1067,13 +1036,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   texFile << "\\newcommand{\\pt}{\\ensuremath{p_{\\mathrm{T}}}\\xspace}" << std::endl;
   texFile << std::endl;
 
-  texFile << "\\setbeamersize{text margin left=5pt,text margin right=5pt}" << std::endl;
+  texFile << "\\setbeamersize{text margin left=3pt,text margin right=3pt}" << std::endl;
   texFile << std::endl;
 
   texFile << "\\setbeamertemplate{frametitle}" << std::endl;
   texFile << "{" << std::endl;
   texFile << "    \\nointerlineskip" << std::endl;
-  texFile << "    \\begin{beamercolorbox}[sep=0.3cm, ht=1.8em, wd=\\paperwidth]{frametitle}" << std::endl;
+  texFile << "    \\begin{beamercolorbox}[sep=0.1cm, ht=1.0em, wd=\\paperwidth]{frametitle}" << std::endl;
   texFile << "        \\vbox{}\\vskip-2ex%" << std::endl;
   texFile << "        \\strut\\insertframetitle\\strut" << std::endl;
   texFile << "        \\vskip-0.8ex%" << std::endl;
@@ -1082,9 +1051,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   texFile << std::endl;
 
   texFile << "\\setbeamertemplate{footline}{%" << std::endl;
-  texFile << "  \\begin{beamercolorbox}[sep=.8em,wd=\\paperwidth,leftskip=0.5cm,rightskip=0.5cm]{footlinecolor}" << std::\
+  texFile << "  \\begin{beamercolorbox}[sep=.4em,wd=\\paperwidth,leftskip=0.5cm,rightskip=0.5cm]{footlinecolor}" << std::\
     endl;
-  texFile << "    \\hspace{0.3cm}%" << std::endl;
+  texFile << "    \\hspace{0.15cm}%" << std::endl;
   texFile << "    \\hfill\\insertauthor \\hfill\\insertpagenumber" << std::endl;
   texFile << "  \\end{beamercolorbox}%" << std::endl;
   texFile << "}" << std::endl;
@@ -1119,21 +1088,18 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   texFile << " \\end{itemize}" << std::endl;
   texFile << "\\end{frame}" << std::endl;
 
-
   for(unsigned int spI = 0; spI < spectraNames.size(); ++spI){
     if(spectraNames.at(spI).find("AbsEta0p0to2p0") == std::string::npos) continue;
     
     std::string centStr = "PP";
     
     if(!isDataPP){
-      spectraNames.at(spI).substr(spectraNames.at(spI).find("Cent"), spectraNames.at(spI).size());
+      centStr = spectraNames.at(spI).substr(spectraNames.at(spI).find("Cent"), spectraNames.at(spI).size());
       centStr.replace(centStr.find("_"), centStr.size(), "");
     }
 
     std::string jtStr = spectraNames.at(spI).substr(spectraNames.at(spI).find("_ak")+1, spectraNames.at(spI).size());
     jtStr.replace(jtStr.find("_"), jtStr.size(), "");
-
-    
 
     texFile << "\\begin{frame}" << std::endl;
     texFile << "\\frametitle{\\centerline{" << jtStr << ", " << centStr << "}}" << std::endl;
@@ -1155,9 +1121,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   texFile << "\\end{document}" << std::endl;
   texFile << std::endl;
 
-
   texFile.close();
-
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     outFile_p->cd();

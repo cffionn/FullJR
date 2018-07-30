@@ -746,7 +746,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      }
 	    }
 
-	    if(!goodTruth){
+	    if(!goodTruth && refpt_[tI][jI] < 0){
 	      bool goodTruth2 = (refptTemp >= jtPtBins[0] && refptTemp < jtPtBins[nJtPtBins] && refptTemp > minJtPtCut[tI]);
 	      if(!goodTruth2){
 		for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){

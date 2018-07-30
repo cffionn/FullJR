@@ -125,6 +125,9 @@ int plotJetResponse(const std::string inResponseName)
   Int_t nIDTemp = cutProp.GetNID();
   std::vector<std::string> idStrTemp = cutProp.GetIdStr();
 
+  const Int_t nResponseMod = cutProp.GetNResponseMod();
+  std::vector<double> responseMod = cutProp.GetResponseMod();
+
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
@@ -183,119 +186,124 @@ int plotJetResponse(const std::string inResponseName)
       if(!isPP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 
       for(Int_t iI = 0; iI < nID; ++iI){	
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);	
-	  
-	  for(Int_t mI = 0; mI < nManip; ++mI){
-	    TH2D* response_h = (TH2D*)responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
 
-	    bool doLogX = false;
-            if(response_h->GetXaxis()->GetBinWidth(1)*3 < response_h->GetXaxis()->GetBinWidth(response_h->GetNbinsX()-1)) doLogX = true;
-	    
-	    TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
-	    canv_p->SetTopMargin(0.01);
-	    canv_p->SetBottomMargin(0.14);
-	    canv_p->SetLeftMargin(0.14);
-	    canv_p->SetRightMargin(0.14);
-	    
-	    gStyle->SetOptStat(0);
-	    
-	    if(renormX[mI]){
-	      for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-		Double_t xSum = 0.;
+	for(Int_t modI = 0; modI < nResponseMod; ++modI){
+	  std::string resStr = "ResponseMod" + prettyString(responseMod[modI], 2, true);
+
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);	
+	  
+	    for(Int_t mI = 0; mI < nManip; ++mI){
+	      TH2D* response_h = (TH2D*)responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
 	      
-		for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-		  xSum += response_h->GetBinContent(bIX+1, bIY+1);
-		}
-		
-		if(xSum <= 0) continue;
-		
-		for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-		  response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/xSum);
-		  response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/xSum);
-		}
-	      }	
-	    }
-	    else{
-	      for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
-		Double_t ySum = 0.;
-		
+	      bool doLogX = false;
+	      if(response_h->GetXaxis()->GetBinWidth(1)*3 < response_h->GetXaxis()->GetBinWidth(response_h->GetNbinsX()-1)) doLogX = true;
+	      
+	      TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+	      canv_p->SetTopMargin(0.01);
+	      canv_p->SetBottomMargin(0.14);
+	      canv_p->SetLeftMargin(0.14);
+	      canv_p->SetRightMargin(0.14);
+	      
+	      gStyle->SetOptStat(0);
+	      
+	      if(renormX[mI]){
 		for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-		  ySum += response_h->GetBinContent(bIX+1, bIY+1);
-		}
-		
-		if(ySum <= 0) continue;
-		
-		for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
-		  response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/ySum);
-		  response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/ySum);
-		}
+		  Double_t xSum = 0.;
+		  
+		  for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+		    xSum += response_h->GetBinContent(bIX+1, bIY+1);
+		  }
+		  
+		  if(xSum <= 0) continue;
+		  
+		  for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+		    response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/xSum);
+		    response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/xSum);
+		  }
+		}	
+	      }
+	      else{
+		for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
+		  Double_t ySum = 0.;
+		  
+		  for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
+		    ySum += response_h->GetBinContent(bIX+1, bIY+1);
+		  }
+		  
+		  if(ySum <= 0) continue;
+		  
+		  for(Int_t bIX = 0; bIX < response_h->GetNbinsX(); ++bIX){
+		    response_h->SetBinContent(bIX+1, bIY+1, response_h->GetBinContent(bIX+1, bIY+1)/ySum);
+		    response_h->SetBinError(bIX+1, bIY+1, response_h->GetBinError(bIX+1, bIY+1)/ySum);
+		  }
+		}	
 	      }	
-	    }	
-	    
-	    response_h->DrawCopy("COLZ TEXT");
-	    gStyle->SetPaintTextFormat("1.3f");
-	    gPad->SetLogz();
-	    if(doLogX){
-	      gPad->SetLogx();
-	      gPad->SetLogy();
+	      
+	      response_h->DrawCopy("COLZ TEXT");
+	      gStyle->SetPaintTextFormat("1.3f");
+	      gPad->SetLogz();
+	      if(doLogX){
+		gPad->SetLogx();
+		gPad->SetLogy();
+	      }
+	      
+	      std::string renormStr = "renormX";
+	      if(!renormX[mI]) renormStr = "renormY";
+	      canv_p->SaveAs(("pdfDir/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
+	      delete canv_p;
 	    }
 	    
-	    std::string renormStr = "renormX";
-	    if(!renormX[mI]) renormStr = "renormY";
-	    canv_p->SaveAs(("pdfDir/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
-	    delete canv_p;
-	  }
+	    Int_t nPadX = -1;
+	    Int_t nPadY = -1;
+	    getPadsXY(nJtPtBins, &nPadX, &nPadY);
 	    
-	  Int_t nPadX = -1;
-	  Int_t nPadY = -1;
-	  getPadsXY(nJtPtBins, &nPadX, &nPadY);
-	  
-	  TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
-	  recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
-	  recoJtPtPerGenPtBin_p->SetBottomMargin(0.01);
-	  recoJtPtPerGenPtBin_p->SetLeftMargin(0.01);
-	  recoJtPtPerGenPtBin_p->SetRightMargin(0.01);
-	  
-	  recoJtPtPerGenPtBin_p->Divide(nPadX, nPadY);
+	    TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
+	    recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
+	    recoJtPtPerGenPtBin_p->SetBottomMargin(0.01);
+	    recoJtPtPerGenPtBin_p->SetLeftMargin(0.01);
+	    recoJtPtPerGenPtBin_p->SetRightMargin(0.01);
+	    
+	    recoJtPtPerGenPtBin_p->Divide(nPadX, nPadY);
+	    
+	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+	      const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	      
+	      recoJtPtPerGenPtBin_p->cd();
+	      recoJtPtPerGenPtBin_p->cd(jI+1);
+	      
+	      TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str());
+	      
+	      temp_p->DrawCopy("HIST E1 P");
+	    }
+	    
+	    recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	    delete recoJtPtPerGenPtBin_p;
+	    
+	    TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
+	    recoJtPtPerGenPtBinWeighted_p->SetTopMargin(0.01);
+	    recoJtPtPerGenPtBinWeighted_p->SetBottomMargin(0.01);
+	    recoJtPtPerGenPtBinWeighted_p->SetLeftMargin(0.01);
+	    recoJtPtPerGenPtBinWeighted_p->SetRightMargin(0.01);
+	    
+	    recoJtPtPerGenPtBinWeighted_p->Divide(nPadX, nPadY);
+	    
+	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
+	      const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	    
+	      recoJtPtPerGenPtBinWeighted_p->cd();
+	      recoJtPtPerGenPtBinWeighted_p->cd(jI+1);
+	      
+	      
+	      TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str());
+	      
+	      temp_p->DrawCopy("HIST E1 P");
+	    }
+	    
+	    recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
 
-	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	    const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
-	  
-	    recoJtPtPerGenPtBin_p->cd();
-	    recoJtPtPerGenPtBin_p->cd(jI+1);
-	    
-	    TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str());
-	  
-	    temp_p->DrawCopy("HIST E1 P");
+	    delete recoJtPtPerGenPtBinWeighted_p;
 	  }
-
-	  recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
-	  delete recoJtPtPerGenPtBin_p;
-	
-	  TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
-	  recoJtPtPerGenPtBinWeighted_p->SetTopMargin(0.01);
-	  recoJtPtPerGenPtBinWeighted_p->SetBottomMargin(0.01);
-	  recoJtPtPerGenPtBinWeighted_p->SetLeftMargin(0.01);
-	  recoJtPtPerGenPtBinWeighted_p->SetRightMargin(0.01);
-	  
-	  recoJtPtPerGenPtBinWeighted_p->Divide(nPadX, nPadY);
-	  
-	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	    const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
-	    
-	    recoJtPtPerGenPtBinWeighted_p->cd();
-	    recoJtPtPerGenPtBinWeighted_p->cd(jI+1);
-	    
-	    
-	    TH1D* temp_p = (TH1D*)responseFile_p->Get((dirName + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str());
-	    
-	    temp_p->DrawCopy("HIST E1 P");
-	  }
-	  
-	  recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
-
-	  delete recoJtPtPerGenPtBinWeighted_p;
 	}
       }
     }
