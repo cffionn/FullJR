@@ -1047,7 +1047,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   //  spectraNames
   //  multijetNames
 
-  const std::string textWidth = "0.22";
+  const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
   texFileName.replace(0, std::string("output").size(), "pdfDir");
@@ -1122,14 +1122,26 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   for(unsigned int spI = 0; spI < spectraNames.size(); ++spI){
     if(spectraNames.at(spI).find("AbsEta0p0to2p0") == std::string::npos) continue;
+    
+    std::string centStr = "PP";
+    
+    if(!isDataPP){
+      spectraNames.at(spI).substr(spectraNames.at(spI).find("Cent"), spectraNames.at(spI).size());
+      centStr.replace(centStr.find("_"), centStr.size(), "");
+    }
+
+    std::string jtStr = spectraNames.at(spI).substr(spectraNames.at(spI).find("_ak")+1, spectraNames.at(spI).size());
+    jtStr.replace(jtStr.find("_"), jtStr.size(), "");
+
+    
 
     texFile << "\\begin{frame}" << std::endl;
-    texFile << "\\frametitle{\\centerline{Placeholder}}" << std::endl;
+    texFile << "\\frametitle{\\centerline{" << jtStr << ", " << centStr << "}}" << std::endl;
     texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << spectraNames.at(spI) << "}" << std::endl;
     
     for(unsigned int mI = 0; mI < multijetNames.at(spI).size(); ++mI){    
       texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << multijetNames.at(spI).at(mI) << "}";
-      if(mI == 3) texFile << "\\\\";
+      if(mI == 2 || mI == 6) texFile << "\\\\";
       texFile << std::endl;
     }
 

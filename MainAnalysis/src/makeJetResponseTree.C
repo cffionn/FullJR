@@ -649,7 +649,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
-	  bool goodTruth = (refpt_[tI][jI] >= jtPtBins[0] && refpt_[tI][jI] < jtPtBins[nJtPtBins]);
+	  bool goodTruth = (refpt_[tI][jI] >= jtPtBins[0] && refpt_[tI][jI] < jtPtBins[nJtPtBins] && refpt_[tI][jI] > minJtPtCut[tI]);
 	  if(!goodTruth) continue;
 
 	  for(Int_t mI = 0; mI < nResponseMod; ++mI){
@@ -672,8 +672,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarMC;
 	      else if(isStrSame(systStr[sI], "JERData")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*responseError[mI];
 	      
-	      goodReco[sI] = (jtPtFillVal[sI] >= jtPtBins[0] && jtPtFillVal[sI] < jtPtBins[nJtPtBins]);
-	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= jtPtBins[1] && jtPtFillVal[sI] < jtPtBins[nJtPtBins-1]);
+	      goodReco[sI] = (jtPtFillVal[sI] >= jtPtBins[0] && jtPtFillVal[sI] < jtPtBins[nJtPtBins] && jtPtFillVal[sI] > minJtPtCut[tI]);
+	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= jtPtBins[recoTruncPos[tI]] && jtPtFillVal[sI] < jtPtBins[nJtPtBins-1]);
 	    }
 
 	    std::vector<bool> passesID;
