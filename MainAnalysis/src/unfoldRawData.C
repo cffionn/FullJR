@@ -276,6 +276,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     std::cout << " Unfolding " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
+      if(isDataPP) std::cout << "  " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << "%..." << std::endl;
+
       for(Int_t idI = 0; idI < nID; ++idI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){	 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){

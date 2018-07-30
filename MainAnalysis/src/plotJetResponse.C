@@ -176,6 +176,7 @@ int plotJetResponse(const std::string inResponseName)
   delete date;
 
   checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
 
   for(Int_t jI = 0; jI < nJets; ++jI){
     std::string dirName = jetDirList.at(jI);
@@ -250,7 +251,7 @@ int plotJetResponse(const std::string inResponseName)
 	      
 	      std::string renormStr = "renormX";
 	      if(!renormX[mI]) renormStr = "renormY";
-	      canv_p->SaveAs(("pdfDir/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
+	      canv_p->SaveAs(("pdfDir/" + dateStr + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
 	      delete canv_p;
 	    }
 	    
@@ -277,7 +278,7 @@ int plotJetResponse(const std::string inResponseName)
 	      temp_p->DrawCopy("HIST E1 P");
 	    }
 	    
-	    recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	    recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
 	    delete recoJtPtPerGenPtBin_p;
 	    
 	    TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
@@ -300,7 +301,7 @@ int plotJetResponse(const std::string inResponseName)
 	      temp_p->DrawCopy("HIST E1 P");
 	    }
 	    
-	    recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	    recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
 
 	    delete recoJtPtPerGenPtBinWeighted_p;
 	  }
