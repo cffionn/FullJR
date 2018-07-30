@@ -506,11 +506,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       jetTrees_p[tI]->SetBranchAddress("jtPfNHF", jtPfNHF_[tI]);
       jetTrees_p[tI]->SetBranchAddress("jtPfNEF", jtPfNEF_[tI]);
       jetTrees_p[tI]->SetBranchAddress("jtPfMUF", jtPfMUF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCHF", jtPfCHMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCEF", jtPfCEMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNHF", jtPfNHMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNEF", jtPfNEMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfMUF", jtPfMUMF_[tI]);
+      jetTrees_p[tI]->SetBranchAddress("jtPfCHMF", jtPfCHMF_[tI]);
+      jetTrees_p[tI]->SetBranchAddress("jtPfCEMF", jtPfCEMF_[tI]);
+      jetTrees_p[tI]->SetBranchAddress("jtPfNHMF", jtPfNHMF_[tI]);
+      jetTrees_p[tI]->SetBranchAddress("jtPfNEMF", jtPfNEMF_[tI]);
+      jetTrees_p[tI]->SetBranchAddress("jtPfMUMF", jtPfMUMF_[tI]);
       jetTrees_p[tI]->SetBranchAddress("jtPfCHM", jtPfCHM_[tI]);
       jetTrees_p[tI]->SetBranchAddress("jtPfCEM", jtPfCEM_[tI]);
       jetTrees_p[tI]->SetBranchAddress("jtPfNHM", jtPfNHM_[tI]);
