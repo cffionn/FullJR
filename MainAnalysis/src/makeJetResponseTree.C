@@ -753,8 +753,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 		  for(unsigned int iI = 0; iI < passesID.size(); ++iI){
 		    if(!passesID.at(iI)) continue;
 
-		    if(isPara) recoJtPt_NoTruth_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
-		    else recoJtPt_NoTruth_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
+		    if(isPara) recoJtPt_NoTruth_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
+		    else recoJtPt_NoTruth_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
 		  }
 		}
 	      }
@@ -774,43 +774,43 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 		  }
 		  
 		  if(goodTruth && goodReco[0]){
-		    recoJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
+		    recoJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
 		    genJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
-		    response_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], refpt_[tI][jI], fullWeight_);
+		    response_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], refpt_[tI][jI], fullWeight_);
 		    
 		    if(genJtPos >= 0){
-		      if(anomolousJetCount < maxAnomolousJet && jtpt_[tI][jI] > 800. && refpt_[tI][jI] < 200. && passesID.at(1) && responseTrees.at(tI).find("akPu") == std::string::npos){
+		      if(anomolousJetCount < maxAnomolousJet && jtPtFillVal[0] > 800. && refpt_[tI][jI] < 200. && passesID.at(1) && responseTrees.at(tI).find("akPu") == std::string::npos){
 			std::cout << "Anomolous jet \'" << anomolousJetCount << "\':" << std::endl;
 			std::cout << " File: " << fileList.at(fI) << std::endl;
 			std::cout << " Algo, entry: " << responseTrees.at(tI) << ", " << entry << std::endl;
-			std::cout << " reco,gen: " << jtpt_[tI][jI] << ", " << refpt_[tI][jI] << ", " << jteta_[tI][jI] << std::endl;
+			std::cout << " reco,gen: " << jtPtFillVal[0] << ", " << refpt_[tI][jI] << ", " << jteta_[tI][jI] << std::endl;
 			std::cout << " run,lumi,evt: " << run_ << ", " << lumi_ << ", " << evt_ << std::endl;
 			
 			anomolousJetCount++;
 		      }
 		      
-		      recoJtPtPerGenPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtpt_[tI][jI]/refpt_[tI][jI]);
-		      recoJtPtPerGenPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtpt_[tI][jI]/refpt_[tI][jI], fullWeight_);
+		      recoJtPtPerGenPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI]);
+		      recoJtPtPerGenPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI], fullWeight_);
 		    }
 		    
 		    if(recoJtPos >= 0 && refpt_[tI][jI] > 0){
-		      genJtPtPerRecoPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtpt_[tI][jI]/refpt_[tI][jI]);
-		      genJtPtPerRecoPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtpt_[tI][jI]/refpt_[tI][jI], fullWeight_);
+		      genJtPtPerRecoPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI]);
+		      genJtPtPerRecoPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI], fullWeight_);
 		    }
 		    
 		    if(goodRecoTrunc[0]){
-		      recoJtPt_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
-		      response_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], refpt_[tI][jI], fullWeight_);
+		      recoJtPt_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
+		      response_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], refpt_[tI][jI], fullWeight_);
 		    }
 		  }
 		  else if(goodTruth) genJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
 		}
 		else{
 		  if(goodTruth && goodReco[0]){
-		    recoJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
+		    recoJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
 		    genJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
 		    
-		    if(goodRecoTrunc[0]) recoJtPt_RecoTrunc_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI], fullWeight_);
+		    if(goodRecoTrunc[0]) recoJtPt_RecoTrunc_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
 		  }
 		  else if(goodTruth) genJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
 		}
