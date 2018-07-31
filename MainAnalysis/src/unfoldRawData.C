@@ -10,6 +10,11 @@
 #include "TH1D.h"
 #include "TDatime.h"
 #include "TDirectory.h"
+#include "TCanvas.h"
+#include "TPad.h"
+#include "TStyle.h"
+#include "TLegend.h"
+#include "TLatex.h"
 
 //RooUnfold dependencies
 #include "src/RooUnfoldResponse.h"
@@ -19,16 +24,26 @@
 #include "MainAnalysis/include/cutPropagator.h"
 
 //Non-local FullJR dependencies (Utility, etc.)
+#include "Utility/include/checkMakeDir.h"
+#include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/histDefUtility.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/vanGoghPalette.h"
 
 int unfoldRawData(const std::string inDataFileName, const std::string inResponseName)
 {
+  vanGoghPalette vg;
+
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
+  const std::string dateStr2 = std::to_string(date->GetYear()) + "." + std::to_string(date->GetMonth()) + "." + std::to_string(date->GetDay());
   delete date;
+
+  checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> responseJetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
@@ -179,7 +194,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  const Int_t nBayes = 20;
+  const Int_t nBayes = 21;
+  const Int_t nBayesDraw = 8;
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
   TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
@@ -209,6 +225,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		
 		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
+		centerTitles({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
+		setSumW2({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
 	      }
 	    }
 	  }
@@ -276,9 +294,10 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     std::cout << " Unfolding " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      if(isDataPP) std::cout << "  " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << "%..." << std::endl;
+      if(!isDataPP) std::cout << "  " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << "%..." << std::endl;
 
       for(Int_t idI = 0; idI < nID; ++idI){
+
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){	 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
@@ -310,22 +329,342 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   outFile_p->cd();
 
+  const Double_t yPadFrac = 0.45;
+  const Double_t marg = 0.12;
+
+  const Int_t nStyles = 6;
+  const Int_t styles[nStyles] = {24, 25, 27, 28, 46, 44};
+
+  const Int_t nColors = 5;
+  const Int_t colors[nColors] = {1, vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(4)};
+
+
+  std::vector<std::vector<std::string> > pdfNames;
+
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     outFile_p->cd();
     dir_p[jI]->cd();
 
+    std::string tempStr = dataJetDirList.at(jI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+
+    Double_t lowPtTruncVal = 200.;
+    Bool_t isBigJet = tempStr.find("ak8") != std::string::npos || tempStr.find("ak10") != std::string::npos || tempStr.find("akCs8") != std::string::npos || tempStr.find("akCs10") != std::string::npos;
+    if(isBigJet) lowPtTruncVal = 300.;
+    
     for(Int_t cI = 0; cI < nCentBins; ++cI){
+      std::string centStr = "PP";
+      std::string centStr2 = "PP";
+      if(!isDataPP){
+	centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
+	centStr2 = std::to_string(centBinsLow[cI]) + "-" + std::to_string(centBinsHi[cI]) + "%";
+      }
+
       for(Int_t idI = 0; idI < nID; ++idI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){	
+	  const std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 2, true);
+
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	    	    
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	    if(jtAbsEtaStr.find("AbsEta0p0to2p0") == std::string::npos) continue;
+	    const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|#eta|<" +  prettyString(jtAbsEtaBinsHi[aI], 1, false);
+
+	    
+	    pdfNames.push_back({});
+
+	    for(Int_t sI = 0; sI < nSyst; ++sI){	    	   
+              const std::string tempSystStr = systStr[sI] + "_";
+
+	      TLegend* leg_p = new TLegend(0.15, 0.05, 0.5, 0.6);
+	      leg_p->SetBorderSize(0.0);
+	      leg_p->SetFillStyle(0);
+	      leg_p->SetFillColor(0);
+	      leg_p->SetTextFont(43);
+	      leg_p->SetTextSize(14);
+
+	      TLatex* label_p = new TLatex();
+	      label_p->SetTextFont(43);
+	      label_p->SetTextSize(14);
+	      label_p->SetNDC();                  
+
+	      TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+	      TPad* pads[3];
+	      canv_p->cd();
+	      pads[0] = new TPad("pad0", "", 0.0, yPadFrac, 1.0, 1.0);
+	      pads[0]->SetLeftMargin(marg);
+	      pads[0]->SetTopMargin(0.01);
+	      pads[0]->SetBottomMargin(0.001);
+	      pads[0]->SetRightMargin(0.002);
+	      pads[0]->Draw();
+
+	      canv_p->cd();
+	      pads[1] = new TPad("pad1", "", 0.0, yPadFrac - (yPadFrac - marg)/2., 1.0, yPadFrac);
+	      pads[1]->SetLeftMargin(marg);
+	      pads[1]->SetTopMargin(0.001);
+	      pads[1]->SetBottomMargin(0.001);
+	      pads[1]->SetRightMargin(0.002);
+	      pads[1]->Draw();
+
+	      canv_p->cd();
+	      pads[2] = new TPad("pad2", "", 0.0, 0.0, 1.0, yPadFrac - (yPadFrac - marg)/2.);
+	      pads[2]->SetLeftMargin(marg);
+	      pads[2]->SetTopMargin(0.001);
+	      pads[2]->SetBottomMargin(marg/(yPadFrac - (yPadFrac - marg)/2.));
+	      pads[2]->SetRightMargin(0.002);
+	      pads[2]->Draw();
+
+	      canv_p->cd();	       
+	      pads[0]->cd();
+
+	      Double_t min = 1000000000;
+	      Double_t max = -1;
+
+	      for(Int_t bI = 0; bI < nBayesDraw; ++bI){
+		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetNbinsX(); ++bIX){
+		  if(max < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1)) max = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
+		  if(min > jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) && jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > 0) min = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
+		}
+	      }
+
+	      
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMaximum(20.*max);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMinimum(min/20.);
+
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerStyle(styles[bI%nStyles]);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerColor(colors[bI%nColors]);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetLineColor(colors[bI%nColors]);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerSize(1);
+
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleFont(43);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleFont(43);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelFont(43);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelFont(43);
+
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleSize(14);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleSize(14);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelSize(14);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelSize(14);
+
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleOffset(5.);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleOffset(1.5);
+
+		if(bI < nBayesDraw){
+		  if(bI == 0){
+		    jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P");
+
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerStyle(1);
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerSize(0.001);
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerColor(0);
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineColor(1);
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineWidth(2);
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->DrawCopy("HIST E1");
+		    
+		    leg_p->AddEntry(jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], "Folded", "L");
+		  }
+		  else jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P SAME"); 		
+		  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bI+1)).c_str(), "P L");
+		}
+	      }
+
+	      canv_p->cd();
+	      pads[0]->cd();
+	      gStyle->SetOptStat(0);
+	      gPad->SetLogy();
+	      gPad->SetTicks(1,2);
+	      bool doLogX = false;
+	      if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(1)*3 < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetNbinsX()-1)) doLogX = true;
+	      if(doLogX) gPad->SetLogx();
+
+	      leg_p->Draw("SAME");
+
+	      gPad->RedrawAxis();
+
+	      
+	      label_p->DrawLatex(0.55, 0.94, tempStr.c_str());
+	      label_p->DrawLatex(0.55, 0.88, centStr2.c_str());
+	      label_p->DrawLatex(0.55, 0.82, jtAbsEtaStr2.c_str());
+	      label_p->DrawLatex(0.55, 0.76, resStr.c_str());
+	      label_p->DrawLatex(0.55, 0.70, idStr.at(idI).c_str());
+	      label_p->DrawLatex(0.55, 0.64, systStr[sI].c_str());
+
+	      canv_p->cd();
+              pads[1]->cd();
+
+	      TH1D* clones_p[nBayes];
+	      
+	      max = -1;
+	      min = 100;
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
+		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]);
+		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
+		  double binContent = clones_p[bI]->GetBinContent(bIX+1);
+		  if(binContent > max) max = binContent;
+		  if(binContent < min && binContent > 0) min = binContent;
+		}
+	      }
+
+	      double interval = (max - min)/10.;
+	      max += interval;
+	      min -= interval;
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		clones_p[bI]->SetMaximum(max);
+		clones_p[bI]->SetMinimum(min);
+
+		clones_p[bI]->GetYaxis()->SetTitle("Ratio Nominal");
+		clones_p[bI]->GetYaxis()->SetTitleSize(10);
+		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*1.5);
+		clones_p[bI]->GetYaxis()->SetNdivisions(505);	       		
+
+		if(bI < nBayesDraw){
+		  if(bI == 0) clones_p[bI]->DrawCopy("HIST E1 P");
+		  else clones_p[bI]->DrawCopy("HIST E1 P SAME");
+		}
+	      }
+
+	      gStyle->SetOptStat(0);
+	      if(doLogX) gPad->SetLogx();
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		delete clones_p[bI];
+		clones_p[bI] = NULL;
+	      }
+	      gPad->SetTicks(1,2);
+	      gPad->RedrawAxis();
+
+	      canv_p->cd();
+              pads[2]->cd();
+	      
+	      int terminalPos = -1;
+	    
+	      max = -1;
+	      min = 100;
+	      for(Int_t bI = 1; bI < nBayes; ++bI){
+		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
+		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI-1]);
+
+		bool sub1Perc = true;
+		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
+		  double binCenter = (clones_p[bI]->GetBinLowEdge(bIX+1) + clones_p[bI]->GetBinLowEdge(bIX+2))/2.;
+		  double binContent = clones_p[bI]->GetBinContent(bIX+1);
+
+		  if(binCenter > lowPtTruncVal && binCenter < 1000. && sub1Perc){
+		    if(binContent > 1.005 || binContent < .995) sub1Perc = false;
+		  }
+		  if(binContent > max) max = binContent;
+		  if(binContent < min && binContent > 0) min = binContent;
+		}
+
+		if(sub1Perc && terminalPos < 0) terminalPos = bI;
+	      }
+
+	      interval = (max - min)/10.;
+	      max += interval;
+	      min -= interval;
+
+	      const Int_t nTempBins = 10;
+	      Double_t tempBins[nTempBins+1];
+	      getLinBins(min, max, nTempBins, tempBins);
+
+	      for(Int_t bI = 1; bI < nBayes; ++bI){
+		clones_p[bI]->SetMaximum(max);
+		clones_p[bI]->SetMinimum(min);
+		
+		clones_p[bI]->GetYaxis()->SetTitle("Ratio Prev");
+		clones_p[bI]->GetYaxis()->SetTitleSize(10);
+		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*2.);
+		clones_p[bI]->GetYaxis()->SetNdivisions(505);
+
+		if(bI < nBayesDraw){
+		  if(bI == 1) clones_p[bI]->DrawCopy("HIST E1 P");
+		  else clones_p[bI]->DrawCopy("HIST E1 P SAME");
+		}
+	      }
+
+	      gStyle->SetOptStat(0);
+	      if(doLogX) gPad->SetLogx();
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		delete clones_p[bI];
+		clones_p[bI] = NULL;
+	      }
+
+	      drawWhiteBox(900, 1100, .00, min-0.0001);
+
+
+	      gPad->SetTicks(1,2);
+	      gPad->RedrawAxis();
+
+
+	      label_p->SetNDC(0);
+	      if(terminalPos > 0){
+		label_p->DrawLatex(110, tempBins[9], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
+		
+		Double_t maxDeltaCenter = -1;
+		Double_t maxDelta = 0;
+		Double_t lastDeltaCenter = -1;
+		Double_t lastDelta = 0;
+		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetNbinsX(); ++bIX){
+		  double center = (jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1) + jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1))/2.;
+		  
+		  if(center < lowPtTruncVal) continue;
+		  if(center > 1000.) continue;
+		  
+		  double content1 = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinContent(bIX+1);
+		  double content1Max = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-1]->GetBinContent(bIX+1);
+		  double content1MaxMin1 = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-2]->GetBinContent(bIX+1);
+
+		  if(content1 == 0 && content1Max != 0){
+		    maxDelta = 100;
+		    maxDeltaCenter = center;
+		  }
+		  else if(TMath::Abs(content1 - content1Max)/content1 > maxDelta){
+		    maxDelta = TMath::Abs(content1 - content1Max)/content1;
+		    maxDeltaCenter = center;
+		  }
+
+		  if(content1MaxMin1 == 0 && content1Max != 0){
+		    lastDelta = 100;
+		    lastDeltaCenter = center;
+		  }
+		  else if(TMath::Abs(content1MaxMin1 - content1Max)/content1MaxMin1 > lastDelta){
+		    lastDelta = TMath::Abs(content1MaxMin1 - content1Max)/content1MaxMin1;
+		    maxDeltaCenter = center;
+		  }
+		}
+		std::cout << "MaxDelta: " << maxDelta << ", " << maxDeltaCenter << std::endl;
+		std::cout << "LastDelta: " << lastDelta << ", " << lastDeltaCenter << std::endl;
+
+		label_p->DrawLatex(110, tempBins[7], ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
+		label_p->DrawLatex(110, tempBins[5], ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
+	      }
+	      else label_p->DrawLatex(110, (max + min)/2., ("Doesn't terminate for nBayes=" + std::to_string(nBayes+1)).c_str());
+	      label_p->DrawLatex(100, min - interval*2, "100");
+	      label_p->DrawLatex(200, min - interval*2, "200");
+	      label_p->DrawLatex(400, min - interval*2, "400");
+	      label_p->DrawLatex(600, min - interval*2, "600");
+	      label_p->DrawLatex(1000, min - interval*2, "1000");
+
+	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + dateStr + ".pdf";
+	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
+	      canv_p->SaveAs(("pdfDir/" + dateStr + "/" + saveName).c_str());
+
+	      delete pads[0];
+	      delete pads[1];
+ 	      delete canv_p;
+	      delete leg_p;
+	      delete label_p;
+
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
 		delete jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI];
 		
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
-		delete jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI];
+		delete jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI];		
 	      }
 	    }
 	  }
@@ -333,6 +672,128 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
       }
     }
   }
+
+  //TEX FILE
+  const std::string textWidth = "0.245";
+  std::string texFileName = outFileName;
+  texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
+  texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr);
+
+  std::ofstream texFile(texFileName.c_str());
+
+  texFile << "\\RequirePackage{xspace}" << std::endl;
+  texFile << "\\RequirePackage{amsmath}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\documentclass[xcolor=dvipsnames]{beamer}" << std::endl;
+  texFile << "\\usetheme{Warsaw}" << std::endl;
+  texFile << "\\setbeamercolor{structure}{fg=NavyBlue!90!NavyBlue}" << std::endl;
+  texFile << "\\setbeamercolor{footlinecolor}{fg=white,bg=lightgray}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\newcommand{\\pt}{\\ensuremath{p_{\\mathrm{T}}}\\xspace}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamersize{text margin left=3pt,text margin right=3pt}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamerfont{frametitle}{size=\\tiny}" << std::endl;
+  texFile << "\\setbeamertemplate{frametitle}" << std::endl;
+  texFile << "{" << std::endl;
+  texFile << "    \\nointerlineskip" << std::endl;
+  texFile << "    \\begin{beamercolorbox}[sep=0.05cm, ht=1.0em, wd=\\paperwidth]{frametitle}" << std::endl;
+  texFile << "        \\vbox{}\\vskip-2ex%" << std::endl;
+  texFile << "        \\strut\\insertframetitle\\strut" << std::endl;
+  texFile << "        \\vskip-0.8ex%" << std::endl;
+  texFile << "    \\end{beamercolorbox}" << std::endl;
+  texFile << "}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\setbeamertemplate{footline}{%" << std::endl;
+  texFile << "  \\begin{beamercolorbox}[sep=.4em,wd=\\paperwidth,leftskip=0.5cm,rightskip=0.5cm]{footlinecolor}" << std::endl;
+  texFile << "    \\hspace{0.075cm}%" << std::endl;
+  texFile << "    \\hfill\\insertauthor \\hfill\\insertpagenumber" << std::endl;
+  texFile << "  \\end{beamercolorbox}%" << std::endl;
+  texFile << "}" << std::endl;
+  texFile << "\\setbeamertemplate{navigation symbols}{}" << std::endl;
+  texFile << std::endl;
+  
+  texFile << "\\setbeamertemplate{itemize item}[circle]" << std::endl;
+  texFile << "\\setbeamertemplate{itemize subitem}[circle]" << std::endl;
+  texFile << "\\setbeamertemplate{itemize subsubitem}[circle]" << std::endl;
+  texFile << "\\setbeamercolor{itemize item}{fg=black}" << std::endl;
+  texFile << "\\setbeamercolor{itemize subitem}{fg=black}" << std::endl;
+  texFile << "\\setbeamercolor{itemize subsubitem}{fg=black}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\definecolor{links}{HTML}{00BFFF}" << std::endl;
+  texFile << "\\hypersetup{colorlinks,linkcolor=,urlcolor=links}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\author[CM]{Chris McGinn}" << std::endl;
+  texFile << std::endl;
+
+  texFile << "\\begin{document}" << std::endl;
+  texFile << "\\begin{frame}" << std::endl;
+  texFile << "\\frametitle{\\centerline{Unfolding termination (" << dateStr2 << ")}}" << std::endl;
+  texFile << " \\begin{itemize}" << std::endl;
+  texFile << "  \\fontsize{10}{10}\\selectfont" << std::endl;
+  texFile << "  \\item{Placeholder}" << std::endl;
+  texFile << "  \\begin{itemize}" << std::endl;
+  texFile << "   \\fontsize{10}{10}\\selectfont" << std::endl;
+  texFile << "   \\item{Placeholder}" << std::endl;
+  texFile << "  \\end{itemize}" << std::endl;
+  texFile << " \\end{itemize}" << std::endl;
+  texFile << "\\end{frame}" << std::endl;
+
+  for(unsigned int spI = 0; spI < pdfNames.size(); ++spI){
+    if(pdfNames.at(spI).at(0).find("AbsEta0p0to2p0") == std::string::npos) continue;
+
+    std::string centStr = "PP";
+
+    if(!isDataPP){
+      centStr = pdfNames.at(spI).at(0).substr(pdfNames.at(spI).at(0).find("Cent"), pdfNames.at(spI).at(0).size());
+      centStr.replace(centStr.find("_"), centStr.size(), "");
+    }
+
+    std::string jtStr = pdfNames.at(spI).at(0).substr(pdfNames.at(spI).at(0).find("_ak")+1, pdfNames.at(spI).at(0).size());
+    jtStr.replace(jtStr.find("_"), jtStr.size(), "");
+
+    std::string resStr = pdfNames.at(spI).at(0).substr(pdfNames.at(spI).at(0).find("_Response")+1, pdfNames.at(spI).at(0).size());
+    resStr.replace(resStr.find("_"), resStr.size(), "");
+
+    std::string idStr = "";
+    if(pdfNames.at(spI).at(0).find("_NoID") != std::string::npos) idStr = "NoID";
+    else if(pdfNames.at(spI).at(0).find("_LightMUID") != std::string::npos) idStr = "LightMUID";
+    else if(pdfNames.at(spI).at(0).find("_LightMUAndCHID") != std::string::npos) idStr = "LightMUAndCHID";
+    else if(pdfNames.at(spI).at(0).find("_FullLight") != std::string::npos) idStr = "FullLight";
+    else if(pdfNames.at(spI).at(0).find("_FullTight") != std::string::npos) idStr = "FullTight";
+
+    if(idStr.find("LightMUAndCHID") == std::string::npos) continue;
+    if(resStr.find("0p10") == std::string::npos) continue;
+    
+    texFile << "\\begin{frame}" << std::endl;
+    texFile << "\\frametitle{\\centerline{" << jtStr << ", " << centStr << ", " << resStr << ", " << idStr << "}}" << std::endl;
+
+    for(unsigned int mI = 0; mI < pdfNames.at(spI).size(); ++mI){
+      texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << pdfNames.at(spI).at(mI) << "}";
+      if(mI == 2 || mI == 5) texFile << "\\\\";
+      texFile << std::endl;
+    }
+
+    texFile << "\\begin{itemize}" << std::endl;
+    texFile << "\\fontsize{8}{8}\\selectfont" << std::endl;
+    texFile << "\\item{test}" << std::endl;
+    texFile << "\\end{itemize}" << std::endl;
+    texFile << "\\end{frame}" << std::endl;
+  }
+
+
+  texFile << "\\end{document}" << std::endl;
+  texFile << std::endl;
+
+  texFile.close();
+
 
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
