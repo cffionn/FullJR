@@ -296,8 +296,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
-  const Int_t nSyst = 8;
-  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JERMC", "JERData", "Fake"};
+  const Int_t nSyst = 9;
+  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JERMC", "JERData", "Fake", "PriorFlat"};
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
@@ -690,7 +690,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      if(isStrSame(systStr[sI], "JECUpMC")) jtPtFillVal[sI] += jtPtFillVal[sI]*jecVarMC;
 	      else if(isStrSame(systStr[sI], "JECDownMC")) jtPtFillVal[sI] -= jtPtFillVal[sI]*jecVarMC;
 	      else if(isStrSame(systStr[sI], "JECUpData") || isStrSame(systStr[sI], "JECDownData") ){
-		Float_t tempScale =  jtPtFillVal[sI]/refpt_[tI][jI];
+		Float_t tempScale =  jtPtFillVal[sI]/rawpt_[tI][jI];
 		Float_t tempRawPt = rawpt_[tI][jI];
 		if(isStrSame(systStr[sI], "JECUpData")) tempRawPt += TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
 		else tempRawPt -= TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
