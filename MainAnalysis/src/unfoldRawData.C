@@ -520,8 +520,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		clones_p[bI]->SetMaximum(max);
 		clones_p[bI]->SetMinimum(min);
 
-		clones_p[bI]->GetYaxis()->SetTitle("Ratio Nominal");
-		clones_p[bI]->GetYaxis()->SetTitleSize(10);
+		clones_p[bI]->GetYaxis()->SetTitle("Ratio w/ Bayes0");
+		clones_p[bI]->GetYaxis()->SetTitleSize(9);
+		clones_p[bI]->GetYaxis()->SetLabelSize(9);
 		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*1.5);
 		clones_p[bI]->GetYaxis()->SetNdivisions(505);	       		
 
@@ -548,7 +549,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    
 	      max = -1;
 	      min = 100;
-	      for(Int_t bI = 1; bI < nBayes; ++bI){
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
 		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-1]);
 
@@ -580,7 +581,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		clones_p[bI]->SetMinimum(min);
 		
 		clones_p[bI]->GetYaxis()->SetTitle("Ratio w/ Bayes 100");
-		clones_p[bI]->GetYaxis()->SetTitleSize(10);
+		clones_p[bI]->GetYaxis()->SetTitleSize(9);
+		clones_p[bI]->GetYaxis()->SetLabelSize(9);
 		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*1.5);
 		clones_p[bI]->GetYaxis()->SetNdivisions(505);
 
@@ -604,10 +606,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      gPad->SetTicks(1,2);
 	      gPad->RedrawAxis();
 
-
-	      label_p->SetNDC(0);
+	      //	      label_p->SetNDC(0);
+	      canv_p->cd();
+	      pads[0]->cd();
 	      if(terminalPos > 0){
-		label_p->DrawLatex(110, tempBins[8], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
+		//		label_p->DrawLatex(110, tempBins[8], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
+		label_p->DrawLatex(0.3, 0.4, ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
 		
 		Double_t maxDeltaCenter = -1;
 		Double_t maxDelta = 0;
@@ -644,10 +648,19 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		std::cout << "MaxDelta: " << maxDelta << ", " << maxDeltaCenter << std::endl;
 		std::cout << "LastDelta: " << lastDelta << ", " << lastDeltaCenter << std::endl;
 
-		label_p->DrawLatex(110, tempBins[6], ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
-		label_p->DrawLatex(110, tempBins[4], ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
+		//		label_p->DrawLatex(110, tempBins[6], ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
+		//		label_p->DrawLatex(110, tempBins[4], ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
+		label_p->DrawLatex(0.3, 0.3, ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
+		label_p->DrawLatex(0.3, 0.2, ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
 	      }
-	      else label_p->DrawLatex(110, (max + min)/2., ("Doesn't terminate for nBayes=" + std::to_string(nBayes+1)).c_str());
+	      else label_p->DrawLatex(0.3, 0.4, ("Doesn't terminate for nBayes=" + std::to_string(nBayes+1)).c_str());
+	      //	      else label_p->DrawLatex(110, (max + min)/2., ("Doesn't terminate for nBayes=" + std::to_string(nBayes+1)).c_str());
+
+	      canv_p->cd();
+	      pads[2]->cd();
+	      
+	      label_p->SetNDC(0);
+
 	      label_p->DrawLatex(100, min - interval*2, "100");
 	      label_p->DrawLatex(200, min - interval*2, "200");
 	      label_p->DrawLatex(400, min - interval*2, "400");
@@ -679,7 +692,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
   //TEX FILE
-  const std::string textWidth = "0.245";
+  const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
   texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr);
@@ -782,7 +795,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
     for(unsigned int mI = 0; mI < pdfNames.at(spI).size(); ++mI){
       texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << pdfNames.at(spI).at(mI) << "}";
-      if(mI == 2 || mI == 5) texFile << "\\\\";
+      if(mI == 3 || mI == 7) texFile << "\\\\";
       texFile << std::endl;
     }
 
