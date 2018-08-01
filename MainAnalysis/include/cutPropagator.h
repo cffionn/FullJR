@@ -25,6 +25,7 @@ class cutPropagator
   double jtAbsEtaMax;
 
   std::string rcDiffFileName;
+  std::string flatPriorFileName;
   double jecVarMC;
   double jerVarMC;
 
@@ -145,6 +146,8 @@ class cutPropagator
   bool CheckSystStr(cutPropagator inCutProp);
   bool CheckRCDiffFileName(std::string inRCDiffFileName);
   bool CheckRCDiffFileName(cutPropagator inCutProp);
+  bool CheckFlatPriorFileName(std::string inFlatPriorFileName);
+  bool CheckFlatPriorFileName(cutPropagator inCutProp);
   bool CheckJECVarMC(double inJECVarMC);
   bool CheckJECVarMC(cutPropagator inCutProp);
   bool CheckJERVarMC(double inJERVarMC);
@@ -190,6 +193,7 @@ class cutPropagator
   double GetJtAbsEtaMax(){return jtAbsEtaMax;}
 
   std::string GetRCDiffFileName(){return rcDiffFileName;}
+  std::string GetFlatPriorFileName(){return flatPriorFileName;}
 
   double GetJECVarMC(){return jecVarMC;}
   double GetJERVarMC(){return jerVarMC;}
@@ -251,6 +255,7 @@ class cutPropagator
   void SetJtAbsEtaMax(double inJtAbsEtaMax){jtAbsEtaMax = inJtAbsEtaMax; return;}
 
   void SetRCDiffFileName(std::string inRCDiffFileName){rcDiffFileName = inRCDiffFileName; return;}
+  void SetFlatPriorFileName(std::string inFlatPriorFileName){flatPriorFileName = inFlatPriorFileName; return;}
   
   void SetJECVarMC(double inJECVarMC){jecVarMC = inJECVarMC; return;}
   void SetJERVarMC(double inJERVarMC){jerVarMC = inJERVarMC; return;}
@@ -352,6 +357,7 @@ void cutPropagator::Clean()
   jtAbsEtaMax = -99;
 
   rcDiffFileName = "";
+  flatPriorFileName = "";
 
   jecVarMC = -99;
   jerVarMC = -99;
@@ -431,6 +437,7 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("centBinsHi", tempStr)) centBinsHi = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jtAbsEtaMax", tempStr)) jtAbsEtaMax = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("rcDiffFileName", tempStr)) rcDiffFileName = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
+    else if(isStrSame("flatPriorFileName", tempStr)) flatPriorFileName = ((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle();
     else if(isStrSame("jecVarMC", tempStr)) jecVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jerVarMC", tempStr)) jerVarMC = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jecVarData", tempStr)) jecVarData = std::stof(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
@@ -615,6 +622,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed isPPName("isPP", std::to_string(isPP));
   TNamed jtAbsEtaMaxName("jtAbsEtaMax", std::to_string(jtAbsEtaMax).c_str());
   TNamed rcDiffFileNameName("rcDiffFileName", rcDiffFileName);
+  TNamed flatPriorFileNameName("flatPriorFileName", flatPriorFileName);
   TNamed jecVarMCName("jecVarMC", std::to_string(jecVarMC).c_str());
   TNamed jerVarMCName("jerVarMC", std::to_string(jerVarMC).c_str());
   TNamed jecVarDataName("jecVarData", std::to_string(jecVarData).c_str());
@@ -662,6 +670,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   isPPName.Write("", TObject::kOverwrite);
   jtAbsEtaMaxName.Write("", TObject::kOverwrite);
   rcDiffFileNameName.Write("", TObject::kOverwrite);
+  flatPriorFileNameName.Write("", TObject::kOverwrite);
   jecVarMCName.Write("", TObject::kOverwrite);
   jerVarMCName.Write("", TObject::kOverwrite);
   jecVarDataName.Write("", TObject::kOverwrite);
@@ -754,6 +763,7 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
     if(!CheckNSyst(inCutProp)) return false;
     if(!CheckSystStr(inCutProp)) return false;
     if(!CheckRCDiffFileName(inCutProp)) return false;
+    if(!CheckFlatPriorFileName(inCutProp)) return false;
     if(!CheckJECVarMC(inCutProp)) return false;
     if(!CheckJERVarMC(inCutProp)) return false;
     if(!CheckJECVarData(inCutProp)) return false;
@@ -874,6 +884,8 @@ bool cutPropagator::CheckSystStr(std::vector<std::string> inSystStr){return Chec
 bool cutPropagator::CheckSystStr(cutPropagator inCutProp){return CheckSystStr(inCutProp.GetSystStr());}
 bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName){return CheckString(inRCDiffFileName, rcDiffFileName);}
 bool cutPropagator::CheckRCDiffFileName(cutPropagator inCutProp){return CheckRCDiffFileName(inCutProp.GetRCDiffFileName());}
+bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName){return CheckString(inFlatPriorFileName, flatPriorFileName);}
+bool cutPropagator::CheckFlatPriorFileName(cutPropagator inCutProp){return CheckFlatPriorFileName(inCutProp.GetFlatPriorFileName());}
 bool cutPropagator::CheckJECVarMC(double inJECVarMC){return CheckDouble(inJECVarMC, jecVarMC);}
 bool cutPropagator::CheckJECVarMC(cutPropagator inCutProp){return CheckJECVarMC(inCutProp.GetJECVarMC());}
 bool cutPropagator::CheckJERVarMC(double inJERVarMC){return CheckDouble(inJERVarMC, jerVarMC);}
