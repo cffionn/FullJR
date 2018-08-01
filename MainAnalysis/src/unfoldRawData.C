@@ -194,7 +194,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  const Int_t nBayes = 21;
+  const Int_t nBayes = 31;
+  Int_t bayesVal[nBayes];
+  for(Int_t bI = 0; bI < nBayes; ++bI){
+    if(bI == nBayes - 1) bayesVal[bI] = 100;
+    else bayesVal[bI] = bI+1;
+  }
   const Int_t nBayesDraw = 8;
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
@@ -221,7 +226,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      const std::string tempSystStr = systStr[sI] + "_";
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		std::string bayesStr = "Bayes" + std::to_string(bI+1);
+		std::string bayesStr = "Bayes" + std::to_string(bayesVal[bI]);
 		
 		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
@@ -303,7 +308,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){	    
-		RooUnfoldBayes bayes(rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 1+bI, false, "name");
+		RooUnfoldBayes bayes(rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], bayesVal[bI], false, "name");
 		bayes.SetVerbose(0);	    
 		TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
 		
@@ -435,7 +440,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerStyle(styles[bI%nStyles]);
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerColor(colors[bI%nColors]);
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetLineColor(colors[bI%nColors]);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerSize(1);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerSize(0.8);
 
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleFont(43);
 		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleFont(43);
@@ -459,12 +464,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerColor(0);
 		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineColor(1);
 		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineWidth(2);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->DrawCopy("HIST E1");
+		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->DrawCopy("HIST E1 SAME");
 		    
 		    leg_p->AddEntry(jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], "Folded", "L");
 		  }
 		  else jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P SAME"); 		
-		  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bI+1)).c_str(), "P L");
+		  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bayesVal[bI])).c_str(), "P L");
 		}
 	      }
 
@@ -545,7 +550,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      min = 100;
 	      for(Int_t bI = 1; bI < nBayes; ++bI){
 		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
-		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI-1]);
+		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-1]);
 
 		bool sub1Perc = true;
 		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
@@ -553,7 +558,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		  double binContent = clones_p[bI]->GetBinContent(bIX+1);
 
 		  if(binCenter > lowPtTruncVal && binCenter < 1000. && sub1Perc){
-		    if(binContent > 1.005 || binContent < .995) sub1Perc = false;
+		    if(binContent > 1.01 || binContent < .99) sub1Perc = false;
 		  }
 		  if(binContent > max) max = binContent;
 		  if(binContent < min && binContent > 0) min = binContent;
@@ -574,9 +579,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		clones_p[bI]->SetMaximum(max);
 		clones_p[bI]->SetMinimum(min);
 		
-		clones_p[bI]->GetYaxis()->SetTitle("Ratio Prev");
+		clones_p[bI]->GetYaxis()->SetTitle("Ratio w/ Bayes 100");
 		clones_p[bI]->GetYaxis()->SetTitleSize(10);
-		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*2.);
+		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*1.5);
 		clones_p[bI]->GetYaxis()->SetNdivisions(505);
 
 		if(bI < nBayesDraw){
@@ -602,14 +607,14 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      label_p->SetNDC(0);
 	      if(terminalPos > 0){
-		label_p->DrawLatex(110, tempBins[9], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
+		label_p->DrawLatex(110, tempBins[8], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
 		
 		Double_t maxDeltaCenter = -1;
 		Double_t maxDelta = 0;
 		Double_t lastDeltaCenter = -1;
 		Double_t lastDelta = 0;
 		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetNbinsX(); ++bIX){
-		  double center = (jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1) + jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1))/2.;
+		  double center = (jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1) + jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+2))/2.;
 		  
 		  if(center < lowPtTruncVal) continue;
 		  if(center > 1000.) continue;
@@ -639,8 +644,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		std::cout << "MaxDelta: " << maxDelta << ", " << maxDeltaCenter << std::endl;
 		std::cout << "LastDelta: " << lastDelta << ", " << lastDeltaCenter << std::endl;
 
-		label_p->DrawLatex(110, tempBins[7], ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
-		label_p->DrawLatex(110, tempBins[5], ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
+		label_p->DrawLatex(110, tempBins[6], ("MaxDelta: " + prettyString(maxDelta*100, 2, false) + "%").c_str());
+		label_p->DrawLatex(110, tempBins[4], ("LastDelta: " + prettyString(lastDelta*100, 2, false) + "%").c_str());
 	      }
 	      else label_p->DrawLatex(110, (max + min)/2., ("Doesn't terminate for nBayes=" + std::to_string(nBayes+1)).c_str());
 	      label_p->DrawLatex(100, min - interval*2, "100");
