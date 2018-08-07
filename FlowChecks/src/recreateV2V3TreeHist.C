@@ -9,7 +9,9 @@
 #include "TMath.h"
 #include "TDatime.h"
 #include "TF1.h"
+#include "Math/Minimizer.h"
 
+#include "Utility/include/cppWatch.h"
 #include "Utility/include/doGlobalDebug.h"
 
 int recreateV2V3TreeHist(const std::string inFileName)
@@ -38,10 +40,14 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2ObsCorr_Trk_h[nCentBins];
 
   TH1F* v2Raw_EByE_h[nCentBins];
-  TH1F* v2RawCorr_EByE_h[nCentBins];
-  
+  TH1F* v2RawCorr_EByE_h[nCentBins];  
   TH1F* v2Obs_EByE_h[nCentBins];
   TH1F* v2ObsCorr_EByE_h[nCentBins];
+  TH1F* v2Fit_EByE_h[nCentBins];
+  TH1F* v2FitCorr_EByE_h[nCentBins];  
+  TH1F* v2FitV4_EByE_h[nCentBins];
+  TH1F* v2FitV4Corr_EByE_h[nCentBins];  
+
 
   TH1F* v2Raw_Mean_PF_h = new TH1F("v2Raw_Mean_PF_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
   TH1F* v2Raw_Sigma_PF_h = new TH1F("v2Raw_Sigma_PF_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
@@ -74,6 +80,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2ObsCorr_Mean_EByE_h = new TH1F("v2ObsCorr_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
   TH1F* v2ObsCorr_Sigma_EByE_h = new TH1F("v2ObsCorr_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
 
+  TH1F* v2Fit_Mean_EByE_h = new TH1F("v2Fit_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
+  TH1F* v2Fit_Sigma_EByE_h = new TH1F("v2Fit_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
+  TH1F* v2FitCorr_Mean_EByE_h = new TH1F("v2FitCorr_Mean_EByE_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
+  TH1F* v2FitCorr_Sigma_EByE_h = new TH1F("v2FitCorr_Sigma_EByE_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
+
+  
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
     v2Raw_PF_h[cI] = new TH1F(("v2Raw_" + centStr + "_PF_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
@@ -90,6 +102,10 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2RawCorr_EByE_h[cI] = new TH1F(("v2RawCorr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2Obs_EByE_h[cI] = new TH1F(("v2Obs_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2ObsCorr_EByE_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2Fit_EByE_h[cI] = new TH1F(("v2Fit_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2FitCorr_EByE_h[cI] = new TH1F(("v2FitCorr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2FitV4_EByE_h[cI] = new TH1F(("v2FitV4_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2FitV4Corr_EByE_h[cI] = new TH1F(("v2FitV4Corr_" + centStr + "_EByE_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
   }
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
@@ -154,7 +170,7 @@ int recreateV2V3TreeHist(const std::string inFileName)
     inTree_p->SetBranchAddress("eByEWeight", &eByEWeight_p);
   }
 
-  const Int_t nEntries = TMath::Min((Int_t)inTree_p->GetEntries(), (Int_t)100000000);
+  const Int_t nEntries = TMath::Min((Int_t)inTree_p->GetEntries(), (Int_t)200000);
 
   double globalN[nCentBins];
   double globalV2XRawPF[nCentBins];
@@ -190,6 +206,26 @@ int recreateV2V3TreeHist(const std::string inFileName)
     globalV2YRawEByECorr[cI] = 0.;
   }
 
+
+  ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
+  ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
+
+  std::string flowFitForm = "[0]*(1. + 2.*([1]*TMath::Cos(2.*(x - [2])) + [3]*TMath::Cos(3.*(x - [4]))))";
+  std::string flowFitFormV4 = "[0]*(1. + 2.*([1]*TMath::Cos(2.*(x - [2])) + [3]*TMath::Cos(3.*(x - [4])) + [5]*TMath::Cos(4.*(x - [6])) ))";
+
+  TF1* flowFit_p = new TF1("flowFit_p", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
+  TF1* flowFitCorr_p = new TF1("flowFitCorr_p", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
+  TF1* flowFitV4_p = new TF1("flowFitV4_p", flowFitFormV4.c_str(), -TMath::Pi(), TMath::Pi());
+  TF1* flowFitV4Corr_p = new TF1("flowFitV4Corr_p", flowFitFormV4.c_str(), -TMath::Pi(), TMath::Pi());
+
+  
+  cppWatch allLoop;
+  cppWatch fitLoop;
+  cppWatch fitLoopA;
+  cppWatch fitLoopB;
+  cppWatch fitLoopC;
+
+  allLoop.start();
   for(Int_t entry = 0; entry < nEntries; ++entry){
     if(entry%10000 == 0) std::cout << " Entry " << entry << "/" << nEntries << std::endl;
     inTree_p->GetEntry(entry);
@@ -261,6 +297,32 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
     Int_t eByECounter = 0;
     if(hasEByE){    
+      
+      const Int_t nEByE = eByEPhi_p->size();
+      const int nPhiBins = std::fmax(10, nEByE/30);
+
+      double eventPlane2Cos = 0;
+      double eventPlane2Sin = 0;
+
+      double eventPlane3Cos = 0;
+      double eventPlane3Sin = 0;
+
+      double eventPlane4Cos = 0;
+      double eventPlane4Sin = 0;
+
+      double eventPlane2CosCorr = 0;
+      double eventPlane2SinCorr = 0;
+
+      double eventPlane3CosCorr = 0;
+      double eventPlane3SinCorr = 0;
+
+      double eventPlane4CosCorr = 0;
+      double eventPlane4SinCorr = 0;
+
+      TH1F* phi_h = new TH1F("phi_h", ";#phi;Counts (.3 < p_{T} < 3.)", nPhiBins, -TMath::Pi(), TMath::Pi());
+      TH1F* phiCorr_h = new TH1F("phiCorr_h", ";#phi;Counts Corr. (.3 < p_{T} < 3.)", nPhiBins, -TMath::Pi(), TMath::Pi());
+      
+
       for(unsigned tI = 0; tI < eByEPhi_p->size(); tI++){
 	//	if(eByEPt_p->at(tI) >= 2.4) continue;
 	eByECounter++;
@@ -275,9 +337,127 @@ int recreateV2V3TreeHist(const std::string inFileName)
 	v2yRawEByECorr += tempWeightEByE*TMath::Sin(2*(deltaEventPhi));
 	
 	weightEByE += tempWeightEByE;
-      }
-    }
+	
+	phi_h->Fill(deltaEventPhi);
+	phiCorr_h->Fill(deltaEventPhi, tempWeightEByE);
 
+	eventPlane2Cos += std::cos(2*deltaEventPhi);
+	eventPlane2Sin += std::sin(2*deltaEventPhi);
+
+	eventPlane3Cos += std::cos(3*deltaEventPhi);
+	eventPlane3Sin += std::sin(3*deltaEventPhi);
+
+	eventPlane4Cos += std::cos(4*deltaEventPhi);
+	eventPlane4Sin += std::sin(4*deltaEventPhi);
+
+	eventPlane2CosCorr += tempWeightEByE*std::cos(2*deltaEventPhi);
+	eventPlane2SinCorr += tempWeightEByE*std::sin(2*deltaEventPhi);
+
+	eventPlane3CosCorr += tempWeightEByE*std::cos(3*deltaEventPhi);
+	eventPlane3SinCorr += tempWeightEByE*std::sin(3*deltaEventPhi);       
+
+	eventPlane4CosCorr += tempWeightEByE*std::cos(4*deltaEventPhi);
+	eventPlane4SinCorr += tempWeightEByE*std::sin(4*deltaEventPhi);       
+      }
+
+      
+      double eventPlane2 = std::atan2(eventPlane2Sin, eventPlane2Cos)/2.;
+      double eventPlane3 = std::atan2(eventPlane3Sin, eventPlane3Cos)/3.;
+      double eventPlane4 = std::atan2(eventPlane4Sin, eventPlane4Cos)/4.;
+
+      double eventPlane2Corr = std::atan2(eventPlane2SinCorr, eventPlane2CosCorr)/2.;
+      double eventPlane3Corr = std::atan2(eventPlane3SinCorr, eventPlane3CosCorr)/3.;
+      double eventPlane4Corr = std::atan2(eventPlane4SinCorr, eventPlane4CosCorr)/4.;
+
+
+      flowFit_p->SetParameter(0, phi_h->GetMaximum()*3./4.);
+      flowFit_p->SetParameter(1, 0);
+      flowFit_p->SetParameter(2, eventPlane2);
+      flowFit_p->SetParLimits(2, eventPlane2-0.0001, eventPlane2 + 0.0001);
+
+      flowFit_p->SetParameter(3, 0);
+      flowFit_p->SetParameter(4, eventPlane3);
+      flowFit_p->SetParLimits(4, eventPlane3 - 0.0001, eventPlane3 + 0.0001);
+
+      fitLoopA.stop();
+      fitLoopB.start();
+
+      phi_h->Fit("flowFit_p", "Q N 0", "", -TMath::Pi(), TMath::Pi());
+
+      fitLoopB.stop();
+      fitLoopC.start();
+
+      v2Fit_EByE_h[centPos]->Fill(flowFit_p->GetParameter(1));
+
+
+      flowFitCorr_p->SetParameter(0, phiCorr_h->GetMaximum()*3./4.);
+      flowFitCorr_p->SetParameter(1, 0);
+      flowFit_p->SetParameter(2, eventPlane2Corr);
+      flowFit_p->SetParLimits(2, eventPlane2Corr-0.0001, eventPlane2Corr + 0.0001);
+
+      flowFit_p->SetParameter(3, 0);
+      flowFit_p->SetParameter(4, eventPlane3Corr);
+      flowFit_p->SetParLimits(4, eventPlane3Corr - 0.0001, eventPlane3Corr + 0.0001);
+
+      fitLoopA.stop();
+      fitLoopB.start();
+
+      phiCorr_h->Fit("flowFitCorr_p", "Q N 0", "", -TMath::Pi(), TMath::Pi());
+
+      v2FitCorr_EByE_h[centPos]->Fill(flowFitCorr_p->GetParameter(1));
+
+
+      flowFitV4_p->SetParameter(0, phi_h->GetMaximum()*3./4.);
+      flowFitV4_p->SetParameter(1, 0);
+      flowFitV4_p->SetParameter(2, eventPlane2);
+      flowFitV4_p->SetParLimits(2, eventPlane2-0.0001, eventPlane2 + 0.0001);
+
+      flowFitV4_p->SetParameter(3, 0);
+      flowFitV4_p->SetParameter(4, eventPlane3);
+      flowFitV4_p->SetParLimits(4, eventPlane3 - 0.0001, eventPlane3 + 0.0001);
+
+      flowFitV4_p->SetParameter(5, 0);
+      flowFitV4_p->SetParameter(6, eventPlane4);
+      flowFitV4_p->SetParLimits(6, eventPlane4 - 0.0001, eventPlane4 + 0.0001);
+
+      fitLoopA.stop();
+      fitLoopB.start();
+
+      phi_h->Fit("flowFitV4_p", "Q N 0", "", -TMath::Pi(), TMath::Pi());
+
+      fitLoopB.stop();
+      fitLoopC.start();
+
+      v2FitV4_EByE_h[centPos]->Fill(flowFitV4_p->GetParameter(1));
+
+
+      flowFitV4Corr_p->SetParameter(0, phiCorr_h->GetMaximum()*3./4.);
+      flowFitV4Corr_p->SetParameter(1, 0);
+      flowFitV4Corr_p->SetParameter(2, eventPlane2Corr);
+      flowFitV4Corr_p->SetParLimits(2, eventPlane2Corr-0.0001, eventPlane2Corr + 0.0001);
+
+      flowFitV4Corr_p->SetParameter(3, 0);
+      flowFitV4Corr_p->SetParameter(4, eventPlane3Corr);
+      flowFitV4Corr_p->SetParLimits(4, eventPlane3Corr - 0.0001, eventPlane3Corr + 0.0001);
+
+      flowFitV4Corr_p->SetParameter(5, 0);
+      flowFitV4Corr_p->SetParameter(6, eventPlane4Corr);
+      flowFitV4Corr_p->SetParLimits(6, eventPlane4Corr - 0.0001, eventPlane4Corr + 0.0001);
+
+      fitLoopA.stop();
+      fitLoopB.start();
+
+      phiCorr_h->Fit("flowFitV4Corr_p", "Q N 0", "", -TMath::Pi(), TMath::Pi());
+
+      v2FitV4Corr_EByE_h[centPos]->Fill(flowFitV4Corr_p->GetParameter(1));
+ 
+      fitLoopC.stop();
+      fitLoop.stop();
+      delete phi_h;      
+      delete phiCorr_h;      
+
+    }
+  
     if(hasPF){
       v2xRawPF /= (double)pfPhi_p->size();
       v2yRawPF /= (double)pfPhi_p->size();
@@ -325,6 +505,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
       v2xRawEByECorr /= weightEByE;
       v2yRawEByECorr /= weightEByE;
       
+
+      //      std::cout << "hiBin,X,Y,XCorr,YCorr: " << hiBin_ << ", " << v2xRawEByE << ", " << v2yRawEByE << ", " << v2xRawEByECorr << ", " << v2yRawEByECorr << std::endl;
+
       double v2RawEByE = TMath::Sqrt(v2xRawEByE*v2xRawEByE + v2yRawEByE*v2yRawEByE);
       double v2RawEByECorr = TMath::Sqrt(v2xRawEByECorr*v2xRawEByECorr + v2yRawEByECorr*v2yRawEByECorr);
       
@@ -338,6 +521,20 @@ int recreateV2V3TreeHist(const std::string inFileName)
       globalV2YRawEByECorr[centPos] += v2yRawEByECorr;
     }
   }
+  allLoop.stop();
+
+  delete flowFit_p;
+  delete flowFitCorr_p;
+  delete flowFitV4_p;
+  delete flowFitV4Corr_p;
+  
+
+  std::cout << "All loop: " << allLoop.total() << std::endl;
+  std::cout << " Fit loop: " << fitLoop.total() << ", " << fitLoop.total()/allLoop.total() << std::endl;
+  std::cout << "  Fit loop A: " << fitLoopA.total() << ", " << fitLoopA.total()/allLoop.total() << std::endl;
+  std::cout << "  Fit loop B: " << fitLoopB.total() << ", " << fitLoopB.total()/allLoop.total() << std::endl;
+  std::cout << "  Fit loop C: " << fitLoopC.total() << ", " << fitLoopC.total()/allLoop.total() << std::endl;
+  
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     globalV2XRawPF[cI] /= globalN[cI];
@@ -359,8 +556,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
       globalV2YRawEByECorr[cI] /= globalN[cI];
     }
 
+    std::cout << "Cent, N: " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%, " << globalN[cI] << std::endl;
+
     if(hasPF){
-      std::cout << "Cent, N: " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%, " << globalN[cI] << std::endl;
       std::cout << "  Global v2xRawPF, v2yRawPF, N: " << globalV2XRawPF[cI] << ", " << globalV2YRawPF[cI] << std::endl;
       std::cout << "  Global v2xRawPFCorr, v2yRawPFCorr, N: " << globalV2XRawPFCorr[cI] << ", " << globalV2YRawPFCorr[cI] << std::endl;
     }
@@ -594,7 +792,6 @@ int recreateV2V3TreeHist(const std::string inFileName)
     delete v2ObsCorr_Sigma_PF_h;
   }
 
-
   for(Int_t cI = 0; cI < nCentBins; ++cI){  
     if(hasTrk){
       v2Raw_Trk_h[cI]->Write("", TObject::kOverwrite);
@@ -660,6 +857,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
     if(hasEByE){
       v2Raw_EByE_h[cI]->Write("", TObject::kOverwrite);
       v2RawCorr_EByE_h[cI]->Write("", TObject::kOverwrite);
+
+      v2Fit_EByE_h[cI]->Write("", TObject::kOverwrite);
+      v2FitCorr_EByE_h[cI]->Write("", TObject::kOverwrite);
+      v2FitV4_EByE_h[cI]->Write("", TObject::kOverwrite);
+      v2FitV4Corr_EByE_h[cI]->Write("", TObject::kOverwrite);
       
       v2Obs_EByE_h[cI]->Write("", TObject::kOverwrite);
       v2ObsCorr_EByE_h[cI]->Write("", TObject::kOverwrite);
@@ -673,6 +875,16 @@ int recreateV2V3TreeHist(const std::string inFileName)
       v2RawCorr_Mean_EByE_h->SetBinError(cI+1, v2RawCorr_EByE_h[cI]->GetMeanError());
       v2RawCorr_Sigma_EByE_h->SetBinContent(cI+1, v2RawCorr_EByE_h[cI]->GetStdDev());
       v2RawCorr_Sigma_EByE_h->SetBinError(cI+1, v2RawCorr_EByE_h[cI]->GetStdDevError());
+
+      v2Fit_Mean_EByE_h->SetBinContent(cI+1, v2Fit_EByE_h[cI]->GetMean());
+      v2Fit_Mean_EByE_h->SetBinError(cI+1, v2Fit_EByE_h[cI]->GetMeanError());
+      v2Fit_Sigma_EByE_h->SetBinContent(cI+1, v2Fit_EByE_h[cI]->GetStdDev());
+      v2Fit_Sigma_EByE_h->SetBinError(cI+1, v2Fit_EByE_h[cI]->GetStdDevError());
+      
+      v2FitCorr_Mean_EByE_h->SetBinContent(cI+1, v2FitCorr_EByE_h[cI]->GetMean());
+      v2FitCorr_Mean_EByE_h->SetBinError(cI+1, v2FitCorr_EByE_h[cI]->GetMeanError());
+      v2FitCorr_Sigma_EByE_h->SetBinContent(cI+1, v2FitCorr_EByE_h[cI]->GetStdDev());
+      v2FitCorr_Sigma_EByE_h->SetBinError(cI+1, v2FitCorr_EByE_h[cI]->GetStdDevError());
       
       v2Obs_Mean_EByE_h->SetBinContent(cI+1, v2Obs_EByE_h[cI]->GetMean());
       v2Obs_Mean_EByE_h->SetBinError(cI+1, v2Obs_EByE_h[cI]->GetMeanError());
@@ -688,6 +900,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
     delete v2Raw_EByE_h[cI];
     delete v2RawCorr_EByE_h[cI];
 
+    delete v2Fit_EByE_h[cI];
+    delete v2FitCorr_EByE_h[cI];
+
+    delete v2FitV4_EByE_h[cI];
+    delete v2FitV4Corr_EByE_h[cI];
+
     delete v2Obs_EByE_h[cI];
     delete v2ObsCorr_EByE_h[cI];
   }
@@ -698,6 +916,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
   v2RawCorr_Mean_EByE_h->Write("", TObject::kOverwrite);
   v2RawCorr_Sigma_EByE_h->Write("", TObject::kOverwrite);
 
+  v2Fit_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2Fit_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
+  v2FitCorr_Mean_EByE_h->Write("", TObject::kOverwrite);
+  v2FitCorr_Sigma_EByE_h->Write("", TObject::kOverwrite);
+
   v2Obs_Mean_EByE_h->Write("", TObject::kOverwrite);
   v2Obs_Sigma_EByE_h->Write("", TObject::kOverwrite);
 
@@ -707,8 +931,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
   if(hasEByE){
     delete v2Raw_Mean_EByE_h;
     delete v2Raw_Sigma_EByE_h;
+    delete v2Fit_Mean_EByE_h;
+    delete v2Fit_Sigma_EByE_h;
     delete v2RawCorr_Mean_EByE_h;
     delete v2RawCorr_Sigma_EByE_h;
+    delete v2FitCorr_Mean_EByE_h;
+    delete v2FitCorr_Sigma_EByE_h;
     
     delete v2Obs_Mean_EByE_h;
     delete v2Obs_Sigma_EByE_h;

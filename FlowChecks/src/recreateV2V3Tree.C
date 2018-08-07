@@ -38,7 +38,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
   if(outFileName.size() == 0) outFileName = "output/v2V3Tree_" + dateStr + ".root";
   else{
     if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
-    outFileName = outFileName + "_" + dateStr + ".root";
+    outFileName = outFileName + "_FlowCheckNtuples_" + dateStr + ".root";
   }
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
@@ -51,14 +51,17 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
   Float_t chi2FromTree_;
   Float_t nDOFFromTree_;
   std::vector<float>* pfPtOut_p=NULL;
+  std::vector<float>* pfEtaOut_p=NULL;
   std::vector<float>* pfPhiOut_p=NULL;
   std::vector<float>* pfWeightOut_p=NULL;
 
   std::vector<float>* trkPtOut_p=NULL;
+  std::vector<float>* trkEtaOut_p=NULL;
   std::vector<float>* trkPhiOut_p=NULL;
   std::vector<float>* trkWeightOut_p=NULL;
 
   std::vector<float>* eByEPtOut_p=NULL;
+  std::vector<float>* eByEEtaOut_p=NULL;
   std::vector<float>* eByEPhiOut_p=NULL;
   std::vector<float>* eByEWeightOut_p=NULL;
 
@@ -79,18 +82,21 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
   
   if(hasPFTree){
     v2V3Tree_p->Branch("pfPt", &pfPtOut_p);
+    v2V3Tree_p->Branch("pfEta", &pfEtaOut_p);
     v2V3Tree_p->Branch("pfPhi", &pfPhiOut_p);
     v2V3Tree_p->Branch("pfWeight", &pfWeightOut_p);   
   }
 
   if(hasTrackTree){
     v2V3Tree_p->Branch("trkPt", &trkPtOut_p);
+    v2V3Tree_p->Branch("trkEta", &trkEtaOut_p);
     v2V3Tree_p->Branch("trkPhi", &trkPhiOut_p);
     v2V3Tree_p->Branch("trkWeight", &trkWeightOut_p);   
   }
 
   if(hasEbyETree){
     v2V3Tree_p->Branch("eByEPt", &eByEPtOut_p);
+    v2V3Tree_p->Branch("eByEEta", &eByEEtaOut_p);
     v2V3Tree_p->Branch("eByEPhi", &eByEPhiOut_p);
     v2V3Tree_p->Branch("eByEWeight", &eByEWeightOut_p);   
   }
@@ -288,6 +294,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
   
     if(hasPFTree){
       pfPtOut_p->clear();
+      pfEtaOut_p->clear();
       pfPhiOut_p->clear();
       pfWeightOut_p->clear();
       
@@ -301,6 +308,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI)));
 	
 	pfPtOut_p->push_back(pfPt_p->at(pfI));
+	pfEtaOut_p->push_back(pfEta_p->at(pfI));
 	pfPhiOut_p->push_back(pfPhi_p->at(pfI));
 	pfWeightOut_p->push_back(tempWeight);
       }
@@ -309,6 +317,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 
     if(hasTrackTree){
       trkPtOut_p->clear();
+      trkEtaOut_p->clear();
       trkPhiOut_p->clear();
       trkWeightOut_p->clear();
       
@@ -336,6 +345,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEta_[tI], trkPt_[tI]));
 	
 	trkPtOut_p->push_back(trkPt_[tI]);
+	trkEtaOut_p->push_back(trkEta_[tI]);
 	trkPhiOut_p->push_back(trkPhi_[tI]);
 	trkWeightOut_p->push_back(tempWeight);
       }
@@ -343,6 +353,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 
     if(hasEbyETree){
       eByEPtOut_p->clear();
+      eByEEtaOut_p->clear();
       eByEPhiOut_p->clear();
       eByEWeightOut_p->clear();
       
@@ -355,6 +366,7 @@ int recreateV2V3Tree(const std::string inFileName, std::string outFileName = "")
 	double tempWeight = 1./corrHists_p[centCorrPos]->GetBinContent(corrHists_p[centCorrPos]->FindBin(trkEbyEEta_[tI], trkEbyEPt_[tI]));
 	
 	eByEPtOut_p->push_back(trkEbyEPt_[tI]);
+	eByEEtaOut_p->push_back(trkEbyEEta_[tI]);
 	eByEPhiOut_p->push_back(trkEbyEPhi_[tI]);
 	eByEWeightOut_p->push_back(tempWeight);
       }
