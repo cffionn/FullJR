@@ -7,6 +7,10 @@
 //Alternative handling would be looking for a better match in cases where high pt jets look fake
 //but this comes with its own problems
 
+#include <iostream>
+
+#include "Utility/include/etaPhiFunc.h"
+
 class specialHYDJETEventExclude
 {
  public:
@@ -32,6 +36,7 @@ class specialHYDJETEventExclude
   double deltaVal = 0.01;
 
   bool CheckEventBadJet(const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[], Int_t entry, Int_t run, Int_t lumi, Int_t evt);
+  bool CheckIgnoreMinus999(double jtpt, double jtphi, double jteta, const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[]);
   void PrintExcludedNumbers();
   int TotalExcludedNumbers();
 };
@@ -75,6 +80,25 @@ bool specialHYDJETEventExclude::CheckEventBadJet(const int ngen_, float genpt_[]
   return isLeadFound && isSubleadFound;
 }
 
+bool specialHYDJETEventExclude::CheckIgnoreMinus999(double jtpt, double jtphi, double jteta, const int ngen_, float genpt_[], float genphi_[], float geneta_[], int gensubid_[])
+{
+  bool isGood = true;
+  if(jtpt > 100){
+
+    for(int gI = 0; gI < ngen_; ++gI){
+      if(gensubid_[gI] == 0) continue;
+      if(jtpt/genpt_[gI] < 0.4) continue;
+
+      if(getDR(jteta, jtphi, geneta_[gI], genphi_[gI]) < 0.2){
+	isGood = false;
+	break;
+      }
+    }
+    
+  }
+
+  return isGood;
+}
 
 void specialHYDJETEventExclude::PrintExcludedNumbers()
 {
