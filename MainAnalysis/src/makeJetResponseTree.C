@@ -121,6 +121,20 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   //Post possible returns, start your random number generator
   TRandom3* randGen_p = new TRandom3(0);
 
+  unsigned int pos = 0;
+  while(pos < pthats.size()){
+    for(unsigned int pI = pos+1; pI < pthats.size(); ++pI){
+      double pthatTemp = pthats.at(pos);
+      double pthatWeightTemp = pthatWeights.at(pos);
+
+      pthats.at(pos) = pthats.at(pI);
+      pthatWeights.at(pos) = pthatWeights.at(pI);
+
+      pthats.at(pI) = pthatTemp;
+      pthatWeights.at(pI) = pthatWeightTemp;
+    }
+  }
+
   std::cout << "Pthats and weights: " << std::endl;
   for(unsigned int pI = 0; pI < pthats.size(); ++pI){
     std::cout << " " << pI << "/" << pthats.size() << ": " << pthats.at(pI) << ", " << pthatWeights.at(pI) << std::endl;
@@ -132,7 +146,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
   
   
-  unsigned int pos = 0;
+  pos = 0;
   while(responseTrees.size() > pos){
     //For testing, uncomment to exclude all but R=0.4 trees
     //    if(responseTrees.at(pos).find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
@@ -200,6 +214,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Float_t pthatHi = pthats.at(pthats.size()-1)*2.;
   Double_t pthatBins[nPthatBins+1];
   getLinBins(pthatLow, pthatHi, nPthatBins, pthatBins);
+
+  
 
   const Int_t nCentBins2 = 100;
   const Float_t centBinsLow2 = 0;
@@ -293,8 +309,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
-  const Int_t nSyst = 11;
-  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat"};
+  const Int_t nSyst = 13;
+  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
@@ -414,7 +430,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   TH2D* response_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH2D* response_RecoTrunc_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   RooUnfoldResponse* rooResponse_RecoTrunc_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* rooResponse_CheckFlatPrior_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_CheckFlatPrior_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     outFile_p->cd();
@@ -456,10 +472,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      rooResponse_RecoTrunc_h[dI][cI][iI][mI][aI][sI]->Setup(recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI]);
 	    }
 	    
-	    rooResponse_CheckFlatPrior_h[dI][cI][iI][mI][aI] = new TH1D(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_CheckFlatPrior_h").c_str(), ";Gen. p_{T} (Weighted Flat);Counts (Weighted)", nJtPtBins, jtPtBins);
+	    genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI] = new TH1D(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_CheckFlatPrior_h").c_str(), ";Gen. p_{T} (Weighted Flat);Counts (Weighted)", nJtPtBins, jtPtBins);
 
-	    centerTitles({recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI], response_h[dI][cI][iI][mI][aI], response_RecoTrunc_h[dI][cI][iI][mI][aI], rooResponse_CheckFlatPrior_h[dI][cI][iI][mI][aI]});
-	    setSumW2({recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI], response_h[dI][cI][iI][mI][aI], response_RecoTrunc_h[dI][cI][iI][mI][aI], rooResponse_CheckFlatPrior_h[dI][cI][iI][mI][aI]});
+	    centerTitles({recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI], response_h[dI][cI][iI][mI][aI], response_RecoTrunc_h[dI][cI][iI][mI][aI], genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI]});
+	    setSumW2({recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI], response_h[dI][cI][iI][mI][aI], response_RecoTrunc_h[dI][cI][iI][mI][aI], genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI]});
 	    
 	    
 	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
@@ -714,6 +730,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       Bool_t isPara = randGen_p->Uniform(0., 1.) < fracParaFills;
 
       for(Int_t tI = 0; tI < nTrees; ++tI){
+	std::string algoName = responseTrees.at(tI);
+	algoName = algoName.substr(0, algoName.find("/"));
+
 	const Int_t rVal = getRVal(jetTrees_p[tI]->GetName());
 	Double_t rValD = getRVal(jetTrees_p[tI]->GetName());
 	rValD /= 10.;
@@ -745,8 +764,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	    Float_t jtPtFillVal[nSyst];
 	    bool goodReco[nSyst];
 	    bool goodRecoTrunc[nSyst];
+	    double fullWeight2[nSyst];
+
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	  
 	      jtPtFillVal[sI] = jtpt_[tI][jI] + (jtpt_[tI][jI] - refpt_[tI][jI])*responseMod[mI];
+	      fullWeight2[sI] = fullWeight_;
 
 	      if(isStrSame(systStr[sI], "JECUpMC")) jtPtFillVal[sI] += jtPtFillVal[sI]*jecVarMC;
 	      else if(isStrSame(systStr[sI], "JECDownMC")) jtPtFillVal[sI] -= jtPtFillVal[sI]*jecVarMC;
@@ -762,7 +784,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      }
 	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarMC;
 	      else if(isStrSame(systStr[sI], "JERData")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarData[mI];
-	      
+	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] *= flatWeight.getJtWeight(algoName, hiBin_/2, refpt_[tI][jI], jteta_[tI][jI]);
+	      else if(isStrSame(systStr[sI], "PriorUp1PowerPthat")) fullWeight2[sI] *= pthat_/pthatLow;
+	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
+
 	      goodReco[sI] = (jtPtFillVal[sI] >= jtPtBins[0] && jtPtFillVal[sI] < jtPtBins[nJtPtBins] && jtPtFillVal[sI] > minJtPtCut[tI]);
 	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= jtPtBins[recoTruncPos[tI]] && jtPtFillVal[sI] < jtPtBins[nJtPtBins-1]);
 	    }
@@ -832,10 +857,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 		
 		if(!isPara){
 		  for(Int_t sI = 0; sI < nSyst; ++sI){
-		    if(goodRecoTrunc[sI]) rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight_);
-		    else rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Miss(refpt_[tI][jI], fullWeight_);
+		    if(goodRecoTrunc[sI]) rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+		    else rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Miss(refpt_[tI][jI], fullWeight2[sI]);
 
-		    rooResponse_CheckFlatPrior_h[tI][centPos][iI][mI][aI]->Fill(refpt_[tI][jI], fullWeight_);
+
+		    if(isStrSame(systStr[sI], "PriorFlat")) genJtPt_CheckFlatPrior_h[tI][centPos][iI][mI][aI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
 		  }
 		  
 		  if(goodTruth && goodReco[0]){
@@ -939,7 +965,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      rooResponse_RecoTrunc_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	    }
 	    
-	    rooResponse_CheckFlatPrior_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
+	    genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 
 	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
 	      recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI]->Write("", TObject::kOverwrite);
@@ -1003,7 +1029,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 	      delete rooResponse_RecoTrunc_h[dI][cI][iI][mI][aI][sI];
 	    }
 	    
-	    delete rooResponse_CheckFlatPrior_h[dI][cI][iI][mI][aI];
+	    delete genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI];
 
 	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
 	      delete recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI];
