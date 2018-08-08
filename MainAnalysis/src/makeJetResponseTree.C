@@ -1,4 +1,3 @@
-
 //cpp dependencies
 #include <iostream>
 #include <string>
@@ -23,6 +22,7 @@
 
 //Local FullJR (MainAnalysis) dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/flatWeightReader.h"
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
@@ -212,12 +212,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate()) + "_" + std::to_string(date->GetHour());
   delete date;
-
   const std::string fullPath = std::getenv("FULLJRDIR");
-
-  const std::string rcDiffFileName = "MainAnalysis/tables/rcDifferences_20180418.txt";
-  scaleErrorTool scaleErr((fullPath + "/" + rcDiffFileName).c_str());
-  scaleErr.Init();
 
   std::string outFileName = inName;
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
@@ -302,6 +297,67 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat"};
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
+
+  const std::string rcDiffFileName = "MainAnalysis/tables/rcDifferences_20180418.txt";
+  scaleErrorTool scaleErr((fullPath + "/" + rcDiffFileName).c_str());
+  scaleErr.Init();
+
+  cutPropagator cutProp;
+  cutProp.SetInFileNames({inName});
+  cutProp.SetInFullFileNames(fileList);
+  cutProp.SetIsPP(isPP);
+  cutProp.SetRCDiffFileName(rcDiffFileName);
+  cutProp.SetJtAbsEtaMax(jtAbsEtaMax);
+  cutProp.SetJECVarMC(jecVarMC);
+  cutProp.SetJERVarMC(jerVarMC);
+  cutProp.SetJECVarData(jecVarData);
+  cutProp.SetNResponseMod(nResponseMod);
+  cutProp.SetResponseMod(nResponseMod, responseMod);
+  cutProp.SetJERVarData(nResponseMod, jerVarData);
+  cutProp.SetNJtAlgos(nTrees);
+  cutProp.SetJtAlgos(responseTrees);
+  cutProp.SetMinJtPtCut(nTrees, minJtPtCut);
+  cutProp.SetMultiJtPtCut(nTrees, multiJtPtCut);
+  cutProp.SetRecoTruncPos(nTrees, recoTruncPos);
+  cutProp.SetNJtPtBins(nJtPtBins);
+  cutProp.SetJtPtBins(nJtPtBins+1, jtPtBins);
+  cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
+  cutProp.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
+  cutProp.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
+  cutProp.SetNPthats(pthats.size());
+  cutProp.SetPthats(pthats);
+  cutProp.SetPthatWeights(pthatWeights);
+  cutProp.SetNCentBins(nCentBins);
+  cutProp.SetCentBinsLow(centBinsLow);
+  cutProp.SetCentBinsHi(centBinsHi);
+  cutProp.SetNID(nID);
+  cutProp.SetIdStr(nID, idStr);
+  cutProp.SetJtPfCHMFCutLow(nID, jtPfCHMFCutLow);
+  cutProp.SetJtPfCHMFCutHi(nID, jtPfCHMFCutHi);
+  cutProp.SetJtPfMUMFCutLow(nID, jtPfMUMFCutLow);
+  cutProp.SetJtPfMUMFCutHi(nID, jtPfMUMFCutHi);
+  cutProp.SetJtPfNHFCutLow(nID, jtPfNHFCutLow);
+  cutProp.SetJtPfNHFCutHi(nID, jtPfNHFCutHi);
+  cutProp.SetJtPfNEFCutLow(nID, jtPfNEFCutLow);
+  cutProp.SetJtPfNEFCutHi(nID, jtPfNEFCutHi);
+  cutProp.SetJtPfMUFCutLow(nID, jtPfMUFCutLow);
+  cutProp.SetJtPfMUFCutHi(nID, jtPfMUFCutHi);
+  cutProp.SetJtPfCHFCutLow(nID, jtPfCHFCutLow);
+  cutProp.SetJtPfCHFCutHi(nID, jtPfCHFCutHi);
+  cutProp.SetJtPfCEFCutLow(nID, jtPfCEFCutLow);
+  cutProp.SetJtPfCEFCutHi(nID, jtPfCEFCutHi);
+  cutProp.SetJtPfMinMult(nID, jtPfMinMult);
+  cutProp.SetJtPfMinChgMult(nID, jtPfMinChgMult);
+  cutProp.SetNSyst(nSyst);
+  cutProp.SetSystStr(nSyst, systStr);
+
+  const std::string flatWeightNamePbPb = "output/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180808_14.root";
+  const std::string flatWeightNamePP = "output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180808_14.root";
+  std::string flatWeightName = fullPath + "/";
+  if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
+  else flatWeightName = flatWeightName + flatWeightNamePbPb;
+  flatWeightReader flatWeight(flatWeightName, cutProp);
+
 
   const Int_t nResponseBins = 300;
   Double_t responseBins[nResponseBins+1];
@@ -970,55 +1026,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   TDirectory* subDir_p = (TDirectory*)cutDir_p->mkdir("subDir");
 
   //std::cout << __LINE__ << std::endl;
-
-  cutPropagator cutProp;
-  cutProp.SetInFileNames({inName});
-  cutProp.SetInFullFileNames(fileList);
-  cutProp.SetIsPP(isPP);
-  cutProp.SetRCDiffFileName(rcDiffFileName);
-  cutProp.SetJtAbsEtaMax(jtAbsEtaMax);
-  cutProp.SetJECVarMC(jecVarMC);
-  cutProp.SetJERVarMC(jerVarMC);
-  cutProp.SetJECVarData(jecVarData);
-  cutProp.SetNResponseMod(nResponseMod);
-  cutProp.SetResponseMod(nResponseMod, responseMod);
-  cutProp.SetJERVarData(nResponseMod, jerVarData);
-  cutProp.SetNJtAlgos(nTrees);
-  cutProp.SetJtAlgos(responseTrees);
-  cutProp.SetMinJtPtCut(nTrees, minJtPtCut);
-  cutProp.SetMultiJtPtCut(nTrees, multiJtPtCut);
-  cutProp.SetRecoTruncPos(nTrees, recoTruncPos);
-  cutProp.SetNJtPtBins(nJtPtBins);
-  cutProp.SetJtPtBins(nJtPtBins+1, jtPtBins);
-  cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
-  cutProp.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
-  cutProp.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
-  cutProp.SetNPthats(pthats.size());
-  cutProp.SetPthats(pthats);
-  cutProp.SetPthatWeights(pthatWeights);
-  cutProp.SetNCentBins(nCentBins);
-  cutProp.SetCentBinsLow(centBinsLow);
-  cutProp.SetCentBinsHi(centBinsHi);
-  cutProp.SetNID(nID);
-  cutProp.SetIdStr(nID, idStr);
-  cutProp.SetJtPfCHMFCutLow(nID, jtPfCHMFCutLow);
-  cutProp.SetJtPfCHMFCutHi(nID, jtPfCHMFCutHi);
-  cutProp.SetJtPfMUMFCutLow(nID, jtPfMUMFCutLow);
-  cutProp.SetJtPfMUMFCutHi(nID, jtPfMUMFCutHi);
-  cutProp.SetJtPfNHFCutLow(nID, jtPfNHFCutLow);
-  cutProp.SetJtPfNHFCutHi(nID, jtPfNHFCutHi);
-  cutProp.SetJtPfNEFCutLow(nID, jtPfNEFCutLow);
-  cutProp.SetJtPfNEFCutHi(nID, jtPfNEFCutHi);
-  cutProp.SetJtPfMUFCutLow(nID, jtPfMUFCutLow);
-  cutProp.SetJtPfMUFCutHi(nID, jtPfMUFCutHi);
-  cutProp.SetJtPfCHFCutLow(nID, jtPfCHFCutLow);
-  cutProp.SetJtPfCHFCutHi(nID, jtPfCHFCutHi);
-  cutProp.SetJtPfCEFCutLow(nID, jtPfCEFCutLow);
-  cutProp.SetJtPfCEFCutHi(nID, jtPfCEFCutHi);
-  cutProp.SetJtPfMinMult(nID, jtPfMinMult);
-  cutProp.SetJtPfMinChgMult(nID, jtPfMinChgMult);
-  cutProp.SetNSyst(nSyst);
-  cutProp.SetSystStr(nSyst, systStr);
 
   //std::cout << __LINE__ << std::endl;
 

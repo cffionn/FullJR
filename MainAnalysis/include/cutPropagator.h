@@ -1,3 +1,6 @@
+#ifndef CUTPROPAGATOR_H
+#define CUTPROPAGATOR_H
+
 //cpp dependencies
 #include <string>
 #include <iostream>
@@ -1251,3 +1254,5 @@ std::string cutPropagator::to_string_with_precision(double a_value, const int n)
   out << std::setprecision(n) << a_value;
   return out.str();
 }
+
+#endif
