@@ -82,6 +82,9 @@ class cutPropagator
   int nSyst;
   std::vector<std::string> systStr;
 
+  int nBayes;
+  std::vector<int> bayesVal;
+
   void Clean();
   bool GetAllVarFromFile(TFile* inFile_p);
   bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDirectory* inSubDir_p);
@@ -147,6 +150,10 @@ class cutPropagator
   bool CheckNSyst(cutPropagator inCutProp);
   bool CheckSystStr(std::vector<std::string> inSystStr);
   bool CheckSystStr(cutPropagator inCutProp);
+  bool CheckNBayes(int inNBayes);
+  bool CheckNBayes(cutPropagator inCutProp);
+  bool CheckBayesVal(std::vector<int> inBayesVal);
+  bool CheckBayesVal(cutPropagator inCutProp);
   bool CheckRCDiffFileName(std::string inRCDiffFileName);
   bool CheckRCDiffFileName(cutPropagator inCutProp);
   bool CheckFlatPriorFileName(std::string inFlatPriorFileName);
@@ -250,6 +257,9 @@ class cutPropagator
   int GetNSyst(){return nSyst;}
   std::vector<std::string> GetSystStr(){return systStr;}
 
+  int GetNBayes(){return nBayes;}
+  std::vector<int> GetBayesVal(){return bayesVal;}
+
   void SetInFileNames(std::vector<std::string> inInFileNames){inFileNames = inInFileNames; return;}
   void SetInFullFileNames(std::vector<std::string> inInFullFileNames){inFullFileNames = inInFullFileNames; return;}
 
@@ -342,6 +352,10 @@ class cutPropagator
   void SetSystStr(std::vector<std::string> inSystStr){systStr = inSystStr; return;};
   void SetSystStr(int inN, const std::string inSystStr[]);
 
+  void SetNBayes(int inNBayes){nBayes = inNBayes; return;}
+  void SetBayesVal(std::vector<int> inBayesVal){bayesVal = inBayesVal; return;};
+  void SetBayesVal(int inN, const int inBayesVal[]);
+
   std::vector<int> StringToIntVect(std::string inStr);
   std::vector<double> StringToDoubleVect(std::string inStr);
   std::vector<std::string> StringToStringVect(std::string inStr);
@@ -412,6 +426,9 @@ void cutPropagator::Clean()
 
   nSyst = -1;
   systStr.clear();
+
+  nBayes = -1;
+  bayesVal.clear();
 
   return;
 }
@@ -486,6 +503,8 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("jtPfMinChgMult", tempStr)) jtPfMinChgMult = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nSyst", tempStr)) nSyst = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("systStr", tempStr)) systStr = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nBayes", tempStr)) nBayes = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("bayesVal", tempStr)) bayesVal = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else{
       std::cout << "WARNING: TNAMED \'" << tempStr << "\' is unaccounted for in cutPropagator. Consider fixing" << std::endl;
     }
@@ -621,6 +640,13 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     systStr2 = systStr2 + systStr.at(sI) + ",";
   }
 
+  std::string nBayesStr = std::to_string(nBayes);
+  std::string bayesVal2 = "";
+
+  for(int sI = 0; sI < nBayes; ++sI){
+    bayesVal2 = bayesVal2 + std::to_string(bayesVal.at(sI)) + ",";
+  }
+
   TNamed inFileNamesName("inFileNames", inFileNames2.c_str());
   TNamed isPPName("isPP", std::to_string(isPP));
   TNamed jtAbsEtaMaxName("jtAbsEtaMax", std::to_string(jtAbsEtaMax).c_str());
@@ -668,6 +694,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed jtPfMinChgMultName("jtPfMinChgMult", jtPfMinChgMultStr.c_str());
   TNamed nSystName("nSyst", nSystStr.c_str());
   TNamed systStrName("systStr", systStr2.c_str());
+  TNamed nBayesName("nBayes", nBayesStr.c_str());
+  TNamed bayesValName("bayesVal", bayesVal2.c_str());
 
   inFileNamesName.Write("", TObject::kOverwrite);
   isPPName.Write("", TObject::kOverwrite);
@@ -717,6 +745,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   jtPfMinChgMultName.Write("", TObject::kOverwrite);
   nSystName.Write("", TObject::kOverwrite);
   systStrName.Write("", TObject::kOverwrite);
+  nBayesName.Write("", TObject::kOverwrite);
+  bayesValName.Write("", TObject::kOverwrite);
 
   inFile_p->cd();
   inDir_p->cd();
@@ -761,6 +791,9 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(!CheckJtPfCEFCutHi(inCutProp)) return false;
   if(!CheckJtPfMinMult(inCutProp)) return false;
   if(!CheckJtPfMinChgMult(inCutProp)) return false;
+
+  if(!CheckNBayes(inCutProp)) return false;
+  if(!CheckBayesVal(inCutProp)) return false;
 
   if(doBothMCOrBothData){
     if(!CheckNSyst(inCutProp)) return false;
@@ -885,6 +918,10 @@ bool cutPropagator::CheckNSyst(int inNSyst){return CheckInt(inNSyst, nSyst);}
 bool cutPropagator::CheckNSyst(cutPropagator inCutProp){return CheckNSyst(inCutProp.GetNSyst());}
 bool cutPropagator::CheckSystStr(std::vector<std::string> inSystStr){return CheckVectString(inSystStr, systStr);}
 bool cutPropagator::CheckSystStr(cutPropagator inCutProp){return CheckSystStr(inCutProp.GetSystStr());}
+bool cutPropagator::CheckNBayes(int inNBayes){return CheckInt(inNBayes, nBayes);}
+bool cutPropagator::CheckNBayes(cutPropagator inCutProp){return CheckNBayes(inCutProp.GetNBayes());}
+bool cutPropagator::CheckBayesVal(std::vector<int> inBayesVal){return CheckVectInt(inBayesVal, bayesVal);}
+bool cutPropagator::CheckBayesVal(cutPropagator inCutProp){return CheckBayesVal(inCutProp.GetBayesVal());}
 bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName){return CheckString(inRCDiffFileName, rcDiffFileName);}
 bool cutPropagator::CheckRCDiffFileName(cutPropagator inCutProp){return CheckRCDiffFileName(inCutProp.GetRCDiffFileName());}
 bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName){return CheckString(inFlatPriorFileName, flatPriorFileName);}
@@ -1209,6 +1246,15 @@ void cutPropagator::SetSystStr(int inN, const std::string inSystStr[])
 {
   for(int i = 0; i < inN; ++i){
     systStr.push_back(inSystStr[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetBayesVal(int inN, const int inBayesVal[])
+{
+  for(int i = 0; i < inN; ++i){
+    bayesVal.push_back(inBayesVal[i]);
   }
 
   return;

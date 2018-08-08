@@ -13,6 +13,8 @@
 
 //Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/returnRootFileContentsList.h"
+
 
 int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFileNamePbPb)
 {
@@ -33,11 +35,13 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   cutPropagator cutPropPP;
   cutPropPP.Clean();
   cutPropPP.GetAllVarFromFile(inFilePP_p);
+  std::vector<std::string> jetPPList = returnRootFileContentsList(inFilePP_p, "TDirectoryFile", "JetAnalyzer");
 
   TFile* inFilePbPb_p = new TFile(inFileNamePbPb.c_str(), "READ");
   cutPropagator cutPropPbPb;
   cutPropPbPb.Clean();
   cutPropPbPb.GetAllVarFromFile(inFilePbPb_p);
+  std::vector<std::string> jetPbPbList = returnRootFileContentsList(inFilePbPb_p, "TDirectoryFile", "JetAnalyzer");
 
   if(!cutPropPP.GetIsPP() || cutPropPbPb.GetIsPP() || !cutPropPP.CheckPropagatorsMatch(cutPropPbPb, true, false)){
     if(!cutPropPP.GetIsPP()) std::cout << "inFileNamePP \'" << inFileNamePP << "\' is not pp, return 1" << std::endl;
@@ -53,9 +57,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     return 1;
   }
 
+  const Int_t nJtPP = jetPPList.size();
+  const Int_t nJtPbPb = jetPbPbList.size();
 
   const Int_t nSyst = cutPropPbPb.GetNSyst();
   std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
+
+  const Int_t nBayes = cutPropPbPb.GetNBayes();
+  std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
 
   const Int_t nResponseMod = cutPropPbPb.GetNResponseMod();
   std::vector<double> responseMod = cutPropPbPb.GetResponseMod();
@@ -64,12 +73,12 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   std::vector<Int_t> centBinsLow = cutPropPbPb.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropPbPb.GetCentBinsHi();
 
-  const Int_t nJtPtBins = cutPropPbPb.GetNJtPtBins();
-  std::vector<Double_t> jtPtBinsTemp = cutPropPbPb.GetJtPtBins();
+  //  const Int_t nJtPtBins = cutPropPbPb.GetNJtPtBins();
+  //  std::vector<Double_t> jtPtBinsTemp = cutPropPbPb.GetJtPtBins();
 
   const Int_t nJtAbsEtaBins = cutPropPbPb.GetNJtAbsEtaBins();
-  std::vector<Double_t> jtAbsEtaBinsLowTemp = cutPropPbPb.GetJtAbsEtaBinsLow();
-  std::vector<Double_t> jtAbsEtaBinsHiTemp = cutPropPbPb.GetJtAbsEtaBinsHi();
+  std::vector<Double_t> jtAbsEtaBinsLow = cutPropPbPb.GetJtAbsEtaBinsLow();
+  std::vector<Double_t> jtAbsEtaBinsHi = cutPropPbPb.GetJtAbsEtaBinsHi();
 
   const Int_t nID = cutPropPbPb.GetNID();
   std::vector<std::string> idStr = cutPropPbPb.GetIdStr();
@@ -78,10 +87,94 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   std::vector<double> jtPfMUMFCutLow = cutPropPbPb.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutPropPbPb.GetJtPfMUMFCutHi();
 
+  std::vector<int> jetPPMatchedToPbPb;
+  for(Int_t jI = 0; jI < nJtPbPb; ++jI){
+    const Int_t rValPbPb = getRVal(jetPbPbList.at(jI));
+
+    bool isMatched = false;
+    for(Int_t jI2 = 0; jI2 < nJtPP; ++jI2){
+      const Int_t rValPP = getRVal(jetPPList.at(jI2));
+      
+      if(rValPbPb == rValPP){
+	jetPPMatchedToPbPb.push_back(jI2);
+	isMatched = true;
+	break;
+      }
+    }
+
+    if(!isMatched){
+      std::cout << "Warning: " << jetPbPbList.at(jI) << " has no match." << std::endl;
+      std::cout << " Options: ";
+      for(Int_t jI2 = 0; jI2 < nJtPP; ++jI2){
+	std::cout << jetPPList.at(jI2) << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+  }
+
+  if(jetPPMatchedToPbPb.size() != jetPbPbList.size()){
+    std::cout << "Size of pp algos, " << jetPPMatchedToPbPb.size() << ",  matched to jetPbPbList of different size, " << jetPbPbList.size() << ". return 1" << std::endl;
+    
+    inFilePP_p->Close();
+    delete inFilePP_p;
+    
+    inFilePbPb_p->Close();
+    delete inFilePbPb_p;    
+
+    return 1;
+  }
+
+  std::cout << "Processing the following pairs of jets: " << std::endl;
+  for(Int_t jI = 0; jI < nJtPbPb; ++jI){
+    std::cout << " " << jI << "/" << nJtPbPb << ": " << jetPbPbList.at(jI) << ", " << jetPPList.at(jetPPMatchedToPbPb.at(jI)) << std::endl;
+  }
+
+  inFilePbPb_p->cd();
+  TH1D* jtPtUnfolded_RecoTrunc_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+
+  inFilePP_p->cd();
+  TH1D* jtPtUnfolded_RecoTrunc_PP_h[nJtPbPb][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+
+
+  for(Int_t idI = 0; idI < nID; ++idI){
+    for(Int_t mI = 0; mI < nResponseMod; ++mI){
+      const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
+
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
+
+	for(Int_t sI = 0; sI < nSyst; ++sI){
+	  const std::string tempSystStr = systStr.at(sI) + "_";
+
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
+	    
+	    for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+	      for(Int_t cI = 0; cI < nCentBins; ++cI){		
+		const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+
+		const std::string name = jetPbPbList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+
+		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)inFilePbPb_p->Get(name.c_str());	    
+		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
+	      }
+	    }
+
+	    for(Int_t tI = 0; tI < nJtPP; ++tI){
+	      const std::string name = jetPPList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPPList.at(tI) + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+
+	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)inFilePP_p->Get(name.c_str());
+	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
+	    }
+	  }
+	}
+      }
+    }
+  }
+
 
   
-
-
 
   inFilePP_p->Close();
   delete inFilePP_p;

@@ -26,7 +26,6 @@
 //Non-local FullJR dependencies (Utility, etc.)
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/getLinBins.h"
-#include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/plotUtilities.h"
@@ -200,6 +199,10 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     if(bI == nBayes - 1) bayesVal[bI] = 100;
     else bayesVal[bI] = bI+1;
   }
+  
+  cutPropData.SetNBayes(nBayes);
+  cutPropData.SetBayesVal(nBayes, bayesVal);
+
   const Int_t nBayesDraw = 8;
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
