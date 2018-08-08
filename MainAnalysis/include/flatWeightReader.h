@@ -208,7 +208,12 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
   }
 
   if(algPos == -1){
-    std::cout << "flatWeightReader: Warning algPos == -1, return weight of 1" << std::endl;
+    std::cout << "flatWeightReader: Warning algPos == -1 for \'" << algo << "\', return weight of 1" << std::endl;
+    std::cout << " Options were: ";
+    for(int jI = 0; jI < nJtAlgos; ++jI){
+      std::cout << jtAlgos.at(jI) << ", ";
+    }
+    std::cout << std::endl;
     return 1.;
   }
 
@@ -236,8 +241,11 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
   }
 
   if(etaPos == -1){
-    std::cout << "flatWeightReader: Warning etaPos == -1, return weight of 1" << std::endl;
-    return 1.;
+    if(jteta == jtAbsEtaBinsHi.at(jtAbsEtaBinsHi.size()-1)) etaPos = jtAbsEtaBinsHi.size()-2;
+    else{
+      std::cout << "flatWeightReader: Warning etaPos == -1 for eta, " << jteta << ", return weight of 1" << std::endl;
+      return 1.;
+    }
   }
 
   int binPos = -1;

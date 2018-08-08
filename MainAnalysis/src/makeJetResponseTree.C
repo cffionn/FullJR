@@ -1,3 +1,4 @@
+
 //cpp dependencies
 #include <iostream>
 #include <string>
@@ -49,6 +50,8 @@ std::string to_string_with_precision(const T a_value, const int n)
 
 int makeJetResponseTree(const std::string inName, bool isPP = false)
 {
+  std::cout << __LINE__ << std::endl;
+
   cppWatch totalRunWatch;
   cppWatch fileLoopWatch;
   cppWatch writeLoopWatch;
@@ -118,21 +121,31 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   }
 
 
+  std::cout << __LINE__ << std::endl;
+
   //Post possible returns, start your random number generator
   TRandom3* randGen_p = new TRandom3(0);
 
   unsigned int pos = 0;
   while(pos < pthats.size()){
+    bool isMoved = false;
     for(unsigned int pI = pos+1; pI < pthats.size(); ++pI){
-      double pthatTemp = pthats.at(pos);
-      double pthatWeightTemp = pthatWeights.at(pos);
 
-      pthats.at(pos) = pthats.at(pI);
-      pthatWeights.at(pos) = pthatWeights.at(pI);
+      if(pthats.at(pI) < pthats.at(pos)){
+	double pthatTemp = pthats.at(pos);
+	double pthatWeightTemp = pthatWeights.at(pos);
+	
+	pthats.at(pos) = pthats.at(pI);
+	pthatWeights.at(pos) = pthatWeights.at(pI);
+	
+	pthats.at(pI) = pthatTemp;
+	pthatWeights.at(pI) = pthatWeightTemp;
 
-      pthats.at(pI) = pthatTemp;
-      pthatWeights.at(pI) = pthatWeightTemp;
+	isMoved = true;
+      }
     }
+
+    if(!isMoved) pos++;
   }
 
   std::cout << "Pthats and weights: " << std::endl;
@@ -146,6 +159,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
   
   
+  std::cout << __LINE__ << std::endl;
+
   pos = 0;
   while(responseTrees.size() > pos){
     //For testing, uncomment to exclude all but R=0.4 trees
@@ -170,6 +185,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     }
   }
   
+
+  std::cout << __LINE__ << std::endl;
 
   inFile_p->Close();
   delete inFile_p;
@@ -215,6 +232,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   Double_t pthatBins[nPthatBins+1];
   getLinBins(pthatLow, pthatHi, nPthatBins, pthatBins);
 
+  std::cout << __LINE__ << std::endl;
   
 
   const Int_t nCentBins2 = 100;
@@ -271,6 +289,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
       break;
     }
   }
+
+  std::cout << __LINE__ << std::endl;
 
   Double_t minJtPtCut[nTrees];
   Double_t multiJtPtCut[nTrees];
@@ -367,8 +387,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetNSyst(nSyst);
   cutProp.SetSystStr(nSyst, systStr);
 
-  const std::string flatWeightNamePbPb = "output/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180808_14.root";
-  const std::string flatWeightNamePP = "output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180808_14.root";
+  const std::string flatWeightNamePbPb = "MainAnalysis/output/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180808_14.root";
+  const std::string flatWeightNamePP = "MainAnalysis/output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180808_14.root";
   std::string flatWeightName = fullPath + "/";
   if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
   else flatWeightName = flatWeightName + flatWeightNamePbPb;
@@ -662,8 +682,17 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
     nFileLoopEvt += nEntries;
 
+    cppWatch subEntryWatch;
+
+    subEntryWatch.start();
     for(Int_t entry = 0; entry < nEntries; ++entry){
-      if(nEntries >= 50000 && entry%printInterval == 0) std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
+      if(nEntries >= 50000 && entry%printInterval == 0){
+	std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
+	subEntryWatch.stop();
+	std::cout << "  Timing: " << subEntryWatch.total() << std::endl;
+	subEntryWatch.clear();
+	subEntryWatch.start();
+      }
 
       hiTree_p->GetEntry(entry);
       skimTree_p->GetEntry(entry);
@@ -731,7 +760,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
       for(Int_t tI = 0; tI < nTrees; ++tI){
 	std::string algoName = responseTrees.at(tI);
-	algoName = algoName.substr(0, algoName.find("/"));
+	//	algoName = algoName.substr(0, algoName.find("/"));
 
 	const Int_t rVal = getRVal(jetTrees_p[tI]->GetName());
 	Double_t rValD = getRVal(jetTrees_p[tI]->GetName());
