@@ -1,4 +1,3 @@
-
 //cpp dependencies
 #include <iostream>
 #include <string>
@@ -48,7 +47,7 @@ std::string to_string_with_precision(const T a_value, const int n)
   return out.str();
 }
 
-int makeJetResponseTree(const std::string inName, bool isPP = false)
+int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1.)
 {
   std::cout << __LINE__ << std::endl;
 
@@ -252,7 +251,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
   else if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
-  outFileName = "output/" + outFileName + "_JetResponse_" + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_" + dateStr + ".root";
 
   checkMakeDir("output");
 
@@ -387,8 +386,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
   cutProp.SetNSyst(nSyst);
   cutProp.SetSystStr(nSyst, systStr);
 
-  const std::string flatWeightNamePbPb = "MainAnalysis/output/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180808_14.root";
-  const std::string flatWeightNamePP = "MainAnalysis/output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180808_14.root";
+  const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180809_10.root";
+
+  const std::string flatWeightNamePP = "MainAnalysis/tables/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180809_10.root";
+
   std::string flatWeightName = fullPath + "/";
   if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
   else flatWeightName = flatWeightName + flatWeightNamePbPb;
@@ -678,16 +679,20 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
     }
 
     const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[0]->GetEntries());
-    const Int_t printInterval = TMath::Max(1, nEntries/20);
+    const Double_t entryFrac = inEntryFrac;
+    const Int_t nEntriesToProcess = entryFrac*nEntries;
+    const Int_t printInterval = TMath::Max(1, nEntriesToProcess/20);
 
-    nFileLoopEvt += nEntries;
+
+    nFileLoopEvt += nEntriesToProcess;
 
     cppWatch subEntryWatch;
 
     subEntryWatch.start();
-    for(Int_t entry = 0; entry < nEntries; ++entry){
-      if(nEntries >= 50000 && entry%printInterval == 0){
-	std::cout << " Entry: " << entry << "/" << nEntries << std::endl;
+    std::cout << "Processing " << nEntriesToProcess << "... (" << prettyString(entryFrac, 2, false) << " fraction of " << nEntries << ")" << std::endl;
+    for(Int_t entry = 0; entry < nEntriesToProcess; ++entry){
+      if(nEntriesToProcess >= 50000 && entry%printInterval == 0){
+	std::cout << " Entry: " << entry << "/" << nEntriesToProcess << std::endl;
 	subEntryWatch.stop();
 	std::cout << "  Timing: " << subEntryWatch.total() << std::endl;
 	subEntryWatch.clear();
@@ -1121,14 +1126,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2 && argc != 3){
-    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt>" << std::endl;
+  if(argc != 2 && argc != 3 && argc != 4){
+    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt> <entryFrac-Opt>" << std::endl;
     return 1;
   }
   
   int retVal = 0;
   if(argc == 2) retVal += makeJetResponseTree(argv[1]);
   else if(argc == 3) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]));
+  else if(argc == 4) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]));
 
   std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
