@@ -16,7 +16,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe 
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -36,11 +36,17 @@ bin/makeRawRAATree.exe: src/makeRawRAATree.C
 bin/makeJetResponseTree.exe: src/makeJetResponseTree.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe src/makeJetResponseTree.C
 
+bin/makeDeriveFlatResponse.exe: src/makeDeriveFlatResponse.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeDeriveFlatResponse.exe src/makeDeriveFlatResponse.C
+
 bin/validateJetResponse.exe: src/validateJetResponse.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/validateJetResponse.exe src/validateJetResponse.C
 
 bin/plotJetResponse.exe: src/plotJetResponse.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotJetResponse.exe src/plotJetResponse.C
+
+bin/plotUnfoldedSpectra.exe: src/plotUnfoldedSpectra.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedSpectra.exe src/plotUnfoldedSpectra.C
 
 bin/makeMuonFakeCheck.exe: src/makeMuonFakeCheck.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeMuonFakeCheck.exe src/makeMuonFakeCheck.C

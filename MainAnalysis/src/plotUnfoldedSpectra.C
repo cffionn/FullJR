@@ -1,10 +1,12 @@
 //cpp dependencies
 #include <iostream>
 #include <string>
+#include <vector>
 
 //ROOT dependencies
 #include "TFile.h"
 #include "TH1D.h"
+#include "TDirectory.h"
 #include "TCanvas.h"
 #include "TDatime.h"
 
@@ -15,7 +17,6 @@
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/returnRootFileContentsList.h"
-
 
 int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFileNamePbPb)
 {
@@ -232,8 +233,80 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     }
   }
 
-  
+  std::string outFileName = inFileNamePP;
+  while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
+  if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
+  else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
 
+  std::string outFileName2 = inFileNamePbPb;
+  while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
+  if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
+  else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
+
+  const Int_t sizeToTruncName = 40;
+  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
+  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_PlotUnfoldedSpectra_" + dateStr + ".root";
+
+  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
+ 
+  TDirectory* dirPP_p[nJtPP];
+  TDirectory* dirPbPb_p[nJtPbPb];
+  
+  for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+    std::string tempStr = jetPbPbList.at(tI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+    dirPbPb_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
+    dirPbPb_p[tI]->cd();
+
+    for(Int_t cI = 0; cI < nCentBins; ++cI){		
+      for(Int_t idI = 0; idI < nID; ++idI){
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	      for(Int_t bI = 0; bI < nBayes; ++bI){
+		std::string newName = jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
+		newName.replace(newName.find("_h"), 2, "_Rescaled_h");
+		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  for(Int_t tI = 0; tI < nJtPP; ++tI){
+    std::string tempStr = jetPPList.at(tI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+    dirPP_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
+    dirPP_p[tI]->cd();
+
+    for(Int_t idI = 0; idI < nID; ++idI){
+      for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	  for(Int_t sI = 0; sI < nSyst; ++sI){
+	    for(Int_t bI = 0; bI < nBayes; ++bI){
+	      std::string newName = jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
+	      newName.replace(newName.find("_h"), 2, "_Rescaled_h");
+	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
+  outFile_p->Close();
+  delete outFile_p;
   
 
   inFilePP_p->Close();
