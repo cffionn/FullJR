@@ -13,9 +13,14 @@
 #include "TDirectory.h"
 #include "TNamed.h"
 
+//Local FullJR (MainAnalysis) dependencies
+#include "MainAnalysis/include/doLocalDebug.h"
+
+//Non-local FullJR (Utility, etc.) dependencies
+#include "Utility/include/doGlobalDebug.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/stringUtil.h"
-#include "Utility/include/plotUtilities.h"
 
 class cutPropagator
 {
@@ -533,6 +538,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     return false;
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   inFile_p->cd();
   inDir_p->cd();
 
@@ -557,6 +564,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   std::string minJtPtCutStr = "";
   std::string multiJtPtCutStr = "";
   std::string recoTruncPosStr = "";
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   for(int jI = 0; jI < nJtAlgos; ++jI){
     if(jtAlgos.size() != 0) jtAlgosStr = jtAlgosStr + jtAlgos.at(jI) + ",";
@@ -593,6 +602,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   for(int jI = 0; jI < nCentBins; ++jI){
     centBinsHiStr = centBinsHiStr + std::to_string(centBinsHi.at(jI)) + ",";
   }
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::string nIDStr = std::to_string(nID);
   std::string idStr2 = "";
@@ -640,12 +651,16 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     systStr2 = systStr2 + systStr.at(sI) + ",";
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   std::string nBayesStr = std::to_string(nBayes);
   std::string bayesVal2 = "";
 
   for(int sI = 0; sI < nBayes; ++sI){
     bayesVal2 = bayesVal2 + std::to_string(bayesVal.at(sI)) + ",";
   }
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   TNamed inFileNamesName("inFileNames", inFileNames2.c_str());
   TNamed isPPName("isPP", std::to_string(isPP));
@@ -696,6 +711,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed systStrName("systStr", systStr2.c_str());
   TNamed nBayesName("nBayes", nBayesStr.c_str());
   TNamed bayesValName("bayesVal", bayesVal2.c_str());
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   inFileNamesName.Write("", TObject::kOverwrite);
   isPPName.Write("", TObject::kOverwrite);
@@ -748,18 +765,27 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   nBayesName.Write("", TObject::kOverwrite);
   bayesValName.Write("", TObject::kOverwrite);
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   inFile_p->cd();
   inDir_p->cd();
   inSubDir_p->cd();  
+
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::vector<TNamed> inFullFileNames2;
   for(unsigned int i = 0; i < inFullFileNames.size(); ++i){
     inFullFileNames2.push_back(TNamed(("inFullFileNames_" + std::to_string(i)).c_str(), inFullFileNames.at(i).c_str()));
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   for(unsigned int i = 0; i < inFullFileNames2.size(); ++i){
     inFullFileNames2.at(i).Write("", TObject::kOverwrite);
   }
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   return true;
 }

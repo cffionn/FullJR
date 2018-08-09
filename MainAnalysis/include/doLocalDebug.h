@@ -1,6 +1,6 @@
 #ifndef DOLOCALDEBUG_H
 #define DOLOCALDEBUG_H
 
-const bool doLocalDebug = false
+bool doLocalDebug = false;
 
 #endif

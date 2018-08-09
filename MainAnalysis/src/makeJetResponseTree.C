@@ -1,3 +1,4 @@
+
 //cpp dependencies
 #include <iostream>
 #include <string>
@@ -22,11 +23,13 @@
 
 //Local FullJR (MainAnalysis) dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/doLocalDebug.h"
 #include "MainAnalysis/include/flatWeightReader.h"
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/cppWatch.h"
+#include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
@@ -49,7 +52,7 @@ std::string to_string_with_precision(const T a_value, const int n)
 
 int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1.)
 {
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   cppWatch totalRunWatch;
   cppWatch fileLoopWatch;
@@ -120,7 +123,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   }
 
 
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   //Post possible returns, start your random number generator
   TRandom3* randGen_p = new TRandom3(0);
@@ -158,7 +161,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
   
   
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   pos = 0;
   while(responseTrees.size() > pos){
@@ -185,7 +188,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   }
   
 
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   inFile_p->Close();
   delete inFile_p;
@@ -231,7 +234,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   Double_t pthatBins[nPthatBins+1];
   getLinBins(pthatLow, pthatHi, nPthatBins, pthatBins);
 
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
   
 
   const Int_t nCentBins2 = 100;
@@ -289,7 +292,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     }
   }
 
-  std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   Double_t minJtPtCut[nTrees];
   Double_t multiJtPtCut[nTrees];
@@ -338,6 +341,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   scaleErr.Init();
 
   cutPropagator cutProp;
+  cutProp.Clean();
   cutProp.SetInFileNames({inName});
   cutProp.SetInFullFileNames(fileList);
   cutProp.SetIsPP(isPP);
@@ -971,7 +975,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     centralityFullRatio_h->Write("", TObject::kOverwrite);
   }
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     outFile_p->cd();
@@ -1018,7 +1022,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   deleteLoopWatch.start();
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   outFile_p->cd();
   generalDir_p->cd();
@@ -1035,7 +1039,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     delete centralityFullRatio_h;
   }
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     outFile_p->cd();
@@ -1085,18 +1089,18 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
   TDirectory* subDir_p = (TDirectory*)cutDir_p->mkdir("subDir");
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   if(!cutProp.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   outFile_p->Close();
   delete outFile_p;
 
-  //std::cout << __LINE__ << std::endl;
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   delete randGen_p;
 

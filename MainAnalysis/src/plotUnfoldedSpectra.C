@@ -13,6 +13,7 @@
 
 //Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
 
@@ -57,11 +58,18 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     return 1;
   }
 
+  const Int_t nAdditionalSyst = 4;
+  const std::string additionalSyst[nAdditionalSyst] = {"LumiUp", "LumiDown", "TAAUp", "TAADown"};
+
   const Int_t nJtPP = jetPPList.size();
   const Int_t nJtPbPb = jetPbPbList.size();
 
-  const Int_t nSyst = cutPropPbPb.GetNSyst();
+  const Int_t nSystOrig = cutPropPbPb.GetNSyst();
+  const Int_t nSyst = nSystOrig + nAdditionalSyst;
   std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
+  for(Int_t sI = 0; sI < nAdditionalSyst; ++sI){
+    systStr.push_back(additionalSyst[sI]);
+  }
 
   const Int_t nBayes = cutPropPbPb.GetNBayes();
   std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
@@ -156,16 +164,26 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 		const std::string name = jetPbPbList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)inFilePbPb_p->Get(name.c_str());	    
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
+		if(sI < nSystOrig){
+		  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)inFilePbPb_p->Get(name.c_str());	    
+		  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
+		}
+		else{
+		  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(name.c_str());	    
+		}
 	      }
 	    }
 
 	    for(Int_t tI = 0; tI < nJtPP; ++tI){
 	      const std::string name = jetPPList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPPList.at(tI) + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)inFilePP_p->Get(name.c_str());
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
+	      if(sI < nSystOrig){
+		jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)inFilePP_p->Get(name.c_str());
+		jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
+	      }
+	      else{
+		jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(name.c_str());
+	      }
 	    }
 	  }
 	}
@@ -173,6 +191,48 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     }
   }
 
+  const Double_t lumiFactor = getLumiFactor();
+  const Double_t nMBEvents = getNMBEvents();
+
+  for(Int_t idI = 0; idI < nID; ++idI){
+    for(Int_t mI = 0; mI < nResponseMod; ++mI){
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	const Double_t etaBinWidth = TMath::Abs(jtAbsEtaBinsHi[aI] - jtAbsEtaBinsLow[aI]);
+
+	for(Int_t sI = 0; sI < nSyst; ++sI){
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+	      for(Int_t cI = 0; cI < nCentBins; ++cI){		
+		const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+		const Double_t centBinWidth = TMath::Abs(centBinsHi[cI] - centBinsLow[cI])/100.;
+
+		Double_t tempTAAFactor = getTAAScaleFactor(centStr);
+		if(isStrSame(systStr[sI], "TAAUp")) tempTAAFactor += tempTAAFactor*getTAAScaleFactorUp(centStr);
+		else if(isStrSame(systStr[sI], "TAADown")) tempTAAFactor -= tempTAAFactor*getTAAScaleFactorDown(centStr);
+
+		Double_t totalPbPbFactor = tempTAAFactor*nMBEvents*2.*etaBinWidth*centBinWidth;
+
+		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Scale(1./totalPbPbFactor);
+		divBinWidth(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]);
+	      }
+	    }
+
+	    for(Int_t tI = 0; tI < nJtPP; ++tI){
+	      Double_t tempLumiFactor = lumiFactor;
+	      if(isStrSame(systStr[sI], "LumiUp")) tempLumiFactor += tempLumiFactor*getLumiPercentError();
+	      else if(isStrSame(systStr[sI], "LumiDown")) tempLumiFactor -= tempLumiFactor*getLumiPercentError();	      
+
+	      Double_t totalPPFactor = tempLumiFactor*2.*etaBinWidth;
+	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->Scale(1./totalPPFactor);
+	      divBinWidth(jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]);
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  
 
   
 
