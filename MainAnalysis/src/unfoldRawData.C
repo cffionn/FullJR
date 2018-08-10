@@ -697,7 +697,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
  	      delete canv_p;
 	      delete leg_p;
 	      delete label_p;
+	    }
+	  }
 
+	  
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    for(Int_t sI = 0; sI < nSyst; ++sI){	    	   
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
 		delete jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI];
