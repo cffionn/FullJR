@@ -79,27 +79,34 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     return 1;
   }
 
+  Int_t valForForLoops = 100000000;
+  if(doLocalDebug || doGlobalDebug){
+    std::cout << "DOLOCALDEBUG or DOGLOBALDEBUG in unfoldRawData: Setting all histogram array sizes to 1 for faster processing" << std::endl;
+    valForForLoops = 1;
+  }
+
   const Int_t isDataPP = cutPropData.GetIsPP();
   const Int_t isResponsePP = cutPropResponse.GetIsPP();
 
-  const Int_t nSyst = cutPropResponse.GetNSyst();
+  const Int_t nSyst = TMath::Min(valForForLoops, cutPropResponse.GetNSyst());
   std::vector<std::string> systStr = cutPropResponse.GetSystStr();
   
-  const Int_t nResponseMod = cutPropResponse.GetNResponseMod();
+  const Int_t nResponseMod = TMath::Min(valForForLoops, cutPropResponse.GetNResponseMod());
   std::vector<double> responseMod = cutPropResponse.GetResponseMod();
+  std::vector<double> jerVarData = cutPropResponse.GetJERVarData();
 
-  const Int_t nCentBins = cutPropData.GetNCentBins();
+  const Int_t nCentBins = TMath::Min(valForForLoops, cutPropData.GetNCentBins());
   std::vector<Int_t> centBinsLow = cutPropData.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropData.GetCentBinsHi();
 
   const Int_t nJtPtBins = cutPropData.GetNJtPtBins();
   std::vector<Double_t> jtPtBinsTemp = cutPropData.GetJtPtBins();
 
-  const Int_t nJtAbsEtaBins = cutPropData.GetNJtAbsEtaBins();
+  const Int_t nJtAbsEtaBins = TMath::Min(valForForLoops, cutPropData.GetNJtAbsEtaBins());
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutPropData.GetJtAbsEtaBinsLow();
   std::vector<Double_t> jtAbsEtaBinsHiTemp = cutPropData.GetJtAbsEtaBinsHi();
 
-  const Int_t nID = cutPropData.GetNID();
+  const Int_t nID = TMath::Min(valForForLoops, cutPropData.GetNID());
   std::vector<std::string> idStr = cutPropData.GetIdStr();
   std::vector<double> jtPfCHMFCutLow = cutPropData.GetJtPfCHMFCutLow();
   std::vector<double> jtPfCHMFCutHi = cutPropData.GetJtPfCHMFCutHi();
@@ -180,10 +187,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
+  std::string debugStr = "";
+  if(doLocalDebug || doGlobalDebug) debugStr = "DEBUG_";
+
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + debugStr + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
@@ -193,7 +203,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  const Int_t nBayes = 31;
+  const Int_t nBayes = TMath::Min(valForForLoops, 31);
   Int_t bayesVal[nBayes];
   for(Int_t bI = 0; bI < nBayes; ++bI){
     if(bI == nBayes - 1) bayesVal[bI] = 100;
@@ -203,7 +213,14 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   cutPropData.SetNBayes(nBayes);
   cutPropData.SetBayesVal(nBayes, bayesVal);
 
-  const Int_t nBayesDraw = 8;
+  cutPropData.SetNResponseMod(nResponseMod);
+  cutPropData.SetResponseMod(responseMod);
+  cutPropData.SetJERVarData(jerVarData);
+
+  cutPropData.SetNSyst(nSyst);
+  cutPropData.SetSystStr(systStr);
+
+  const Int_t nBayesDraw = TMath::Min(valForForLoops, 8);
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
   TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
@@ -670,12 +687,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      label_p->DrawLatex(600, min - interval*2, "600");
 	      label_p->DrawLatex(1000, min - interval*2, "1000");
 
-	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + dateStr + ".pdf";
+	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
 	      canv_p->SaveAs(("pdfDir/" + dateStr + "/" + saveName).c_str());
 
 	      delete pads[0];
 	      delete pads[1];
+	      delete pads[2];
  	      delete canv_p;
 	      delete leg_p;
 	      delete label_p;
