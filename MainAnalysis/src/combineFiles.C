@@ -38,12 +38,16 @@ int recursiveCombineDir(TFile* inFile_p, const std::string dirName, TFile* outFi
   Int_t maxVal = -1;
   for(Int_t dI = 0; dI < nDir; ++dI){
     std::string tempName = dirs_p[dI]->GetName();
-    if(tempName.find(dirName) && maxVal < (Int_t )tempName.size()){
+
+    if(tempName.find(dirName) != std::string::npos && maxVal < (Int_t )tempName.size()){
+      std::cout << "  Is Match!" << std::endl;
       dirPos = dI;
       maxVal = tempName.size();
     }
   }
 
+  inFile_p->cd();
+  dir_p->cd();
   TIter next(dir_p->GetListOfKeys());
   TKey* key = NULL;
 
@@ -64,6 +68,8 @@ int recursiveCombineDir(TFile* inFile_p, const std::string dirName, TFile* outFi
 
     hist_p->Write("", TObject::kOverwrite);
 
+    inFile_p->cd();
+    dir_p->cd();
     //pretty clear memory leak w/o delete here
     delete hist_p;
   }
