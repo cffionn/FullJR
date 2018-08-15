@@ -32,7 +32,7 @@
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vanGoghPalette.h"
 
-int unfoldRawData(const std::string inDataFileName, const std::string inResponseName)
+int unfoldRawData(const std::string inDataFileName, const std::string inResponseName, const std::string selectJtAlgo = "")
 {
   vanGoghPalette vg;
 
@@ -41,14 +41,21 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const std::string dateStr2 = std::to_string(date->GetYear()) + "." + std::to_string(date->GetMonth()) + "." + std::to_string(date->GetDay());
   delete date;
 
-  checkMakeDir("pdfDir");
-  checkMakeDir("pdfDir/" + dateStr);
+  const std::string preDirPerma= "/data/cmcginn/FullJR/";
+  std::string preDirTemp = "";
+  if(checkDir(preDirPerma)) preDirTemp = preDirPerma;
+  const std::string preDir = preDirTemp;
+
+  checkMakeDir(preDir + "pdfDir");
+  checkMakeDir(preDir + "pdfDir/" + dateStr);
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> responseJetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
   std::cout << "Printing " << responseJetDirList.size() << " response jets..." << std::endl;
   for(unsigned int jI = 0; jI < responseJetDirList.size(); ++jI){
     std::cout << " " << jI << "/" << responseJetDirList.size() << ": " << responseJetDirList.at(jI) << std::endl;
+
+    checkMakeDir(preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI));
   }
 
   cutPropagator cutPropResponse;
@@ -175,7 +182,22 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     std::cout << " " << i << "/" << responseJetDirList.size() << ": " << responseJetDirList.at(i) << std::endl;
   }
 
-  const Int_t nDataJet = dataJetDirList.size();
+  if(selectJtAlgo.size() != 0){
+    std::cout << "Restricting to \'" << selectJtAlgo << "\'." << std::endl;
+    unsigned int pos = 0;
+    while(pos < responseJetDirList.size()){
+      if(responseJetDirList.at(pos).find(selectJtAlgo) == std::string::npos) responseJetDirList.erase(responseJetDirList.begin()+pos);
+      else ++pos;
+    }
+
+    if(responseJetDirList.size() == 0){
+      std::cout << "No jet dirs after selection for " << selectJtAlgo << std::endl;
+      return 1;
+    }
+  }
+
+
+  const Int_t nDataJet = responseJetDirList.size();
 
   std::string outFileName = inDataFileName;
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
@@ -190,10 +212,15 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::string debugStr = "";
   if(doLocalDebug || doGlobalDebug) debugStr = "DEBUG_";
 
+  std::string selectJtAlgoStr = selectJtAlgo;
+  if(selectJtAlgoStr.size() != 0) selectJtAlgoStr = selectJtAlgoStr + "_";
+
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + debugStr + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + selectJtAlgoStr + debugStr + dateStr + ".root";
+
+  while(outFileName.find("__") != std::string::npos){outFileName.replace(outFileName.find("__"), 2, "_");}
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
@@ -203,12 +230,30 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  const Int_t nBayes = TMath::Min(valForForLoops, 31);
+  const Int_t nBayes = 35;
+  const Int_t bigBayesSymm = 2;
+  const Int_t nBayesBig = nBayes - (2*bigBayesSymm + 1);
+  Int_t temp100Pos = -1;
   Int_t bayesVal[nBayes];
   for(Int_t bI = 0; bI < nBayes; ++bI){
-    if(bI == nBayes - 1) bayesVal[bI] = 100;
+    if(bI >= nBayesBig) bayesVal[bI] = 100 + 1 + bigBayesSymm - (nBayes - bI);
     else bayesVal[bI] = bI+1;
+
+    if(bayesVal[bI] == 100) temp100Pos = bI;
   }
+
+  const Int_t bayes100Pos = temp100Pos;
+
+  std::cout << "Bayes: " << std::endl;
+  for(Int_t bI = 0; bI < nBayes; ++bI){
+    std::cout << " " << bI << "/" << nBayes << ": " << bayesVal[bI] << std::endl;
+  }
+
+  //  return 0;
+
+  const Int_t nHistDim = nDataJet*nCentBins*nID*nResponseMod*nJtAbsEtaBins*nSyst;
+  std::vector<std::string> histTag;
+  std::vector<int> histBestBayes;
   
   cutPropData.SetNBayes(nBayes);
   cutPropData.SetBayesVal(nBayes, bayesVal);
@@ -220,13 +265,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   cutPropData.SetNSyst(nSyst);
   cutPropData.SetSystStr(systStr);
 
-  const Int_t nBayesDraw = TMath::Min(valForForLoops, 8);
+  const Int_t nBayesDraw = TMath::Min(valForForLoops, 6);
   TDirectory* dir_p[nDataJet];
   TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
   TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
-    std::string tempStr = dataJetDirList.at(jI);
+    std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
     dir_p[jI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
 
@@ -243,7 +288,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr[sI] + "_";
+	      const std::string tempSystStr = systStr.at(sI) + "_";
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		std::string bayesStr = "Bayes" + std::to_string(bayesVal[bI]);
@@ -264,7 +309,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   RooUnfoldResponse* rooResponse_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
-    std::string tempStr = dataJetDirList.at(jI);
+    std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -279,7 +324,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	    
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr[sI] + "_";
+	      const std::string tempSystStr = systStr.at(sI) + "_";
 	     
 	      rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoTrunc_h").c_str());
 	    }
@@ -294,7 +339,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
-    std::string tempStr = dataJetDirList.at(jI);
+    std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -313,7 +358,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   std::cout << "Start Unfolding..." << std::endl;
   for(Int_t jI = 0; jI < nDataJet; ++jI){
-    std::string tempStr = dataJetDirList.at(jI);
+    std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
 
     std::cout << " Unfolding " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
@@ -370,7 +415,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     outFile_p->cd();
     dir_p[jI]->cd();
 
-    std::string tempStr = dataJetDirList.at(jI);
+    std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
 
     Double_t lowPtTruncVal = 200.;
@@ -391,14 +436,14 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
-	    if(jtAbsEtaStr.find("AbsEta0p0to2p0") == std::string::npos) continue;
+	    //	    if(jtAbsEtaStr.find("AbsEta0p0to2p0") == std::string::npos) continue;
 	    const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|#eta|<" +  prettyString(jtAbsEtaBinsHi[aI], 1, false);
 
 	    
 	    pdfNames.push_back({});
 
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	    	   
-              const std::string tempSystStr = systStr[sI] + "_";
+              const std::string tempSystStr = systStr.at(sI) + "_";
 
 	      TLegend* leg_p = new TLegend(0.15, 0.05, 0.5, 0.6);
 	      leg_p->SetBorderSize(0.0);
@@ -512,7 +557,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      label_p->DrawLatex(0.55, 0.82, jtAbsEtaStr2.c_str());
 	      label_p->DrawLatex(0.55, 0.76, resStr.c_str());
 	      label_p->DrawLatex(0.55, 0.70, idStr.at(idI).c_str());
-	      label_p->DrawLatex(0.55, 0.64, systStr[sI].c_str());
+	      label_p->DrawLatex(0.55, 0.64, systStr.at(sI).c_str());
 
 	      canv_p->cd();
               pads[1]->cd();
@@ -566,27 +611,58 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
               pads[2]->cd();
 	      
 	      int terminalPos = -1;
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 	    
+	      TH1D* bandValLow_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValLow");
+	      TH1D* bandValHi_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValHi");
+
+	      for(Int_t bI = bayes100Pos-bigBayesSymm; bI <= bayes100Pos+bigBayesSymm; ++bI){
+		for(Int_t bIX = 0; bIX < bandValLow_p->GetNbinsX(); ++bIX){
+		  if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) < bandValLow_p->GetBinContent(bIX+1)){
+		    bandValLow_p->SetBinContent(bIX+1, jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
+		  }
+		  if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > bandValHi_p->GetBinContent(bIX+1)){
+		    bandValHi_p->SetBinContent(bIX+1, jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
+		  }
+		}
+	      }
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
 	      max = -1;
 	      min = 100;
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
-		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-1]);
-
+		
 		bool sub1Perc = true;
 		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
 		  double binCenter = (clones_p[bI]->GetBinLowEdge(bIX+1) + clones_p[bI]->GetBinLowEdge(bIX+2))/2.;
 		  double binContent = clones_p[bI]->GetBinContent(bIX+1);
+		  double bandLowContent = bandValLow_p->GetBinContent(bIX+1);
+		  double bandHiContent = bandValLow_p->GetBinContent(bIX+1);
 
 		  if(binCenter > lowPtTruncVal && binCenter < 1000. && sub1Perc){
-		    if(binContent > 1.01 || binContent < .99) sub1Perc = false;
+		    if(binContent/bandHiContent > 1.01) sub1Perc = false;
+		    else if(binContent/bandLowContent < .99) sub1Perc = false;
+
+		    //From when dividing just by 100 pos rather than considering covergence band
+		    //		    if(binContent > 1.01 || binContent < .99) sub1Perc = false;
 		  }
+
 		  if(binContent > max) max = binContent;
 		  if(binContent < min && binContent > 0) min = binContent;
 		}
 
-		if(sub1Perc && terminalPos < 0) terminalPos = bI;
+		if(sub1Perc && terminalPos < 0 && bI < nBayesBig) terminalPos = bI;
 	      }
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
+	      delete bandValLow_p;
+	      delete bandValHi_p;
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
 	      interval = (max - min)/10.;
 	      max += interval;
@@ -596,9 +672,15 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      Double_t tempBins[nTempBins+1];
 	      getLinBins(min, max, nTempBins, tempBins);
 
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
 	      for(Int_t bI = 1; bI < nBayes; ++bI){
+ 		if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << ", " << bI << std::endl;
+
 		clones_p[bI]->SetMaximum(max);
 		clones_p[bI]->SetMinimum(min);
+
+ 		if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << ", " << bI << std::endl;
 		
 		clones_p[bI]->GetYaxis()->SetTitle("Ratio w/ Bayes 100");
 		clones_p[bI]->GetYaxis()->SetTitleSize(9);
@@ -606,11 +688,17 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		clones_p[bI]->GetYaxis()->SetTitleOffset(clones_p[bI]->GetYaxis()->GetTitleOffset()*1.5);
 		clones_p[bI]->GetYaxis()->SetNdivisions(505);
 
+		if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << ", " << bI << std::endl;
+
 		if(bI < nBayesDraw){
 		  if(bI == 1) clones_p[bI]->DrawCopy("HIST E1 P");
 		  else clones_p[bI]->DrawCopy("HIST E1 P SAME");
 		}
+
+		if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << ", " << bI << std::endl;
 	      }
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
 	      gStyle->SetOptStat(0);
 	      if(doLogX) gPad->SetLogx();
@@ -622,16 +710,24 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      drawWhiteBox(900, 1100, .00, min-0.0001);
 
-
 	      gPad->SetTicks(1,2);
 	      gPad->RedrawAxis();
 
 	      //	      label_p->SetNDC(0);
 	      canv_p->cd();
 	      pads[0]->cd();
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+	  
+	      const std::string tempHistTag = tempStr + "_" + centStr + "_" + idStr.at(idI) + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + jtAbsEtaStr + "_" + systStr.at(sI);
+	      histTag.push_back(tempHistTag);
+
+	      if(terminalPos >= 0) histBestBayes.push_back(bayesVal[terminalPos]);
+	      else histBestBayes.push_back(-1);
+	      
 	      if(terminalPos > 0){
 		//		label_p->DrawLatex(110, tempBins[8], ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
-		label_p->DrawLatex(0.3, 0.4, ("Terminate at Bayes=" + std::to_string(terminalPos+1)).c_str());
+		label_p->DrawLatex(0.3, 0.4, ("Terminate at Bayes=" + std::to_string(bayesVal[terminalPos]+1)).c_str());
 		
 		Double_t maxDeltaCenter = -1;
 		Double_t maxDelta = 0;
@@ -665,6 +761,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		    maxDeltaCenter = center;
 		  }
 		}
+
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+	      
 		std::cout << "MaxDelta: " << maxDelta << ", " << maxDeltaCenter << std::endl;
 		std::cout << "LastDelta: " << lastDelta << ", " << lastDeltaCenter << std::endl;
 
@@ -689,8 +788,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
-	      canv_p->SaveAs(("pdfDir/" + dateStr + "/" + saveName).c_str());
-
+	      canv_p->SaveAs((preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI) + "/" + saveName).c_str());
+	    
 	      delete pads[0];
 	      delete pads[1];
 	      delete pads[2];
@@ -717,11 +816,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     }
   }
 
+	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   //TEX FILE
   const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
-  texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr);
+  texFileName.replace(0, std::string("output").size(), preDir + "pdfDir/" + dateStr);
 
   std::ofstream texFile(texFileName.c_str());
 
@@ -790,6 +891,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   texFile << " \\end{itemize}" << std::endl;
   texFile << "\\end{frame}" << std::endl;
 
+
+  if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   for(unsigned int spI = 0; spI < pdfNames.size(); ++spI){
     if(pdfNames.at(spI).at(0).find("AbsEta0p0to2p0") == std::string::npos) continue;
 
@@ -842,8 +946,16 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
   TDirectory* subDir_p = (TDirectory*)cutDir_p->mkdir("subDir");
+  TDirectory* unfoldDir_p = (TDirectory*)cutDir_p->mkdir("unfoldDir");
 
-  if(!cutPropData.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
+  if(nHistDim != (int)histTag.size()) std::cout << "WARNING: nHistDim (" << nHistDim << ") != histTag.size() (" << histTag.size() << ")" << std::endl;
+  if(nHistDim != (int)histBestBayes.size()) std::cout << "WARNING: nHistDim (" << nHistDim << ") != histBestBayes.size() (" << histBestBayes.size() << ")" << std::endl;
+
+  cutPropData.SetNHistDim(nHistDim);
+  cutPropData.SetHistTag(histTag);
+  cutPropData.SetHistBestBayes(histBestBayes);
+
+  if(!cutPropData.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p, unfoldDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   outFile_p->Close();
   delete outFile_p;
@@ -853,13 +965,15 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 int main(int argc, char* argv[])
 {
-  if(argc != 3){
-    std::cout << "Usage: ./bin/unfoldRawData.exe <inDataFileName> <inResponseName>" << std::endl;
+  if(argc != 3 && argc != 4){
+    std::cout << "Usage: ./bin/unfoldRawData.exe <inDataFileName> <inResponseName> <selectJtAlgo-Opt>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += unfoldRawData(argv[1], argv[2]);
+
+  if(argc == 3) retVal += unfoldRawData(argv[1], argv[2]);
+  else if(argc == 4) retVal += unfoldRawData(argv[1], argv[2], argv[3]);
 
   std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;

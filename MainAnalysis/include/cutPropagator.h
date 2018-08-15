@@ -90,10 +90,14 @@ class cutPropagator
   int nBayes;
   std::vector<int> bayesVal;
 
+  int nHistDim;
+  std::vector<std::string> histTag;
+  std::vector<int> histBestBayes;
+
   void Clean();
   bool GetAllVarFromFile(TFile* inFile_p);
-  bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDirectory* inSubDir_p);
-  bool CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb);
+  bool WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDirectory* inSubDir_p, TDirectory* unfoldDir_p);
+  bool CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb, bool skipJtAlgo);
 
   bool CheckDouble(double in1, double in2);
   bool CheckInt(int in1, int in2);
@@ -159,6 +163,12 @@ class cutPropagator
   bool CheckNBayes(cutPropagator inCutProp);
   bool CheckBayesVal(std::vector<int> inBayesVal);
   bool CheckBayesVal(cutPropagator inCutProp);
+  bool CheckNHistDim(int inNHistDim);
+  bool CheckNHistDim(cutPropagator inCutProp);
+  bool CheckHistTag(std::vector<int> inHistTag);
+  bool CheckHistTag(cutPropagator inCutProp);
+  bool CheckHistBestBayes(std::vector<int> inHistBestBayes);
+  bool CheckHistBestBayes(cutPropagator inCutProp);
   bool CheckRCDiffFileName(std::string inRCDiffFileName);
   bool CheckRCDiffFileName(cutPropagator inCutProp);
   bool CheckFlatPriorFileName(std::string inFlatPriorFileName);
@@ -265,6 +275,10 @@ class cutPropagator
   int GetNBayes(){return nBayes;}
   std::vector<int> GetBayesVal(){return bayesVal;}
 
+  int GetNHistDim(){return nHistDim;}
+  std::vector<std::string> GetHistTag(){return histTag;}
+  std::vector<int> GetHistBestBayes(){return histBestBayes;}
+
   void SetInFileNames(std::vector<std::string> inInFileNames){inFileNames = inInFileNames; return;}
   void SetInFullFileNames(std::vector<std::string> inInFullFileNames){inFullFileNames = inInFullFileNames; return;}
 
@@ -361,6 +375,12 @@ class cutPropagator
   void SetBayesVal(std::vector<int> inBayesVal){bayesVal = inBayesVal; return;};
   void SetBayesVal(int inN, const int inBayesVal[]);
 
+  void SetNHistDim(int inNHistDim){nHistDim = inNHistDim; return;}
+  void SetHistTag(std::vector<std::string> inHistTag){histTag = inHistTag; return;};
+  void SetHistTag(int inN, const std::string inHistTag[]);
+  void SetHistBestBayes(std::vector<int> inHistBestBayes){histBestBayes = inHistBestBayes; return;};
+  void SetHistBestBayes(int inN, const int inHistBestBayes[]);
+
   std::vector<int> StringToIntVect(std::string inStr);
   std::vector<double> StringToDoubleVect(std::string inStr);
   std::vector<std::string> StringToStringVect(std::string inStr);
@@ -435,13 +455,25 @@ void cutPropagator::Clean()
   nBayes = -1;
   bayesVal.clear();
 
+  nHistDim = -1;
+  histTag.clear();
+  histBestBayes.clear();
+
   return;
 }
 
 bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
 {
   inFile_p->cd();
-  std::vector<std::string> cutDirList = returnRootFileContentsList(inFile_p, "TNamed", "");
+
+  std::vector<std::string> cutDirCheck = returnRootFileContentsList(inFile_p, "TDirectoryFile", "cutDir", 1);
+  if(cutDirCheck.size() == 0){
+    std::cout << "cutPropagator::GetAllVarFromFile - given inFile_p \'" << inFile_p->GetName() << "\' contains no cutDir. return 1" << std::endl;
+    return false;
+  }
+
+  std::vector<std::string> cutDirList = returnTDirContentsList(inFile_p, "cutDir", "TNamed", "cutDir", 0, -1);
+  //returnRootFileContentsList(inFile_p, "TNamed", "cutDir");
   unsigned int pos = 0;
   while(pos < cutDirList.size()){
     if(cutDirList.at(pos).find("cutDir/") != std::string::npos) ++pos;
@@ -449,13 +481,26 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
   }
 
   if(cutDirList.size() == 0){
-    std::cout << "cutPropagator::GetAllVarFromFile - given inFile_p \'" << inFile_p->GetName() << "\' contains no cutDir. return 1" << std::endl;
+    std::cout << "cutPropagator::GetAllVarFromFile - given inFile_p \'" << inFile_p->GetName() << "\' contains empty cutDir. return 1" << std::endl;
     return false;
   }
 
+  //  std::cout << "Printing " << cutDirList.size() << " TNameds..." << std::endl;
   for(unsigned int cI = 0; cI < cutDirList.size(); ++cI){
     std::string tempStr = cutDirList.at(cI);
     while(tempStr.find("/") != std::string::npos){tempStr.replace(0, tempStr.find("/")+1, "");}
+
+    //    std::cout << " " << cI << "/" << cutDirList.size() << ": " << cutDirList.at(cI) << std::endl;
+    bool isHistBayesBest = cutDirList.at(cI).find("/unfoldDir/") != std::string::npos;
+
+    if(isHistBayesBest){
+      
+      histTag.push_back(tempStr);
+      histBestBayes.push_back(std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle()));
+      
+      continue;
+    }
+
 
     if(isStrSame("nCentBins", tempStr)) nCentBins = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("centBinsLow", tempStr)) centBinsLow = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
@@ -510,6 +555,9 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("systStr", tempStr)) systStr = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nBayes", tempStr)) nBayes = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else if(isStrSame("bayesVal", tempStr)) bayesVal = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nHistDim", tempStr)) nHistDim = std::stoi(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("histTag", tempStr)) histTag = StringToStringVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("histBestBayes", tempStr)) histBestBayes = StringToIntVect(((TNamed*)inFile_p->Get(cutDirList.at(cI).c_str()))->GetTitle());
     else{
       std::cout << "WARNING: TNAMED \'" << tempStr << "\' is unaccounted for in cutPropagator. Consider fixing" << std::endl;
     }
@@ -519,7 +567,7 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
 }
 
 
-bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDirectory* inSubDir_p)
+bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDirectory* inSubDir_p, TDirectory* unfoldDir_p = NULL)
 {
   if(inDir_p == NULL){
     std::cout << "cutPropafator::WriteAllVarToFile - Given indir is null. return false" << std::endl;
@@ -548,6 +596,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     inFileNames2 = inFileNames2 + inFileNames.at(i) + ",";
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   std::string responseModStr = "";
   std::string jerVarDataStr = "";
   for(int jI = 0; jI < nResponseMod; ++jI){
@@ -555,10 +605,14 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     jerVarDataStr = jerVarDataStr + std::to_string(jerVarData.at(jI)) + ",";
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   std::string jtPtBinsStr = "";
   for(int jI = 0; jI < nJtPtBins+1; ++jI){
     jtPtBinsStr = jtPtBinsStr + std::to_string(jtPtBins.at(jI)) + ",";
   }
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::string jtAlgosStr = "";
   std::string minJtPtCutStr = "";
@@ -660,6 +714,9 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
     bayesVal2 = bayesVal2 + std::to_string(bayesVal.at(sI)) + ",";
   }
 
+  std::string nHistDimStr = std::to_string(nHistDim);
+  
+
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   TNamed inFileNamesName("inFileNames", inFileNames2.c_str());
@@ -711,7 +768,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed systStrName("systStr", systStr2.c_str());
   TNamed nBayesName("nBayes", nBayesStr.c_str());
   TNamed bayesValName("bayesVal", bayesVal2.c_str());
-
+  TNamed nHistDimName("nHistDim", nHistDimStr.c_str());
+  
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   inFileNamesName.Write("", TObject::kOverwrite);
@@ -764,6 +822,7 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   systStrName.Write("", TObject::kOverwrite);
   nBayesName.Write("", TObject::kOverwrite);
   bayesValName.Write("", TObject::kOverwrite);
+  nHistDimName.Write("", TObject::kOverwrite);
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -787,11 +846,24 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  if(unfoldDir_p != NULL){
+    inFile_p->cd();
+    inDir_p->cd();
+    unfoldDir_p->cd();
+
+    nHistDimName.Write("", TObject::kOverwrite);
+    
+    for(Int_t hI = 0; hI < nHistDim; ++hI){
+      TNamed tempTName(histTag.at(hI).c_str(), std::to_string(histBestBayes.at(hI)).c_str());
+      tempTName.Write("", TObject::kOverwrite);
+    }
+  }
+
   return true;
 }
 
 
-bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb)
+bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMCOrBothData, bool doBothPPOrBothPbPb, bool skipJtAlgo = false)
 {
   if(!CheckJtAbsEtaMax(inCutProp)) return false;
   if(!CheckNJtPtBins(inCutProp)) return false;
@@ -838,11 +910,13 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   }
 
   if(doBothPPOrBothPbPb){
-    if(!CheckNJtAlgos(inCutProp)) return false;
-    if(!CheckJtAlgos(inCutProp)) return false;
-    if(!CheckMinJtPtCut(inCutProp)) return false;
-    if(!CheckMultiJtPtCut(inCutProp)) return false;
-    if(!CheckRecoTruncPos(inCutProp)) return false;
+    if(skipJtAlgo){
+      if(!CheckNJtAlgos(inCutProp)) return false;
+      if(!CheckJtAlgos(inCutProp)) return false;
+      if(!CheckMinJtPtCut(inCutProp)) return false;
+      if(!CheckMultiJtPtCut(inCutProp)) return false;
+      if(!CheckRecoTruncPos(inCutProp)) return false;
+    }
     if(!CheckIsPP(inCutProp)) return false;
     if(!CheckNCentBins(inCutProp)) return false;
     if(!CheckCentBinsLow(inCutProp)) return false;
@@ -1281,6 +1355,26 @@ void cutPropagator::SetBayesVal(int inN, const int inBayesVal[])
 {
   for(int i = 0; i < inN; ++i){
     bayesVal.push_back(inBayesVal[i]);
+  }
+
+  return;
+}
+
+
+void cutPropagator::SetHistTag(int inN, const std::string inHistTag[])
+{
+  for(int i = 0; i < inN; ++i){
+    histTag.push_back(inHistTag[i]);
+  }
+
+  return;
+}
+
+
+void cutPropagator::SetHistBestBayes(int inN, const int inHistBestBayes[])
+{
+  for(int i = 0; i < inN; ++i){
+    histBestBayes.push_back(inHistBestBayes[i]);
   }
 
   return;

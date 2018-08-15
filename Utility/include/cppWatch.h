@@ -24,13 +24,13 @@ cppWatch::cppWatch(){totalInt = 0; currentInt = 0; return;}
 
 void cppWatch::stop()
 {
-  //  std::clock_t c_end = std::clock();
-  std::time_t t_end = std::time(NULL);
+  std::clock_t c_end = std::clock();
+  //std::time_t t_end = std::time(NULL);
 
-  totalInt += t_end  - t_start;
-  currentInt = t_end  - t_start;
-  //  totalInt += c_end - c_start; 
-  //  currentInt = c_end - c_start;
+  //  totalInt += t_end  - t_start;
+  //  currentInt = t_end  - t_start;
+  totalInt += c_end - c_start; 
+  currentInt = c_end - c_start;
   return;
 }
 
