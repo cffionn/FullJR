@@ -1,4 +1,4 @@
- //cpp dependencies
+//cpp dependencies
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,8 +12,6 @@
 #include "TStyle.h"
 #include "TDatime.h"
 #include "TMath.h"
-#include "TCollection.h"
-#include "TKey.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -147,7 +145,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     systStr.push_back(additionalSyst[sI]);
   }
 
-  const Int_t nBayesCap = 10000;
+  const Int_t nBayesCap = 10;
   const Int_t nBayes = TMath::Min(nBayesCap, cutPropPbPb.GetNBayes());
   std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
 
@@ -224,57 +222,19 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  inFilePbPb_p->cd();
+  
   if(doLocalDebug || doGlobalDebug){
     std::cout << "nJtPbPb*nCentBins*nID*nResponseMod*nJtAbsEtaBins*nSyst*nBayes=Total" << std::endl;
     Int_t Total = nJtPbPb*nCentBins*nID*nResponseMod*nJtAbsEtaBins*nSyst*nBayes;
     std::cout << nJtPbPb << "*" << nCentBins << "*" << nID << "*" << nResponseMod << "*" << nJtAbsEtaBins << "*" << nSyst << "*" << nBayes << "=" << Total << std::endl;
   }
 
-
-  std::string outFileName = inFileNamePP;
-  while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
-  if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
-  else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
-
-  std::string outFileName2 = inFileNamePbPb;
-  while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
-  if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
-  else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
-
-  const Int_t sizeToTruncName = 40;
-  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
-  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_PlotUnfoldedSpectra_" + dateStr + ".root";
-
-
-  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
-  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
-  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
-  //https://root-forum.cern.ch/t/tfile-speed/17549/25
-  //Bizarre
-  outFile_p->SetBit(TFile::kDevNull);
-  TH1::AddDirectory(kFALSE);
- 
-  TDirectory* dirPP_p[nJtPP];
-  TDirectory* dirPbPb_p[nJtPbPb];
-  
-  for(Int_t tI = 0; tI < nJtPbPb; ++tI){
-    std::string tempStr = jetPbPbList.at(tI);
-    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
-    dirPbPb_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
-    dirPbPb_p[tI]->cd();
-  }
-
   TH1D* jtPtUnfolded_RecoTrunc_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  
 
-  for(Int_t tI = 0; tI < nJtPP; ++tI){
-    std::string tempStr = jetPPList.at(tI);
-    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
-    dirPP_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
-    dirPP_p[tI]->cd();
-  }
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  inFilePP_p->cd();
   TH1D* jtPtUnfolded_RecoTrunc_PP_h[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -283,276 +243,98 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
   if(doLocalDebug || doGlobalDebug) std::cout << "idI,mI,aI,sI,bI,tI,cI" << std::endl;
 
-  cppWatch histGrabTot;
   cppWatch histGrab;
-  cppWatch histClone;
-
-  histGrabTot.start();
+  histGrab.start();
 
   inFilePbPb_p->cd();
-  for(unsigned int tI = 0; tI < jetPbPbList.size(); ++tI){
-    cppWatch histGrabLocal;
-    histGrabLocal.start();
-    histGrab.start();
-    std::cout << " Grabbing PbPb " << tI << "/" << jetPbPbList.size() << ": " << jetPbPbList.at(tI) << std::endl;
 
-    TDirectory* dir_p = (TDirectory*)inFilePbPb_p->Get(jetPbPbList.at(tI).c_str());
-    TIter nextPbPb(dir_p->GetListOfKeys());
-    TKey* key = NULL;
+  for(Int_t idI = 0; idI < nID; ++idI){
+    std::cout << "Grabbing id " << idI << "/" << nID << ": " << idStr.at(idI) << std::endl;
+    for(Int_t mI = 0; mI < nResponseMod; ++mI){
+      const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
 
-    while( (key = (TKey*)nextPbPb()) ){
-      const std::string name = key->GetName();
-      const std::string className = key->GetClassName();
+      std::cout << " Grabbing mI " << mI << "/" << nResponseMod << ": " << resStr << std::endl;
 
-      if(className.find("TH1") == std::string::npos) continue;
-
-      int idPos = -1;
-      int modPos = -1;
-      int absEtaPos = -1;
-      int systPos = -1;
-      int bayesPos = -1;
-      int centPos = -1;
-
-      for(unsigned int idI = 0; idI < idStr.size(); ++idI){
-	if(name.find("_" + idStr.at(idI) + "_") != std::string::npos){
-	  idPos = idI;
-	  break;
-	}
-      }
-
-      for(int mI = 0; mI < nResponseMod; ++mI){
-	if(name.find("_ResponseMod" + prettyString(responseMod.at(mI), 2, true) + "_") != std::string::npos){
-	  modPos = mI;
-	  break;
-	}
-      }
-
-      for(int aI = 0; aI < nJtAbsEtaBins; ++aI){
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
-	if(name.find(jtAbsEtaStr) != std::string::npos){
-	  absEtaPos = aI;
-	  break;
-	}
-      }
 
-      for(Int_t sI = 1; sI < nSystOrig; ++sI){
-	if(name.find(systStr.at(sI)) != std::string::npos){
-	  systPos = sI;
-	  break;
-	}
-      }
-      if(systPos < 0) systPos = 0;
+	std::cout << "  Grabbing aI " << aI << "/" << nJtAbsEtaBins << ": " << jtAbsEtaStr << std::endl;
 
-      for(Int_t bI = 0; bI < nBayes; ++bI){
-	const std::string bayesStr = "_Bayes" + std::to_string(bayesVal.at(bI)) + "_";
-	if(name.find(bayesStr) != std::string::npos){
-	  bayesPos = bI;
-	  break;
-	}
-      }
-
-      for(Int_t cI = 0; cI < nCentBins; ++cI){		
-	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-	if(name.find(centStr) != std::string::npos){
-	  centPos = cI;
-	  break;
-	}
-      }
-
-
-      if(idPos < 0) std::cout << "Warning: Cannot find idPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(modPos < 0) std::cout << "Warning: Cannot find modPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(absEtaPos < 0) std::cout << "Warning: Cannot find absEtaPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(systPos < 0) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(centPos < 0) std::cout << "Warning: Cannot find centPos for \'" << name << "\'. Code will likely break" << std::endl;
-
-      jtPtUnfolded_RecoTrunc_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
-      /*
-
-      if(systPos == 0){
-	histGrab.stop();
-	histGrabLocal.stop();
-	histCloneLocal.start();
-	histClone.start();
-
-	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(centPos)) + "to" + std::to_string(centBinsHi.at(centPos));
-	const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bayesPos));
-	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(absEtaPos), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(absEtaPos), 1, true);	
-	const std::string resStr = "ResponseMod" + prettyString(responseMod.at(modPos), 2, true);
-
-      	for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
+	for(Int_t sI = 0; sI < nSyst; ++sI){
 	  const std::string tempSystStr = systStr.at(sI) + "_";
-	  const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idPos) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 	  
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][sI][bayesPos] = (TH1D*) (((TH1D*)key->ReadObj())->Clone(newName.c_str()));   
-	}
+	  std::cout << "   Grabbing sI " << sI << "/" << nSyst << ": " << systStr.at(sI) << std::endl;
 
-	histClone.stop();
-	histCloneLocal.stop();
-
-	histGrab.start();
-	histGrabLocal.start();
-      }
-      */
-    }    
-
-    histGrabLocal.stop();
-    histGrab.stop();
-
-    cppWatch histCloneLocal;
-    histCloneLocal.start();
-    histClone.start();
-    
-    std::cout << "  Cloning..." << std::endl;
-
-    for(Int_t cI = 0; cI < nCentBins; ++cI){
-      const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-
-      for(unsigned int idI = 0; idI < idStr.size(); ++idI){
-	for(Int_t mI = 0; mI < nResponseMod; ++mI){
-	  const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
-	  
-	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 	    
-	    for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr.at(sI) + "_";
-	      
-	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
-		
-		const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
-		
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+	    for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+	      for(Int_t cI = 0; cI < nCentBins; ++cI){		
+		//		if(doLocalDebug || doGlobalDebug) std::cout << idI << "," << mI << "," << aI << "," << sI << "," << bI << "," << tI << "," << cI << std::endl;
+
+		const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+
+		const std::string name = jetPbPbList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+
+		if(sI < nSystOrig){
+		  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)inFilePbPb_p->Get(name.c_str());	    
+		  centerTitles(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]);
+		  if(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetSumw2()->GetSize() == 0) setSumW2(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]);
+		}
+		else{
+		  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(name.c_str());	    
+		}
 	      }
 	    }
 	  }
 	}
       }
     }
-
-    histCloneLocal.stop();
-    histClone.stop();
-
-    std::cout << "  Local histgrab, clone times: "<< histGrabLocal.total() << ", " << histCloneLocal.total() << std::endl;
   }
 
-  
 
   inFilePP_p->cd();
-  for(unsigned int tI = 0; tI < jetPPList.size(); ++tI){
-    cppWatch histGrabLocal;
-    histGrabLocal.start();
-    histGrab.start();
-    std::cout << " Grabbing PP " << tI << "/" << jetPPList.size() << ": " << jetPPList.at(tI) << std::endl;
 
-    TDirectory* dir_p = (TDirectory*)inFilePP_p->Get(jetPPList.at(tI).c_str());
-    TIter nextPP(dir_p->GetListOfKeys());
-    TKey* key = NULL;
+  for(Int_t idI = 0; idI < nID; ++idI){
+    std::cout << "Grabbing id " << idI << "/" << nID << ": " << idStr.at(idI) << std::endl;
+    for(Int_t mI = 0; mI < nResponseMod; ++mI){
+      const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
 
-    while( (key = (TKey*)nextPP()) ){
-      const std::string name = key->GetName();
-      const std::string className = key->GetClassName();
+      std::cout << " Grabbing mI " << mI << "/" << nResponseMod << ": " << resStr << std::endl;
 
-      if(className.find("TH1") == std::string::npos) continue;
-
-      int idPos = -1;
-      int modPos = -1;
-      int absEtaPos = -1;
-      int systPos = -1;
-      int bayesPos = -1;
-
-      for(unsigned int idI = 0; idI < idStr.size(); ++idI){
-	if(name.find("_" + idStr.at(idI) + "_") != std::string::npos){
-	  idPos = idI;
-	  break;
-	}
-      }
-
-      for(int mI = 0; mI < nResponseMod; ++mI){
-	if(name.find("_ResponseMod" + prettyString(responseMod.at(mI), 2, true) + "_") != std::string::npos){
-	  modPos = mI;
-	  break;
-	}
-      }
-
-      for(int aI = 0; aI < nJtAbsEtaBins; ++aI){
+      for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
-	if(name.find(jtAbsEtaStr) != std::string::npos){
-	  absEtaPos = aI;
-	  break;
-	}
-      }
 
-      for(Int_t sI = 1; sI < nSystOrig; ++sI){
-	if(name.find(systStr.at(sI)) != std::string::npos){
-	  systPos = sI;
-	  break;
-	}
-      }
-      if(systPos < 0) systPos = 0;
+	std::cout << "  Grabbing aI " << aI << "/" << nJtAbsEtaBins << ": " << jtAbsEtaStr << std::endl;
 
-      for(Int_t bI = 0; bI < nBayes; ++bI){
-	const std::string bayesStr = "_Bayes" + std::to_string(bayesVal.at(bI)) + "_";
-	if(name.find(bayesStr) != std::string::npos){
-	  bayesPos = bI;
-	  break;
-	}
-      }
-
-      if(idPos < 0) std::cout << "Warning: Cannot find idPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(modPos < 0) std::cout << "Warning: Cannot find modPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(absEtaPos < 0) std::cout << "Warning: Cannot find absEtaPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(systPos < 0) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
-
-      jtPtUnfolded_RecoTrunc_PP_h[tI][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
-    }
-
-    histGrabLocal.stop();
-    histGrab.stop();
-    
-    cppWatch histCloneLocal;
-    histCloneLocal.start();
-    histClone.start();
-
-    std::cout << "  Cloning..." << std::endl;
-
-    for(unsigned int idI = 0; idI < idStr.size(); ++idI){
-      for(Int_t mI = 0; mI < nResponseMod; ++mI){
-	const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
-	
-	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
+	for(Int_t sI = 0; sI < nSyst; ++sI){
+	  const std::string tempSystStr = systStr.at(sI) + "_";
 	  
-	  for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
-	    const std::string tempSystStr = systStr.at(sI) + "_";
+	  std::cout << "   Grabbing sI " << sI << "/" << nSyst << ": " << systStr.at(sI) << std::endl;
+
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 	    
-	    for(Int_t bI = 0; bI < nBayes; ++bI){
-	      const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
-	      
-	      const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPPList.at(tI) + "_PP_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
-	      
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+	    for(Int_t tI = 0; tI < nJtPP; ++tI){
+	      const std::string name = jetPPList.at(tI) + "/jtPtUnfolded_RecoTrunc_" + jetPPList.at(tI) + "_PP_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+
+	      if(sI < nSystOrig){
+		jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)inFilePP_p->Get(name.c_str());
+		centerTitles(jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]);
+		if(jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetSumw2()->GetSize() == 0) setSumW2(jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]);
+	      }
+	      else{
+		jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(name.c_str());
+	      }
 	    }
 	  }
 	}
       }
     }
-
-    histCloneLocal.stop();
-    histClone.stop();
-
-    std::cout << "  Local histgrab, clone times: " << histGrabLocal.total() << ", " << histCloneLocal.total() << std::endl;
   }
 
-  
-  histGrabTot.stop();
-  std::cout << "Total histGrabTot: " << histGrabTot.total() << std::endl;
-  std::cout << "  just grabbing: " << histGrab.total() << std::endl;
-  std::cout << "  just cloning: " << histClone.total() << std::endl;
-
+  histGrab.stop();
+  std::cout << "Total histGrab: " << histGrab.total() << std::endl;
 
   if(doLocalDebug || doGlobalDebug){
     std::cout << "Started return" << std::endl;
@@ -605,9 +387,37 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
   std::cout << "Writing histograms..." << std::endl;
 
+  std::string outFileName = inFileNamePP;
+  while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
+  if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
+  else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
 
-  outFile_p->cd();
+  std::string outFileName2 = inFileNamePbPb;
+  while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
+  if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
+  else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
+
+  const Int_t sizeToTruncName = 40;
+  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
+  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_PlotUnfoldedSpectra_" + dateStr + ".root";
+
+  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+  //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
+  //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
+  //https://root-forum.cern.ch/t/tfile-speed/17549/25
+  //Bizarre
+
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
+ 
+  TDirectory* dirPP_p[nJtPP];
+  TDirectory* dirPbPb_p[nJtPbPb];
+  
   for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+    std::string tempStr = jetPbPbList.at(tI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+    dirPbPb_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
     dirPbPb_p[tI]->cd();
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){		
@@ -630,6 +440,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   
 
   for(Int_t tI = 0; tI < nJtPP; ++tI){
+    std::string tempStr = jetPPList.at(tI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+    dirPP_p[tI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
     dirPP_p[tI]->cd();
 
     for(Int_t idI = 0; idI < nID; ++idI){
