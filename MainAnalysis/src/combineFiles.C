@@ -40,7 +40,6 @@ int recursiveCombineDir(TFile* inFile_p, const std::string dirName, TFile* outFi
     std::string tempName = dirs_p[dI]->GetName();
 
     if(tempName.find(dirName) != std::string::npos && maxVal < (Int_t )tempName.size()){
-      std::cout << "  Is Match!" << std::endl;
       dirPos = dI;
       maxVal = tempName.size();
     }
@@ -92,6 +91,9 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   cutPropagator prevProp;
   prevProp.Clean();
 
+  std::vector<std::string> combinedHistTag;
+  std::vector<int> combinedBestBayes;
+
   std::vector<std::string> tdirNameVect;
   std::vector<std::vector<std::string> > tdirNamePerFile;
   std::vector<std::vector<std::string > > th1NameVect;
@@ -105,6 +107,12 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
     cutPropagator cutPropCurrent;
     cutPropCurrent.Clean();    
     cutPropCurrent.GetAllVarFromFile(inFile_p);
+    
+    std::vector<std::string> tempHistTag = cutPropCurrent.GetHistTag();
+    std::vector<int> tempHistBestBayes = cutPropCurrent.GetHistBestBayes();
+
+    combinedHistTag.insert(combinedHistTag.end(), tempHistTag.begin(), tempHistTag.end());
+    combinedBestBayes.insert(combinedBestBayes.end(), tempHistBestBayes.begin(), tempHistBestBayes.end());
 
     std::vector<std::string> classList;
     std::vector<std::string> contentsList = returnRootFileContentsList(inFile_p, "", "", -1, &(classList));
@@ -143,9 +151,10 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
 	std::cout << "Warning: \'" << fileList.at(fI-1) << "\', and \'" << fileList.at(fI) << "\' doesn't match." << std::endl;
       }
     }
-
-    prevProp.Clean();
-    prevProp.GetAllVarFromFile(inFile_p);
+    else{
+      prevProp.Clean();
+      prevProp.GetAllVarFromFile(inFile_p);
+    }
 
     inFile_p->Close();
     delete inFile_p;
@@ -215,20 +224,36 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   int subDirPos = -1;
   int unfoldDirPos = -1;
   
-
   for(Int_t dI = 0; dI < nDir; ++dI){
     outFile_p->cd();
     dirs_p[dI] = NULL;
-    dirs_p[dI] = (TDirectory*)outFile_p->mkdir(tdirNameVect.at(dI).c_str());
+    if(tdirNameVect.at(dI).find("/") == std::string::npos) dirs_p[dI] = (TDirectory*)outFile_p->mkdir(tdirNameVect.at(dI).c_str());
+    else{
+      Int_t prePos = -1;
+      Int_t tempMaxVal = -1;
+      for(Int_t dI2 = 0; dI2 < dI; ++dI2){
+	if(tdirNameVect.at(dI).find(tdirNameVect.at(dI2)) != std::string::npos && tempMaxVal < (int)tdirNameVect.at(dI2).size()){
+	  prePos = dI2;
+	  tempMaxVal = tdirNameVect.at(dI2).size();
+	}
+      }
+    
+      std::string tempDirName = tdirNameVect.at(dI);
+      tempDirName.replace(0, tempDirName.rfind("/")+1, "");
+      std::cout << "Prepos: " << prePos << ", " << dirs_p[prePos]->GetName() << std::endl;
+      dirs_p[prePos]->cd();
+      dirs_p[dI] = (TDirectory*)dirs_p[prePos]->mkdir(tempDirName.c_str());
+    }
     dirs_p[dI]->cd();
-
-    std::cout << tdirNameVect.at(dI) << std::endl;
 
     if(isStrSame("cutDir", tdirNameVect.at(dI))) cutDirPos = dI;
     else if(tdirNameVect.at(dI).find("subDir") != std::string::npos) subDirPos = dI;
     else if(tdirNameVect.at(dI).find("unfoldDir") != std::string::npos) unfoldDirPos = dI;
   }
 
+  std::cout << "UnfoldDirPos: " << unfoldDirPos << std::endl;
+  std::cout << " " << dirs_p[unfoldDirPos]->GetName() << std::endl;
+  
   outFile_p->cd();
 
   cppWatch writingWatch;
@@ -361,7 +386,14 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   
   std::cout << "Write time: " << writingWatch.total() << std::endl;
 
-  if(unfoldDirPos >= 0){
+  prevProp.SetNHistDim(combinedHistTag.size());
+  prevProp.SetHistTag(combinedHistTag);
+  prevProp.SetHistBestBayes(combinedBestBayes);
+
+  std::cout << " Best bayes: " << combinedHistTag.size() << ", " << combinedBestBayes.size() << std::endl;
+  std::cout << "  unfoldDirPos: " << unfoldDirPos << std::endl;
+  
+  if(unfoldDirPos < 0){
     if(!prevProp.WriteAllVarToFile(outFile_p, dirs_p[cutDirPos], dirs_p[subDirPos], NULL)) std::cout << "Warning: Cut writing has failed" << std::endl;
   }
   else{
