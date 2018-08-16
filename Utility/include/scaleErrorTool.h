@@ -1,20 +1,23 @@
 #ifndef SCALEERRORTOOL_H
 #define SCALEERRORTOOL_H
 
+//cpp dependencies
 #include <iostream>
 #include <string>
 #include <vector>
 #include <map>
 #include <fstream>
 
+//ROOT dependencies
 #include "TMath.h"
 #include "TH2F.h"
 #include "TLatex.h"
 #include "TCanvas.h"
 #include "TStyle.h"
 
-#include "Utility/include/doGlobalDebug.h"
+//Local (Utility) dependencies
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/plotUtilities.h"
 
 class scaleErrorTool{
@@ -525,7 +528,7 @@ void scaleErrorTool::makeErrorMaps()
 
     std::string saveName = histVect.at(hI)->GetName();
     saveName = dirName2 + saveName + "_" + std::to_string(date->GetDate()) + ".pdf";
-    canv_p->SaveAs(saveName.c_str());
+    quietSaveAs(canv_p, saveName);
     delete canv_p;
   }
 
