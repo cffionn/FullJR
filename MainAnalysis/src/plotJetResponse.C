@@ -251,7 +251,8 @@ int plotJetResponse(const std::string inResponseName)
 	      
 	      std::string renormStr = "renormX";
 	      if(!renormX[mI]) renormStr = "renormY";
-	      canv_p->SaveAs(("pdfDir/" + dateStr + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf").c_str());
+	      const std::string finalSaveName = "pdfDir/" + dateStr + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf";
+	      quietSaveAs(canv_p, finalSaveName);
 	      delete canv_p;
 	    }
 	    
@@ -278,7 +279,8 @@ int plotJetResponse(const std::string inResponseName)
 	      temp_p->DrawCopy("HIST E1 P");
 	    }
 	    
-	    recoJtPtPerGenPtBin_p->SaveAs(("pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
+	    const std::string recoJtSaveName = "pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf";
+	    quietSaveAs(recoJtPtPerGenPtBin_p, recoJtSaveName);
 	    delete recoJtPtPerGenPtBin_p;
 	    
 	    TCanvas* recoJtPtPerGenPtBinWeighted_p = new TCanvas("recoJtPtPerGenPtBinWeighted_p", "", 450*nPadX, 450*nPadY);
@@ -301,8 +303,8 @@ int plotJetResponse(const std::string inResponseName)
 	      temp_p->DrawCopy("HIST E1 P");
 	    }
 	    
-	    recoJtPtPerGenPtBinWeighted_p->SaveAs(("pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf").c_str());
-
+	    const std::string tempSaveName = "pdfDir/" + dateStr + "/recoJtPtPerGenPtBin_Weighted_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf";
+	    quietSaveAs(recoJtPtPerGenPtBinWeighted_p, tempSaveName);
 	    delete recoJtPtPerGenPtBinWeighted_p;
 	  }
 	}

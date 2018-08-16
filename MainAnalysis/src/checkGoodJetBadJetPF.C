@@ -1543,7 +1543,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     
     //std::cout << __LINE__ << std::endl;
 
-    canv_p->SaveAs(("pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf").c_str());
+    const std::string saveName = "pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf";
+    quietSaveAs(canv_p, saveName);
 
     if(true/*canvStr.find("jtPt_") != std::string::npos*/){
       for(Int_t sI = 0; sI < nSpect; ++sI){
@@ -1611,7 +1612,8 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     gPad->SetLogz();
     gStyle->SetOptStat(0);
 
-    //    canv_p->SaveAs(("pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf").c_str());
+    //    const std::string saveName = "pdfDir/" + dateStr + "/" + algoStr2 + "/" + canvStr + "_" + dateStr + ".pdf";
+    //    quietSaveAs(canv_p, saveName);
     delete canv_p;
 
     goodHistsTH2.at(i)->Write("", TObject::kOverwrite);

@@ -284,12 +284,11 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 	    unfold_h->DrawCopy("HIST E1 P");
 	    if(doLogX) gPad->SetLogx();
 
-	    canv_p->SaveAs(("pdfDir/" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_Bayes" + std::to_string(bI+1) + paraString + "_" + dateStr + ".pdf").c_str());
-	  
+	    const std::string saveName = "pdfDir/" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_Bayes" + std::to_string(bI+1) + paraString + "_" + dateStr + ".pdf";
+	    quietSaveAs(canv_p, saveName);
 	    for(Int_t pI = 0; pI < nPad; ++pI){
 	      delete pads_p[pI];
-	    }
-	    
+	    }	    
 	    delete canv_p;
 	  }
 	}

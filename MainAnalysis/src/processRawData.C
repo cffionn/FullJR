@@ -817,7 +817,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	std::string spectraName = "jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf";
 	spectraNames.push_back(spectraName);
 
-	canv_p->SaveAs(("pdfDir/" + dateStr + "/" + spectraName).c_str());
+	const std::string saveName = "pdfDir/" + dateStr + "/" + spectraName;
+	quietSaveAs(canv_p, saveName);
 
 	delete pads[0];
 	delete pads[1];
@@ -1005,7 +1006,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	
 	  std::string multijetName = "multijetAJ_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + jtPtStr + "_" + dateStr + ".pdf";
 	  multijetNames.at(multijetNames.size()-1).push_back(multijetName);
-	  canv_p->SaveAs(("pdfDir/" + dateStr + "/" + multijetName).c_str());
+	  const std::string saveName = "pdfDir/" + dateStr + "/" + multijetName;
+	  quietSaveAs(canv_p, saveName);
 	  
 	  delete pads[0];
 	  delete pads[1];

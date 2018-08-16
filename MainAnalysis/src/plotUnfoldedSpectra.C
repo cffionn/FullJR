@@ -14,12 +14,15 @@
 #include "TMath.h"
 #include "TCollection.h"
 #include "TKey.h"
+#include "TLegend.h"
 #include "TLatex.h"
 #include "TBox.h"
+#include "TError.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
 #include "MainAnalysis/include/doLocalDebug.h"
+#include "MainAnalysis/include/texSlideCreator.h"
 
 //Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
@@ -33,14 +36,14 @@
 #include "Utility/include/returnRootFileContentsList.h"
 
 
-std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, Double_t minXVal, Double_t maxXVal)
+std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vector<std::string> systStr, Double_t minXVal, Double_t maxXVal, std::vector<std::string>* plotNames)
 {
   vanGoghPalette vg;
   const Int_t nColor = 5;
-  //  const Int_t colors[nColor] = {vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(3), vg.getColor(4)};
+  const Int_t colors[nColor] = {vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(3), vg.getColor(4)};
 
   const Int_t nStyle = 4;
-  Int_t styles[nStyle] = {24, 25, 46, 28};
+  Int_t styles[nStyle] = {20, 21, 47, 34};
 
   std::vector<double> systVect;
 
@@ -48,13 +51,7 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, Double_t
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
 
-  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
-  canv_p->SetTopMargin(0.01);
-  canv_p->SetRightMargin(0.01);
-  canv_p->SetLeftMargin(0.12);
-  canv_p->SetBottomMargin(0.12);
-
-  TH1D* tempHist_p = new TH1D("tempHist_p", ";p_{T};Syst %", 10, minXVal, maxXVal);
+  double smallDelta = 0.000001;
 
   for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
 
@@ -78,7 +75,10 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, Double_t
       }
       else{
 	syst_p.at(sI)->SetBinContent(bIX+1, syst_p.at(sI)->GetBinContent(bIX+1)/nominal_p->GetBinContent(bIX+1));
-	syst_p.at(sI)->SetBinError(bIX+1, 0.0);
+	if(syst_p.at(sI)->GetBinContent(bIX+1) <= 0) syst_p.at(sI)->SetBinContent(bIX+1, smallDelta);
+
+
+	syst_p.at(sI)->SetBinError(bIX+1, smallDelta);
       }
     }
 
@@ -91,29 +91,69 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, Double_t
     if(syst_p.at(sI)->GetMaximum() > maxVal) maxVal = syst_p.at(sI)->GetMaximum();
   }
 
-  canv_p->cd();
-  centerTitles(tempHist_p);
-  tempHist_p->SetMaximum(1.2*maxVal);
-  tempHist_p->DrawCopy("HIST E1 P");
+  const Int_t nMax = 2;
+  const Double_t max[nMax] = {maxVal, 0.25};
+  
+  for(Int_t nI = 0; nI < nMax; ++nI){
+    TLegend* leg_p = new TLegend(0.2, 0.52, 0.4, 0.99);
+    leg_p->SetBorderSize(0);
+    leg_p->SetFillColor(0);
+    leg_p->SetFillStyle(0);
+    leg_p->SetTextFont(43);
+    leg_p->SetTextSize(16);
+    
+    
+    TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+    canv_p->SetTopMargin(0.01);
+    canv_p->SetRightMargin(0.01);
+    canv_p->SetLeftMargin(0.12);
+    canv_p->SetBottomMargin(0.12);
+    
+    TH1D* tempHist_p = new TH1D("tempHist_p", ";Jet p_{T} (GeV);Fractional Systetmatics", 10, minXVal, maxXVal);
+    tempHist_p->GetXaxis()->SetTitleOffset(1.6);
+    
+    canv_p->cd();
+    centerTitles(tempHist_p);
+    tempHist_p->SetMaximum(1.2*max[nI]);
+    tempHist_p->DrawCopy("HIST E1 P");
+    
+    gStyle->SetOptStat(0);
+    gPad->SetLogx();
+    
+    for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+      syst_p.at(sI)->SetMarkerColor(colors[sI%nColor]);
+      syst_p.at(sI)->SetMarkerStyle(styles[sI%nStyle]);
+      syst_p.at(sI)->SetLineColor(colors[sI%nColor]);
+      syst_p.at(sI)->SetMarkerSize(0.8);
 
-  gStyle->SetOptStat(0);
-  gPad->SetLogx();
+      
 
-  for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
-    syst_p.at(sI)->SetMarkerColor(vg.getColor(sI%nColor));
-    syst_p.at(sI)->SetMarkerStyle(styles[sI%nStyle]);
-    syst_p.at(sI)->SetLineColor(vg.getColor(sI%nColor));
-    syst_p.at(sI)->SetMarkerSize(0.8);
+      syst_p.at(sI)->DrawCopy("HIST E1 P SAME");
+      syst_p.at(sI)->DrawCopy("HIST E1 SAME");
+      
+      leg_p->AddEntry(syst_p.at(sI), systStr.at(sI+1).c_str(), "P L");
+    }
+    
+    leg_p->Draw("SAME");
+    
+    gPad->RedrawAxis();
+    gPad->SetTicks(1,2);
 
-    syst_p.at(sI)->DrawCopy("HIST E1 P SAME");
+    std::string maxValStr = "NormalMax";
+    if(nI != 0) maxValStr = "ZOOM";
+    
+    std::string nominalName = nominal_p->GetName();
+    const std::string dirName = "pdfDir/" + dateStr;
+    checkMakeDir(dirName);
+    const std::string saveName = "systErr_" + nominalName + "_" + maxValStr + "_" + dateStr +  ".pdf";
+
+    quietSaveAs(canv_p, (dirName + "/" + saveName));
+    plotNames->push_back(saveName);
+
+    delete tempHist_p;
+    delete canv_p;
+    delete leg_p;
   }
-
-  std::string nominalName = nominal_p->GetName();
-  const std::string saveName = "pdfDir/" + dateStr + "/systErr_" + nominalName + "_" + dateStr +  ".pdf";
-  canv_p->SaveAs(saveName.c_str());
-
-  delete tempHist_p;
-  delete canv_p;
 
   return systVect;
 }
@@ -143,6 +183,9 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
 
 int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFileNamePbPb)
 {
+  std::vector<std::string> slideTitles;
+  std::vector<std::vector<std::string > > pdfPerSlide;
+
   double total = 0;
   cppWatch toPPFile;
   cppWatch ppFile;
@@ -757,11 +800,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     }
   }
 
-  std::cout << "Closing files..." << std::endl;
-
-  outFile_p->Close();
-  delete outFile_p;
-  
   std::cout << "Plotting... " << std::endl;
   const std::string plotID = "LightMUAndCHID";
   const std::string plotAbsEtaStr = "AbsEta0p0to2p0";
@@ -797,6 +835,11 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   if(idPos == -1 || absEtaPos == -1 || bayesPos == -1){
     std::cout << "Plotting pos not found, skip plotting, return 1" << std::endl;
 
+    std::cout << "Closing files..." << std::endl;
+    
+    outFile_p->Close();
+    delete outFile_p;
+  
     inFilePP_p->Close();
     delete inFilePP_p;
 
@@ -817,7 +860,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     for(Int_t mI = 0; mI < nResponseMod; ++mI){
       const std::string responseStr = prettyString(responseMod.at(mI), 2, true);
 
-
       TLatex* label_p = new TLatex();
       label_p->SetTextFont(43);
       label_p->SetTextSize(16);
@@ -834,14 +876,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       Double_t xMinVal = 200;
       Double_t xPointMinVal = xMinVal;
       if(getRVal(jetPbPbList.at(tI)) >= 8) xPointMinVal = 300;
-      Double_t xMaxVal = 1000;
+      Double_t xMaxVal = 1200;
       Double_t xPointMaxVal = 1000;
 
-      TH1F* tempHist_p = new TH1F("tempHist_p", ";p_{T} (GeV);Counts", 10, xMinVal, xMaxVal);
+      const std::string yAxisTitle = "#frac{d^{2}#sigma^{pp}}{dp_{T}d#eta} or #frac{1}{N_{evt}}#frac{1}{#LTTAA#GT}#frac{d^{2}N^{PbPb}}{dp_{T}d#eta} [#frac{nb}{GeV/c}]";
+      TH1F* tempHist_p = new TH1F("tempHist_p", (";Jet p_{T} (GeV/c);" + yAxisTitle).c_str(), 10, xMinVal, xMaxVal);
       centerTitles(tempHist_p);
 
       tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
-      tempHist_p->GetYaxis()->SetTitleOffset(1.8);
+      tempHist_p->GetYaxis()->SetTitleOffset(1.6);
      
       for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
 	bool binIsBad = jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
@@ -876,15 +919,29 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	if(maxVal < tempMaxVal) maxVal = tempMaxVal;
       }
 
-      maxVal *= 10.;
-      minVal /= 10.;
+      maxVal *= 100.;
+      minVal /= 100.;
 
       tempHist_p->SetMaximum(maxVal);
       tempHist_p->SetMinimum(minVal);
 
-      getLogBins(minVal, maxVal, nYBins, yBins);
+      tempHist_p->GetYaxis()->SetLabelFont(43);
+      tempHist_p->GetYaxis()->SetLabelSize(11);
+      
+      std::cout << "Title offset: " << tempHist_p->GetYaxis()->GetTitleOffset() << std::endl;
 
+      getLogBins(minVal, maxVal, nYBins, yBins);
+    
       tempHist_p->DrawCopy("HIST E1 P");
+
+      TLegend* leg_p = new TLegend(0.7, 0.65, 0.95, 0.88);
+      leg_p->SetBorderSize(0);
+      leg_p->SetFillColor(0);
+      leg_p->SetFillStyle(0);
+      leg_p->SetTextFont(43);
+      leg_p->SetTextSize(16);
+
+
 
       jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
       jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
@@ -896,7 +953,12 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       for(Int_t sI = 1; sI < nSyst; ++sI){
 	systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
       }      
-      std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, xPointMinVal, xPointMaxVal);
+
+      pdfPerSlide.push_back({});
+      std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()-1)));
+    
+      slideTitles.push_back("PP Systematic (" + jetPPList.at(ppPos) + ", " + responseStr +  ")");
+
       for(unsigned int sI = 0; sI < systHistVectPP.size(); ++sI){
 	delete systHistVectPP.at(sI);
       }
@@ -905,6 +967,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
       for(Int_t cI = 0; cI < nCentBins; ++cI){
 	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+	const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 
 	jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
 	jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
@@ -916,7 +979,11 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	for(Int_t sI = 1; sI < nSyst; ++sI){
 	  systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
 	}      
-	std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, xPointMinVal, xPointMaxVal);
+
+	pdfPerSlide.push_back({});
+	std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()-1)));
+	slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
+
 	for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	  delete systHistVectPbPb.at(sI);
 	}
@@ -929,6 +996,16 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       for(Int_t cI = 0; cI < nCentBins; ++cI){
 	jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
       }
+
+
+      for(Int_t cI = nCentBins-1; cI >= 0; --cI){
+	const std::string centLegStr = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "% x 10^{" + std::to_string(cI+1) + "}";
+	jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+	leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr.c_str(), "P L F");	
+      }
+
+      jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+      leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L F");
       
       gPad->SetLogy();
       gPad->SetLogx();
@@ -940,16 +1017,37 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       label_p->DrawLatex(400, yBins[0]/4., "400");
       label_p->DrawLatex(600, yBins[0]/4., "600");
       label_p->DrawLatex(800, yBins[0]/4., "800");
+      label_p->DrawLatex(1000, yBins[0]/4., "1000");
+
+      std::string rStr = "R=";
+      if(getRVal(jetPbPbList.at(tI)) < 10) rStr = rStr + "0." + std::to_string(getRVal(jetPbPbList.at(tI)));
+      else rStr = rStr + "1.0";
+    
+      label_p->DrawLatex(250, yBins[19], ("anti-k_{T} " + rStr).c_str());
+      label_p->DrawLatex(250, yBins[18], "|#eta_{jets}| < 2");
+
+      label_p->SetNDC();
+
+      label_p->DrawLatex(0.1, 0.95, "#bf{CMS Preliminary}");
+      label_p->DrawLatex(0.4, 0.95, "27.4 pb^{-1} pp + 404 #mub^{-1} PbPb (5.02 TeV)");
+
+      leg_p->Draw("SAME");
 
       gPad->RedrawAxis();
       gPad->SetTicks(1,2);
 
       std::string saveName = "spectra_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + idNameStr + "_" + plotAbsEtaStr + "_" + plotBayesStr + "_" + responseStr + "_" + dateStr + ".pdf";
+      slideTitles.push_back("Spectra (" + responseStr + ")");
+      pdfPerSlide.push_back({});
+      pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+
       saveName = "pdfDir/" + dateStr + "/" + saveName;
 
-      spectCanv_p->SaveAs(saveName.c_str());
+      quietSaveAs(spectCanv_p, saveName);
 
       delete spectCanv_p;
+      delete label_p;
+      delete leg_p;
 
       for(Int_t cI = 0; cI < nCentBins; ++cI){
 	for(Int_t sI = 0; sI < nSyst; ++sI){
@@ -959,12 +1057,26 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     }
   }
 
-
+  std::cout << "Closing files..." << std::endl;
+  
+  outFile_p->Close();
+  delete outFile_p;
+  
   inFilePP_p->Close();
   delete inFilePP_p;
 
   inFilePbPb_p->Close();
   delete inFilePbPb_p;
+
+  texSlideCreator tex;
+  tex.Clean();
+  tex.Init(outFileName);
+  tex.SetAuthor("Christopher McGinn");
+  tex.SetSlideTitles(slideTitles);
+  tex.SetSlidePdfs(pdfPerSlide);
+  if(!(tex.CreateTexSlides())){
+    std::cout << "Warning: .tex slide creation failed" << std::endl;
+  }
 
   std::cout << "Job complete" << std::endl;
 

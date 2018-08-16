@@ -788,7 +788,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
-	      canv_p->SaveAs((preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI) + "/" + saveName).c_str());
+	      const std::string finalSaveName = preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI) + "/" + saveName;
+	      quietSaveAs(canv_p, finalSaveName);
 	    
 	      delete pads[0];
 	      delete pads[1];
