@@ -1,6 +1,8 @@
+//cpp dependencisef
 #include <iostream>
 #include <string>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TH1D.h"
 #include "TCanvas.h"
@@ -11,8 +13,9 @@
 #include "TLegend.h"
 #include "TLatex.h"
 
-#include "Utility/include/vanGoghPalette.h"
+//Non-local (Utility) dependencies
 #include "Utility/include/plotUtilities.h"
+#include "Utility/include/vanGoghPalette.h"
 
 int makeResErrorPlot(const std::string inFileName, const Int_t rVal, const std::string paraStr, const std::string lowStr, const std::string hiStr, const bool doFake)
 {
@@ -30,6 +33,8 @@ int makeResErrorPlot(const std::string inFileName, const Int_t rVal, const std::
   std::string rStr = "R0p" + std::to_string(rVal);
 
   TDatime* date = new TDatime();
+  const std::string dateStr = std::to_string(date->GetDate());
+  delete date;
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
 
@@ -227,8 +232,9 @@ int makeResErrorPlot(const std::string inFileName, const Int_t rVal, const std::
   gPad->RedrawAxis();
   gPad->SetTicks(1, 2);
 
-  if(!doFake) canv_p->SaveAs(("pdfDir/resErr_" + rStr + paraStr + "_Err" + lowStr + "to" + hiStr + "_" + std::to_string(date->GetDate()) + ".pdf").c_str());
-  else canv_p->SaveAs(("pdfDir/resErr_" + rStr + paraStr + "_Fake_" + std::to_string(date->GetDate()) + ".pdf").c_str());
+  std::string saveName = "pdfDir/resErr_" + rStr + paraStr + "_Err" + lowStr + "to" + hiStr + "_" + dateStr + ".pdf";
+  if(doFake) saveName = "pdfDir/resErr_" + rStr + paraStr + "_Fake_" + dateStr + ".pdf";
+  quietSaveAs(canv_p, saveName);
 
   delete label_p;
   delete leg_p;
@@ -236,8 +242,6 @@ int makeResErrorPlot(const std::string inFileName, const Int_t rVal, const std::
 
   inFile_p->Close();
   delete inFile_p;
-
-  delete date;
 
   return 0;
 }

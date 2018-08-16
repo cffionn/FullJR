@@ -1,8 +1,10 @@
+//cpp dependencies
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TTree.h"
 #include "TH2F.h"
@@ -13,21 +15,22 @@
 #include "TLegend.h"
 #include "TNamed.h"
 
+//Non-local (Utility) dependencies
 #include "Utility/include/checkMakeDir.h"
-#include "Utility/include/mntToXRootdFileString.h"
-#include "Utility/include/histDefUtility.h"
-#include "Utility/include/plotUtilities.h"
-#include "Utility/include/pseudoTowerGeometry.h"
+#include "Utility/include/doGlobalDebug.h"
+#include "Utility/include/etaPhiFunc.h"
+#include "Utility/include/findBinPos.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/getLogBins.h"
-#include "Utility/include/kirchnerPalette.h"
-#include "Utility/include/findBinPos.h"
-#include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/goodGlobalSelection.h"
-#include "Utility/include/doGlobalDebug.h"
+#include "Utility/include/histDefUtility.h"
+#include "Utility/include/kirchnerPalette.h"
+#include "Utility/include/mntToXRootdFileString.h"
+#include "Utility/include/plotUtilities.h"
+#include "Utility/include/pseudoTowerGeometry.h"
+#include "Utility/include/readJSON.h"
 #include "Utility/include/returnFileList.h"
 #include "Utility/include/vectorStringUtility.h"
-#include "Utility/include/readJSON.h"
 
 int makeSubtractedPPEvent(const std::string inFileName)
 {
@@ -375,7 +378,7 @@ int makeSubtractedPPEvent(const std::string inFileName)
 	  
 	  label_p->DrawLatex(.14, .90, "Single PP Event");
 	  
-	  temp_p->SaveAs(saveName.c_str());
+	  quietSaveAs(temp_p, saveName);
 	  
 	  if(isGoodJet) std::cout << "JET: " << jtpt_[jtpos] << ", " << jteta_[jtpos] << ", " << jtphi_[jtpos] << std::endl;
 	  

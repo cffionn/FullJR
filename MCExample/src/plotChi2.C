@@ -1,6 +1,8 @@
+//cpp dependencies
 #include <iostream>
 #include <string>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TH1D.h"
 #include "TCanvas.h"
@@ -8,6 +10,7 @@
 #include "TStyle.h"
 #include "TLatex.h"
 
+//Non-local (Utility) dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/plotUtilities.h"
@@ -71,7 +74,7 @@ int plotChi2(const std::string inFileName)
 
   checkMakeDir("pdfDir");
   const std::string saveName = "pdfDir/atlasRAAChi2_LogLoss_" + dateStr + ".pdf";
-  canv_p->SaveAs(saveName.c_str());
+  quietSaveAs(canv_p, saveName);
 
   delete canv_p;
 

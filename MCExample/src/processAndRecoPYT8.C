@@ -199,7 +199,7 @@ int processAndRecoPYT8(const std::string inFileName, const bool doRecoJets)
 	if(TMath::Abs(jets.at(jI).eta()) > 2.) continue;
 
 	genJtPt_[rI][nJt_[rI]] = jets.at(jI).pt();
-	genJtPhi_[rI][nJt_[rI]] = jets.at(jI).phi();
+	genJtPhi_[rI][nJt_[rI]] = jets.at(jI).phi_std();
 	genJtEta_[rI][nJt_[rI]] = jets.at(jI).eta();
 
 	if(doRecoJets){

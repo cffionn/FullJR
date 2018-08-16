@@ -1,6 +1,8 @@
+//cpp dependencies
 #include <iostream>
 #include <string>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TH1F.h"
 #include "TCanvas.h"
@@ -10,10 +12,12 @@
 #include "TLatex.h"
 #include "TStyle.h"
 
+//Non-local (Utility) dependencies
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/kirchnerPalette.h"
-#include "Utility/include/vanGoghPalette.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/vanGoghPalette.h"
 #include "Utility/include/vectorStringUtility.h"
 
 void setColorStyleLabelTitle(TH1F* inHist_p, const Int_t color, const Int_t style, const Int_t labelSize, const Int_t titleSize)
@@ -325,7 +329,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
 
     const std::string saveName = "pdfDir/plotRecreateV2James_" + centStrName.at(cI) + "_" + pfOrTrkStr + "_" + dateStr + ".pdf";
 
-    canv_p->SaveAs(saveName.c_str());
+    quietSaveAs(canv_p, saveName);
 
     delete pads[0];
     delete pads[1];

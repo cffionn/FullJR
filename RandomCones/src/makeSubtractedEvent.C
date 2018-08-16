@@ -1,8 +1,9 @@
-
+//cpp depdendencies
 #include <iostream>
 #include <string>
 #include <vector>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TTree.h"
 #include "TH2F.h"
@@ -13,21 +14,24 @@
 #include "TLegend.h"
 #include "TNamed.h"
 
+//Non-local (Utility) dependencies
 #include "Utility/include/checkMakeDir.h"
-#include "Utility/include/mntToXRootdFileString.h"
-#include "Utility/include/histDefUtility.h"
-#include "Utility/include/plotUtilities.h"
-#include "Utility/include/pseudoTowerGeometry.h"
+#include "Utility/include/etaPhiFunc.h"
+#include "Utility/include/findBinPos.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/getLogBins.h"
-#include "Utility/include/kirchnerPalette.h"
-#include "Utility/include/findBinPos.h"
-#include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/goodGlobalSelection.h"
+#include "Utility/include/histDefUtility.h"
+#include "Utility/include/kirchnerPalette.h"
+#include "Utility/include/mntToXRootdFileString.h"
+#include "Utility/include/plotUtilities.h"
+#include "Utility/include/pseudoTowerGeometry.h"
 
 int makeSubtractedEvent(const std::string inFileName)
 {
   TDatime* date = new TDatime();
+  const std::string dateStr = std::to_string(date->GetDate());
+  delete date;
 
   checkMakeDir("output");
   std::string outFileName = inFileName;
@@ -35,7 +39,7 @@ int makeSubtractedEvent(const std::string inFileName)
     outFileName.replace(0, outFileName.find("/")+1, "");
   }
   outFileName.replace(outFileName.find(".root"), 5, "");
-  outFileName = "output/" + outFileName + "_Subtracted_" + std::to_string(date->GetDate()) + ".root";
+  outFileName = "output/" + outFileName + "_Subtracted_" + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
@@ -542,7 +546,7 @@ int makeSubtractedEvent(const std::string inFileName)
 	std::string saveName = hist_p.at(hI)->GetName();
 	saveName = "pdfDir/" + saveName + "_";
 	if(isGoodJet) saveName = saveName + "GOODJET_";
-	saveName = saveName + std::to_string(date->GetDate()) + ".pdf";
+	saveName = saveName + dateStr + ".pdf";
 
 	label_p->DrawLatex(.14, .94, "#bf{CMS Preliminary} 2015 PbPb #sqrt{s_{NN}}=5.02 TeV");
 	//	label_p->DrawLatex(.14, .92, "2015 PbPb #sqrt{s_{NN}}=5.02 TeV");
@@ -553,8 +557,8 @@ int makeSubtractedEvent(const std::string inFileName)
 	else if(hI == 3) label_p->DrawLatex(.14, .86, "CS Updated + Flow");
 
 	label_p->DrawLatex(.14, .90, ("Single " + prettyString(hiBin_/2., 1, false) + "% Event").c_str());
-	
-	temp_p->SaveAs(saveName.c_str());
+
+	quietSaveAs(temp_p, saveName);
 	
 	if(isGoodJet) std::cout << "JET: " << jtpt_[jtpos] << ", " << jteta_[jtpos] << ", " << jtphi_[jtpos] << std::endl;
 
@@ -723,9 +727,9 @@ int makeSubtractedEvent(const std::string inFileName)
     label_p->DrawLatex(.84, .92, "[GeV/Area]");
 
     std::string saveName = hist_p.at(hI)->GetName();
-    saveName = "pdfDir/" + saveName + "_NoSubMax_" + std::to_string(date->GetDate()) + ".pdf";
-    temp_p->SaveAs(saveName.c_str());   
-    
+    saveName = "pdfDir/" + saveName + "_NoSubMax_" + dateStr + ".pdf";
+    quietSaveAs(temp_p, saveName);
+
     delete temp_p;
   }
 
@@ -751,8 +755,8 @@ int makeSubtractedEvent(const std::string inFileName)
     label_p->DrawLatex(.84, .92, "[GeV/Area]");
 
     std::string saveName = hist_p.at(hI)->GetName();
-    saveName = "pdfDir/" + saveName + "_SubMax_" + std::to_string(date->GetDate()) + ".pdf";
-    temp_p->SaveAs(saveName.c_str());   
+    saveName = "pdfDir/" + saveName + "_SubMax_" + dateStr + ".pdf";
+    quietSaveAs(temp_p, saveName);
     
     delete temp_p;
   }
@@ -819,8 +823,8 @@ int makeSubtractedEvent(const std::string inFileName)
     label_p->DrawLatex(.12, .94, (centLabelProj.at(hI)).c_str());
 
     std::string saveName = histProjNoSub_p.at(hI)->GetName();
-    saveName = "pdfDir/" + saveName + "_" + std::to_string(date->GetDate()) + ".pdf";
-    temp_p->SaveAs(saveName.c_str());   
+    saveName = "pdfDir/" + saveName + "_" + dateStr + ".pdf";
+    quietSaveAs(temp_p, saveName);
     delete temp_p;
   }
 
@@ -870,9 +874,6 @@ int makeSubtractedEvent(const std::string inFileName)
 
   outFile_p->Close();
   delete outFile_p;
-
-  delete date;
-
 
   return 0;
 }
