@@ -15,6 +15,7 @@
 #include "TCollection.h"
 #include "TList.h"
 #include "TKey.h"
+#include "TString.h"
 
 //Local FullJR (MainAnalysis) dependencies
 #include "MainAnalysis/include/doLocalDebug.h"
@@ -750,10 +751,10 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   TNamed inFileNamesName("inFileNames", inFileNames2.c_str());
-  TNamed isPPName("isPP", std::to_string(isPP));
+  TNamed isPPName("isPP", std::to_string(isPP).c_str());
   TNamed jtAbsEtaMaxName("jtAbsEtaMax", std::to_string(jtAbsEtaMax).c_str());
-  TNamed rcDiffFileNameName("rcDiffFileName", rcDiffFileName);
-  TNamed flatPriorFileNameName("flatPriorFileName", flatPriorFileName);
+  TNamed rcDiffFileNameName("rcDiffFileName", rcDiffFileName.c_str());
+  TNamed flatPriorFileNameName("flatPriorFileName", flatPriorFileName.c_str());
   TNamed jecVarMCName("jecVarMC", std::to_string(jecVarMC).c_str());
   TNamed jerVarMCName("jerVarMC", std::to_string(jerVarMC).c_str());
   TNamed jecVarDataName("jecVarData", std::to_string(jecVarData).c_str());
