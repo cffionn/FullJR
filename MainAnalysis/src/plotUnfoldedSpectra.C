@@ -28,6 +28,7 @@
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/cppWatch.h"
 #include "Utility/include/doGlobalDebug.h"
+#include "Utility/include/getLinBins.h"
 #include "Utility/include/getLogBins.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/kirchnerPalette.h"
@@ -52,6 +53,7 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
 
   double smallDelta = 0.000001;
   std::vector<double> systVect;
+  std::vector<double> nomValVect;
 
   //Building parallel systematic histograms
   Int_t tempNBins = 0;
@@ -65,16 +67,24 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
   const Int_t nBins = tempNBins;
   Double_t bins[nBins+1];
 
+  Int_t binFillPos = 0;
   for(Int_t bIX = 0; bIX < nominal_p->GetNbinsX(); ++bIX){
     Double_t binCenter = nominal_p->GetBinCenter(bIX+1);
     if(binCenter < minXVal) continue;
     if(binCenter > maxXVal){
-      bins[bIX] = nominal_p->GetBinLowEdge(bIX+1);
+      bins[binFillPos] = nominal_p->GetBinLowEdge(bIX+1);
       break;
     }
 
-    bins[bIX] = nominal_p->GetBinLowEdge(bIX+1);
+    bins[binFillPos] = nominal_p->GetBinLowEdge(bIX+1);
+    binFillPos++;
   }
+
+  std::cout << "CHECK BINS:" << std::endl;
+  for(Int_t bIX = 0; bIX < nBins+1; ++bIX){
+    std::cout << bins[bIX] << ", ";
+  }
+  std::cout << std::endl;
 
   const Int_t nSystHist = syst_p.size();
   TH1D* systHist_p[nSystHist];
@@ -108,8 +118,8 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
       Double_t binVal = systHist_p[sI]->GetBinContent(binFillPos+1)*nominal_p->GetBinContent(bIX+1);
       Double_t binErr = systHist_p[sI]->GetBinError(binFillPos+1)*nominal_p->GetBinContent(bIX+1);
 
-      systHist_p[sI]->SetBinContent(binFillPos+1, binVal);
-      systHist_p[sI]->SetBinError(binFillPos+1, binErr);
+      syst_p.at(sI)->SetBinContent(bIX+1, binVal);
+      syst_p.at(sI)->SetBinError(bIX+1, binErr);
       binFillPos++;
     }
 
@@ -119,30 +129,31 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
 
   for(Int_t bIX = 0; bIX < nominal_p->GetNbinsX(); ++bIX){
     Double_t binCenter = nominal_p->GetBinCenter(bIX+1);
-    if(binCenter > maxXVal || binCenter < minXVal) continue;
+    if(binCenter > maxXVal || binCenter < minXVal){
+      for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+	syst_p.at(sI)->SetBinContent(bIX+1, 0.0);
+	syst_p.at(sI)->SetBinError(bIX+1, 0.0);
+      }
+      continue;
+    }
 
     Double_t tempVal = 0.0;
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
       tempVal = TMath::Sqrt(tempVal*tempVal + syst_p.at(sI)->GetBinContent(bIX+1)*syst_p.at(sI)->GetBinContent(bIX+1));
 
-      if(binCenter > maxXVal || binCenter < minXVal){
-	syst_p.at(sI)->SetBinContent(bIX+1, 0.0);
-	syst_p.at(sI)->SetBinError(bIX+1, 0.0);
-      }
-      else{
-	Double_t binVal = syst_p.at(sI)->GetBinContent(bIX+1)/nominal_p->GetBinContent(bIX+1);
-	Double_t tempRelErr = syst_p.at(sI)->GetBinError(bIX+1)/nominal_p->GetBinContent(bIX+1);
-
-	syst_p.at(sI)->SetBinContent(bIX+1, binVal);
-	syst_p.at(sI)->SetBinError(bIX+1, tempRelErr*binVal);
-	if(syst_p.at(sI)->GetBinContent(bIX+1) <= 0){
-	  syst_p.at(sI)->SetBinContent(bIX+1, smallDelta);
-	  syst_p.at(sI)->SetBinError(bIX+1, smallDelta);
-	}
+      Double_t binVal = syst_p.at(sI)->GetBinContent(bIX+1)/nominal_p->GetBinContent(bIX+1);
+      Double_t tempRelErr = syst_p.at(sI)->GetBinError(bIX+1)/nominal_p->GetBinContent(bIX+1);
+      
+      syst_p.at(sI)->SetBinContent(bIX+1, binVal);
+      syst_p.at(sI)->SetBinError(bIX+1, tempRelErr);
+      if(syst_p.at(sI)->GetBinContent(bIX+1) <= 0){
+	syst_p.at(sI)->SetBinContent(bIX+1, smallDelta);
+	syst_p.at(sI)->SetBinError(bIX+1, smallDelta);
       }
     }
-
+  
     systVect.push_back(tempVal);
+    nomValVect.push_back(nominal_p->GetBinContent(bIX+1));
   }
 
   double maxVal = -1;
@@ -162,25 +173,49 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     leg_p->SetTextFont(43);
     leg_p->SetTextSize(16);
     
+    TLatex* label_p = new TLatex();
+    label_p->SetTextFont(43);
+    label_p->SetTextSize(16);
+
     
     TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
     canv_p->SetTopMargin(0.01);
-    canv_p->SetRightMargin(0.01);
+    canv_p->SetRightMargin(0.001);
     canv_p->SetLeftMargin(0.12);
     canv_p->SetBottomMargin(0.12);
     
-    TH1D* tempHist_p = new TH1D("tempHist_p", ";Jet p_{T} (GeV);Fractional Systetmatics", 10, minXVal, maxXVal);
+    TH1D* tempHist_p = new TH1D("tempHist_p", ";Jet p_{T} (GeV);Fractional Systetmatics", nBins, bins);
     tempHist_p->GetXaxis()->SetTitleOffset(1.6);
-    
+    tempHist_p->SetMarkerStyle(1);
+    tempHist_p->SetMarkerSize(0.001);
+    tempHist_p->SetMarkerColor(1);
+    tempHist_p->SetLineColor(1);
+
     canv_p->cd();
     centerTitles(tempHist_p);
-    tempHist_p->SetMaximum(1.2*max[nI]);
+    tempHist_p->SetMaximum(1.5*max[nI]);
     tempHist_p->DrawCopy("HIST E1 P");
     
     gStyle->SetOptStat(0);
     gPad->SetLogx();
-    
+  
+  
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+      Int_t binFillPos = 0;
+      for(Int_t bIX = 0; bIX < syst_p.at(sI)->GetNbinsX(); ++bIX){
+	Double_t binCenter = syst_p.at(sI)->GetBinCenter(bIX+1);
+	if(binCenter > maxXVal || binCenter < minXVal) continue;
+
+	Double_t binVal = tempHist_p->GetBinContent(binFillPos+1)*tempHist_p->GetBinContent(binFillPos+1);
+	binVal += syst_p.at(sI)->GetBinContent(bIX+1)*syst_p.at(sI)->GetBinContent(bIX+1);
+	binVal = TMath::Sqrt(binVal);
+
+	tempHist_p->SetBinContent(binFillPos+1, binVal);
+	tempHist_p->SetBinError(binFillPos+1, smallDelta);
+
+	binFillPos++;
+      }
+
       syst_p.at(sI)->SetMarkerColor(colors[sI%nColor]);
       syst_p.at(sI)->SetMarkerStyle(styles[sI%nStyle]);
       syst_p.at(sI)->SetLineColor(colors[sI%nColor]);
@@ -191,29 +226,67 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
       
       leg_p->AddEntry(syst_p.at(sI), systStr.at(sI+1).c_str(), "P L");
     }
+
+    tempHist_p->DrawCopy("HIST E1 SAME");
+  
+    if(nI == 0){
+      std::cout << "Quick closure check: " << std::endl;
+      for(Int_t bIX = 0; bIX < nBins; ++bIX){
+	std::string binLowStr = prettyString(tempHist_p->GetBinLowEdge(bIX+1), 1, false);
+	std::string binHiStr = prettyString(tempHist_p->GetBinLowEdge(bIX+2), 1, false);
+	std::cout << " " << bIX << ", " << binLowStr << "-" << binHiStr << ": " << tempHist_p->GetBinContent(bIX+1) << ", " << systVect.at(bIX)/nomValVect.at(bIX) << std::endl;
+      }
+    }
     
+    drawWhiteBox(900, 1100, -max[nI]*9./10., -max[nI]/100.);
+
+    double yPos = 0 - max[nI]/20.;
+
+    label_p->DrawLatex(200, yPos, "200");
+    label_p->DrawLatex(400, yPos, "400");
+    label_p->DrawLatex(600, yPos, "600");
+    label_p->DrawLatex(800, yPos, "800");
+	
     leg_p->Draw("SAME");
-    
-    gPad->RedrawAxis();
-    gPad->SetTicks(1,2);
+
+    std::string smoothStr = "Unsmoothed";
+    if(doSmoothing) smoothStr = "Smoothed";
 
     std::string maxValStr = "NormalMax";
     if(nI != 0) maxValStr = "ZOOM";
     
-    std::string smoothStr = "Unsmoothed";
-    if(doSmoothing) smoothStr = "Smoothed";
+    Int_t nLabelBins = 20;
+    Double_t labelBins[nLabelBins+1];
+    getLinBins(0, max[nI], nLabelBins, labelBins);
+
+    label_p->DrawLatex(500, labelBins[19], maxValStr.c_str());
+    label_p->DrawLatex(500, labelBins[17], smoothStr.c_str());
+
+    gPad->RedrawAxis();
+    gPad->SetTicks(1,2);
 
     std::string nominalName = nominal_p->GetName();
+    std::string ppCentTag = "PP";
+    if(nominalName.find("Cent") != std::string::npos){
+      ppCentTag = nominalName.substr(nominalName.find("Cent"), nominalName.size());
+      ppCentTag.replace(0, 4, "");
+      ppCentTag.replace(ppCentTag.find("to"), 2, "-");
+      ppCentTag.replace(ppCentTag.find("_"), ppCentTag.size(), "");
+      ppCentTag = "PbPb " + ppCentTag + "%";
+    }
+    label_p->DrawLatex(500, labelBins[15], ppCentTag.c_str());
+
     const std::string dirName = "pdfDir/" + dateStr;
     checkMakeDir(dirName);
     const std::string saveName = "systErr_" + nominalName + "_" + maxValStr + "_" + smoothStr + "_" + dateStr +  ".pdf";
 
     quietSaveAs(canv_p, (dirName + "/" + saveName));
     plotNames->push_back(saveName);
-
+  
     delete tempHist_p;
     delete canv_p;
     delete leg_p;
+    delete label_p;
   }
 
   return systVect;
@@ -226,6 +299,8 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
 
   TBox* tempBox_p = new TBox();
   tempBox_p->SetFillColorAlpha(nominal_p->GetMarkerColor(), .25);
+
+  Int_t binFillPos = 0;
   for(Int_t bIX = 0; bIX < nominal_p->GetNbinsX(); ++bIX){
     Double_t binCenter = nominal_p->GetBinCenter(bIX+1);
     Double_t binLowEdge = nominal_p->GetBinLowEdge(bIX+1);
@@ -235,7 +310,8 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
     if(binCenter < minXVal) continue;
     if(binCenter > maxXVal) continue;
     
-    tempBox_p->DrawBox(binLowEdge, binContent - syst_.at(bIX), binHiEdge, binContent + syst_.at(bIX));
+    tempBox_p->DrawBox(binLowEdge, binContent - syst_.at(binFillPos), binHiEdge, binContent + syst_.at(binFillPos));
+    ++binFillPos;
   }
 
   return;
@@ -360,9 +436,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   //  const Int_t nSyst = TMath::Min(minForForLoop, nSystOrig + nAdditionalSyst);
   const Int_t nSyst = nSystOrig + nAdditionalSyst;
   std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
+  Int_t jerDataPos = -1;
   for(Int_t sI = 0; sI < nAdditionalSyst; ++sI){
     systStr.push_back(additionalSyst[sI]);
+    if(isStrSame(systStr.at(sI), "JERData")) jerDataPos = sI;
   }
+
+  if(jerDataPos >= 0) std::cout << "JERDATAPOS: " << jerDataPos << std::endl;
+  else std::cout << "WARNING: JERDATAPOS NOT FOUND" << std::endl;
 
   const Int_t nBayesCap = 10000;
   const Int_t nBayes = TMath::Min(nBayesCap, cutPropPbPb.GetNBayes());
@@ -922,6 +1003,18 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     const Int_t ppPos = jetPPMatchedToPbPb.at(tI);
     const std::string rValStr = std::to_string(rVal);
 
+    TCanvas* resModCompCanvUnsmoothed_p = new TCanavs("resModCompCanvUnsmoothed", "", 450, 450);
+    resModCompCanvUnsmoothed_p->SetTopMargin(0.08);
+    resModCompCanvUnsmoothed_p->SetRightMargin(0.01);
+    resModCompCanvUnsmoothed_p->SetLeftMargin(0.14);
+    resModCompCanvUnsmoothed_p->SetBottomMargin(0.14);    
+
+    TCanvas* resModCompCanvSmoothed_p = new TCanavs("resModCompCanvSmoothed", "", 450, 450);
+    resModCompCanvSmoothed_p->SetTopMargin(0.08);
+    resModCompCanvSmoothed_p->SetRightMargin(0.01);
+    resModCompCanvSmoothed_p->SetLeftMargin(0.14);
+    resModCompCanvSmoothed_p->SetBottomMargin(0.14);    
+
     for(Int_t mI = 0; mI < nResponseMod; ++mI){
       const std::string responseStr = prettyString(responseMod.at(mI), 2, true);
 
@@ -1007,7 +1100,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	leg_p->SetTextFont(43);
 	leg_p->SetTextSize(16);
 
-
 	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
 	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
 	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent("", true));
@@ -1018,21 +1110,26 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	for(Int_t sI = 1; sI < nSyst; ++sI){
 	  systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
 	}      
-	
-	pdfPerSlide.push_back({});
-	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()-1)), systSmoothBool[usI]);
+
+	Int_t slideSubVal = 0;
+	if(usI == 0) pdfPerSlide.push_back({});
+	else slideSubVal = nCentBins+1;
+
+	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI]);
     
-	slideTitles.push_back("PP Systematic (" + jetPPList.at(ppPos) + ", " + responseStr +  ")");
+	if(usI == 0) slideTitles.push_back("PP Systematic (" + jetPPList.at(ppPos) + ", " + responseStr +  ")");
+
 
 	for(unsigned int sI = 0; sI < systHistVectPP.size(); ++sI){
 	  delete systHistVectPP.at(sI);
 	}
-	drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
 
+	drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 	  const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+
 
 	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
 	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
@@ -1044,11 +1141,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  for(Int_t sI = 1; sI < nSyst; ++sI){
 	    systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
 	  }      
+	
+	  Int_t centSlideSubVal = 0;
+	  if(usI == 0) pdfPerSlide.push_back({});
+	  else centSlideSubVal = slideSubVal - 1 - cI;
 
-	  pdfPerSlide.push_back({});
-	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()-1)), systSmoothBool[usI]);
-	  slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
-	  
+	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI]);
+	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
+
 	  for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	    delete systHistVectPbPb.at(sI);
 	  }
@@ -1100,11 +1200,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	gPad->RedrawAxis();
 	gPad->SetTicks(1,2);
-
+      
 	std::string saveName = "spectra_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + idNameStr + "_" + plotAbsEtaStr + "_" + plotBayesStr + "_" + responseStr + "_" + systSmooth[usI] + "_" + dateStr + ".pdf";
-	slideTitles.push_back("Spectra (" + responseStr + ")");
-	pdfPerSlide.push_back({});
-	pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+
+	if(usI == 0){
+	  slideTitles.push_back("Spectra (" + responseStr + ")");
+	  pdfPerSlide.push_back({});
+	}
+
+	pdfPerSlide.at(pdfPerSlide.size() - 1).push_back(saveName);
 
 	saveName = "pdfDir/" + dateStr + "/" + saveName;
 

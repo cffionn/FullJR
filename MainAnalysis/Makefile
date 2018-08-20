@@ -16,7 +16,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe 
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -31,10 +31,10 @@ checkFullJRDir:
 	@$(CHECK_FULLJRDIR)
 
 bin/makeRawRAATree.exe: src/makeRawRAATree.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe src/makeRawRAATree.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe src/makeRawRAATree.C 
 
 bin/makeJetResponseTree.exe: src/makeJetResponseTree.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe src/makeJetResponseTree.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe src/makeJetResponseTree.C 
 
 bin/makeDeriveFlatResponse.exe: src/makeDeriveFlatResponse.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeDeriveFlatResponse.exe src/makeDeriveFlatResponse.C
@@ -65,6 +65,12 @@ bin/unfoldRawData.exe: src/unfoldRawData.C
 
 bin/deriveDijetWeights.exe: src/deriveDijetWeights.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe src/deriveDijetWeights.C
+
+bin/checkUnfoldTermination.exe: src/checkUnfoldTermination.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkUnfoldTermination.exe src/checkUnfoldTermination.C
+
+bin/combineFiles.exe: src/combineFiles.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/combineFiles.exe src/combineFiles.C
 
 clean:
 	rm -f ./*~
