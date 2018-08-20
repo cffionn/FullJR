@@ -437,9 +437,16 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t nSyst = nSystOrig + nAdditionalSyst;
   std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
   Int_t jerDataPos = -1;
+
   for(Int_t sI = 0; sI < nAdditionalSyst; ++sI){
     systStr.push_back(additionalSyst[sI]);
-    if(isStrSame(systStr.at(sI), "JERData")) jerDataPos = sI;
+  }
+
+  std::cout << "Processing full systematics: " << std::endl;
+  
+  for(Int_t sI = 0; sI < nSyst; ++sI){
+    std::cout << " " << sI << "/" << nSyst << ": " << systStr.at(sI) << std::endl;
+    if(isStrSame(systStr.at(sI), "JERData")) jerDataPos = sI - 1;
   }
 
   if(jerDataPos >= 0) std::cout << "JERDATAPOS: " << jerDataPos << std::endl;
@@ -564,6 +571,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   TH1D* jtPtUnfolded_RecoTrunc_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  Int_t bayesPosPbPb[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   
 
   for(Int_t tI = 0; tI < nJtPP; ++tI){
@@ -574,6 +582,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   TH1D* jtPtUnfolded_RecoTrunc_PP_h[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  Int_t bayesPosPP[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -666,35 +676,34 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       if(centPos < 0) std::cout << "Warning: Cannot find centPos for \'" << name << "\'. Code will likely break" << std::endl;
 
       jtPtUnfolded_RecoTrunc_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
-      /*
+    }
 
-      if(systPos == 0){
-	histGrab.stop();
-	histGrabLocal.stop();
-	histCloneLocal.start();
-	histClone.start();
-
-	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(centPos)) + "to" + std::to_string(centBinsHi.at(centPos));
-	const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bayesPos));
-	const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(absEtaPos), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(absEtaPos), 1, true);	
-	const std::string resStr = "ResponseMod" + prettyString(responseMod.at(modPos), 2, true);
-
-      	for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
-	  const std::string tempSystStr = systStr.at(sI) + "_";
-	  const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idPos) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+    //Building best bayes
+    for(Int_t cI = 0; cI < nCentBins; ++cI){
+      const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      
+      for(unsigned int idI = 0; idI < idStr.size(); ++idI){
+	for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	  const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
 	  
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][sI][bayesPos] = (TH1D*) (((TH1D*)key->ReadObj())->Clone(newName.c_str()));   
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
+	    
+	    for(Int_t sI = 0; sI < nSystOrig; ++sI){
+	      const std::string tempHistTag = jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + systStr.at(systPos);
+	      if(histTagMapPbPb.count(tempHistTag) == 0){
+		std::cout << "WARNING: tag \'" << tempHistTag << "\' not found. Setting to -1" << std::endl;
+		bayesPosPbPb[tI][cI][idI][mI][aI][sI] = -1;
+	      }
+	      else{
+		bayesPosPbPb[tI][cI][idI][mI][aI][sI] = histTagMapPbPb[tempHistTag];
+	      }	      
+	    }
+	  }
 	}
-
-	histClone.stop();
-	histCloneLocal.stop();
-
-	histGrab.start();
-	histGrabLocal.start();
       }
-      */
-    }    
-
+    }
+  
     histGrabLocal.stop();
     histGrab.stop();
 
@@ -716,13 +725,16 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	    
 	    for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
 	      const std::string tempSystStr = systStr.at(sI) + "_";
-	      
+
+	      bayesPosPbPb[tI][cI][idI][mI][aI][sI] = bayesPosPbPb[tI][cI][idI][mI][aI][0];
+
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 		
 		const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 		
 		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+
 	      }
 	    }
 	  }
@@ -808,6 +820,28 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       jtPtUnfolded_RecoTrunc_PP_h[tI][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
     }
 
+    //Building best bayes
+    for(unsigned int idI = 0; idI < idStr.size(); ++idI){
+      for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	const std::string resStr = "ResponseMod" + prettyString(responseMod.at(mI), 2, true);
+	
+	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
+	  
+	  for(Int_t sI = 0; sI < nSystOrig; ++sI){
+	    const std::string tempHistTag = jetPPList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + systStr.at(systPos);
+	    if(histTagMapPP.count(tempHistTag) == 0){
+	      std::cout << "WARNING: tag \'" << tempHistTag << "\' not found. Setting to -1" << std::endl;
+	      bayesPosPP[tI][cI][idI][mI][aI][sI] = -1;
+	    }
+	    else{
+	      bayesPosPP[tI][cI][idI][mI][aI][sI] = histTagMapPP[tempHistTag];
+	    }
+	  }
+	}
+      }
+    }
+
     histGrabLocal.stop();
     histGrab.stop();
     
@@ -826,6 +860,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  
 	  for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
 	    const std::string tempSystStr = systStr.at(sI) + "_";
+
+	    bayesPosPP[tI][cI][idI][mI][aI][sI] = bayesPosPP[tI][cI][idI][mI][aI][0];
 	    
 	    for(Int_t bI = 0; bI < nBayes; ++bI){
 	      const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
@@ -1003,17 +1039,92 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     const Int_t ppPos = jetPPMatchedToPbPb.at(tI);
     const std::string rValStr = std::to_string(rVal);
 
-    TCanvas* resModCompCanvUnsmoothed_p = new TCanavs("resModCompCanvUnsmoothed", "", 450, 450);
-    resModCompCanvUnsmoothed_p->SetTopMargin(0.08);
-    resModCompCanvUnsmoothed_p->SetRightMargin(0.01);
-    resModCompCanvUnsmoothed_p->SetLeftMargin(0.14);
-    resModCompCanvUnsmoothed_p->SetBottomMargin(0.14);    
+    std::string rStr = "R=";
+    if(getRVal(jetPbPbList.at(tI)) < 10) rStr = rStr + "0." + std::to_string(getRVal(jetPbPbList.at(tI)));
+    else rStr = rStr + "1.0";
 
-    TCanvas* resModCompCanvSmoothed_p = new TCanavs("resModCompCanvSmoothed", "", 450, 450);
-    resModCompCanvSmoothed_p->SetTopMargin(0.08);
-    resModCompCanvSmoothed_p->SetRightMargin(0.01);
-    resModCompCanvSmoothed_p->SetLeftMargin(0.14);
-    resModCompCanvSmoothed_p->SetBottomMargin(0.14);    
+    Double_t xMinVal = 200;
+    Double_t xPointMinVal = xMinVal;
+    if(rVal >= 8) xPointMinVal = 300;
+    Double_t xMaxVal = 1200;
+    Double_t xPointMaxVal = 1000;
+
+    TLegend* legRes_p = new TLegend(0.7, 0.65, 0.95, 0.88);
+    legRes_p->SetBorderSize(0);
+    legRes_p->SetFillColor(0);
+    legRes_p->SetFillStyle(0);
+    legRes_p->SetTextFont(43);
+    legRes_p->SetTextSize(16);
+
+    const Int_t nPad = 2;
+    TCanvas* resModCompCanv_p[nSystSmooth];
+    TPad* resModCompPad_p[nSystSmooth][nPad];
+    TH1D* resModHist_p[nSystSmooth];
+    TH1D* resModHistRat_p[nSystSmooth];
+
+    const Double_t yPadFrac = 0.35;
+    const Double_t yPadLow[nPad] = {yPadFrac, 0.0};
+    const Double_t yPadHi[nPad] = {1.0, yPadFrac};
+    const Double_t padLeftMarg = 0.14;
+
+    for(Int_t usI = 0; usI < nSystSmooth; ++usI){
+      resModCompCanv_p[usI] = new TCanvas(("resModCompCanv_" + systSmooth[usI]).c_str(), "", 450, 450);
+      resModCompCanv_p[usI]->SetTopMargin(0.001);
+      resModCompCanv_p[usI]->SetRightMargin(0.001);
+      resModCompCanv_p[usI]->SetLeftMargin(0.001);
+      resModCompCanv_p[usI]->SetBottomMargin(0.001);    
+
+      for(Int_t pI = 0; pI < nPad; ++pI){
+	resModCompCanv_p[usI]->cd();
+	resModCompPad_p[usI][pI] = new TPad(("resModCompPad_" + systSmooth[usI] + "_" + std::to_string(pI)).c_str(), "", 0.0, yPadLow[pI], 1.0, yPadHi[pI]);
+	resModCompPad_p[usI][pI]->SetRightMargin(0.001);
+	resModCompPad_p[usI][pI]->SetLeftMargin(padLeftMarg);
+
+	if(pI == 0) resModCompPad_p[usI][pI]->SetTopMargin(0.01);
+	else resModCompPad_p[usI][pI]->SetTopMargin(0.001);
+
+	if(pI == 0) resModCompPad_p[usI][pI]->SetBottomMargin(0.001);
+	else resModCompPad_p[usI][pI]->SetBottomMargin(padLeftMarg/yPadFrac);
+
+	resModCompPad_p[usI][pI]->Draw("SAME");
+      }
+
+      resModHist_p[usI] = new TH1D(("resModHist_" + systSmooth[usI]).c_str(), ";Jet p_{T} (GeV/c);Fractional Systematic", 10, xPointMinVal, xPointMaxVal);
+      centerTitles(resModHist_p[usI]);
+
+      resModHist_p[usI]->SetMaximum(0.0);
+      resModHist_p[usI]->SetMinimum(-1);
+      resModCompPad_p[usI][0]->cd();
+      resModHist_p[usI]->GetYaxis()->SetTitleFont(43);
+      resModHist_p[usI]->GetYaxis()->SetTitleSize(16);
+      resModHist_p[usI]->GetYaxis()->SetLabelFont(43);
+      resModHist_p[usI]->GetYaxis()->SetLabelSize(10);
+      resModHist_p[usI]->Draw("HIST");
+
+
+      resModHistRat_p[usI] = new TH1D(("resModHistRat_" + systSmooth[usI]).c_str(), ";Jet p_{T} (GeV/c);Old/New", 10, xPointMinVal, xPointMaxVal);
+      centerTitles(resModHistRat_p[usI]);
+
+      resModHistRat_p[usI]->SetMaximum(1.1);
+      resModHistRat_p[usI]->SetMinimum(0.4);
+      resModCompPad_p[usI][1]->cd();
+
+      resModHistRat_p[usI]->GetYaxis()->SetTitleFont(43);
+      resModHistRat_p[usI]->GetYaxis()->SetTitleSize(16);
+      resModHistRat_p[usI]->GetYaxis()->SetLabelFont(43);
+      resModHistRat_p[usI]->GetYaxis()->SetLabelSize(10);
+
+      resModHistRat_p[usI]->GetXaxis()->SetTitleFont(43);
+      resModHistRat_p[usI]->GetXaxis()->SetTitleSize(16);
+      resModHistRat_p[usI]->GetXaxis()->SetLabelFont(43);
+      resModHistRat_p[usI]->GetXaxis()->SetLabelSize(10);
+
+      resModHistRat_p[usI]->GetXaxis()->SetTitleOffset(2.0);
+
+      resModHistRat_p[usI]->Draw("HIST");
+    }
+  
+    std::vector<TH1D*> prevJERData;
 
     for(Int_t mI = 0; mI < nResponseMod; ++mI){
       const std::string responseStr = prettyString(responseMod.at(mI), 2, true);
@@ -1032,11 +1143,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	spectCanv_p->SetLeftMargin(0.14);
 	spectCanv_p->SetBottomMargin(0.14);
 
-	Double_t xMinVal = 200;
-	Double_t xPointMinVal = xMinVal;
-	if(getRVal(jetPbPbList.at(tI)) >= 8) xPointMinVal = 300;
-	Double_t xMaxVal = 1200;
-	Double_t xPointMaxVal = 1000;
 
 	const std::string yAxisTitle = "#frac{d^{2}#sigma^{pp}}{dp_{T}d#eta} or #frac{1}{N_{evt}}#frac{1}{#LTTAA#GT}#frac{d^{2}N^{PbPb}}{dp_{T}d#eta} [#frac{nb}{GeV/c}]";
 	TH1F* tempHist_p = new TH1F("tempHist_p", (";Jet p_{T} (GeV/c);" + yAxisTitle).c_str(), 10, xMinVal, xMaxVal);
@@ -1044,7 +1150,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
 	tempHist_p->GetYaxis()->SetTitleOffset(1.6);
-	
+
 	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
 	  bool binIsBad = jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
 	  binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
@@ -1115,10 +1221,41 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	if(usI == 0) pdfPerSlide.push_back({});
 	else slideSubVal = nCentBins+1;
 
+	std::cout << __LINE__ << std::endl;
 	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI]);
+	std::cout << __LINE__ << std::endl;
     
-	if(usI == 0) slideTitles.push_back("PP Systematic (" + jetPPList.at(ppPos) + ", " + responseStr +  ")");
+	resModCompCanv_p[usI]->cd();
+	resModCompPad_p[usI][0]->cd();
+	Int_t resStyle = -1;
+	Int_t resCol = kPalette.getColor(getColorPosFromCent("", true));
+	std::string drawStr = "HIST P SAME";
+	if(mI == 0) resStyle = getStyleFromCent("", true);
+	else resStyle = getAltStyleFromCent("", true);
 
+	systHistVectPP.at(jerDataPos)->SetMarkerSize(0.8);
+	systHistVectPP.at(jerDataPos)->SetMarkerStyle(resStyle);
+	systHistVectPP.at(jerDataPos)->SetMarkerColor(resCol);
+	systHistVectPP.at(jerDataPos)->SetLineColor(resCol);
+
+	systHistVectPP.at(jerDataPos)->DrawCopy(drawStr.c_str());
+
+	if(systHistVectPP.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPP.at(jerDataPos)->GetMaximum());
+
+	if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPP.at(jerDataPos)->Clone((std::string(systHistVectPP.at(jerDataPos)->GetName()) + "_CLONE").c_str()));
+	else{
+	  if(usI == 0) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(0));
+	  else if(usI == 1) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins));
+
+	  resModCompCanv_p[usI]->cd();
+	  resModCompPad_p[usI][1]->cd();
+
+	  systHistVectPP.at(jerDataPos)->DrawCopy("HIST P SAME");	  
+	}
+   
+	std::cout << __LINE__ << std::endl;
+
+	if(usI == 0) slideTitles.push_back("PP Systematic (" + jetPPList.at(ppPos) + ", " + responseStr +  ")");
 
 	for(unsigned int sI = 0; sI < systHistVectPP.size(); ++sI){
 	  delete systHistVectPP.at(sI);
@@ -1146,13 +1283,50 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  if(usI == 0) pdfPerSlide.push_back({});
 	  else centSlideSubVal = slideSubVal - 1 - cI;
 
+	  std::cout << __LINE__ << std::endl;
 	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI]);
+	  std::cout << __LINE__ << std::endl;
 	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
+
+	  resModCompCanv_p[usI]->cd();
+	  resModCompPad_p[usI][0]->cd();
+	  resStyle = -1;
+	  resCol = kPalette.getColor(getColorPosFromCent(centStr, false));
+	  drawStr = "HIST P SAME";
+	  if(mI == 0) resStyle = getStyleFromCent(centStr, false);
+	  else resStyle = getAltStyleFromCent(centStr, false);
+	  
+	  systHistVectPbPb.at(jerDataPos)->SetMarkerSize(0.8);
+	  systHistVectPbPb.at(jerDataPos)->SetMarkerStyle(resStyle);
+	  systHistVectPbPb.at(jerDataPos)->SetMarkerColor(resCol);
+	  systHistVectPbPb.at(jerDataPos)->SetLineColor(resCol);
+
+	  std::cout << __LINE__ << std::endl;
+	  
+	  systHistVectPbPb.at(jerDataPos)->DrawCopy(drawStr.c_str());
+
+	  if(systHistVectPbPb.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPbPb.at(jerDataPos)->GetMaximum());
+
+	  if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPbPb.at(jerDataPos)->Clone((std::string(systHistVectPbPb.at(jerDataPos)->GetName()) + "_CLONE").c_str()));	  
+	  else{
+	    if(usI == 0) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(0 + cI + 1));
+	    else if(usI == 1) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins + cI + 1));
+	    
+	    resModCompCanv_p[usI]->cd();
+	    resModCompPad_p[usI][1]->cd();
+	    
+	    systHistVectPbPb.at(jerDataPos)->DrawCopy("HIST P SAME");
+	  }
+	
+
+	  std::cout << __LINE__ << std::endl;
 
 	  for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	    delete systHistVectPbPb.at(sI);
 	  }
 	  drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
+
+	  std::cout << __LINE__ << std::endl;
 	}
 
 
@@ -1161,16 +1335,21 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
 	}
-
+      
+	
+	std::cout << __LINE__ << std::endl;
 
 	for(Int_t cI = nCentBins-1; cI >= 0; --cI){
 	  const std::string centLegStr = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "% x 10^{" + std::to_string(cI+1) + "}";
+	  const std::string centLegStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
 	  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr.c_str(), "P L F");	
+	  if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr2.c_str(), "P L");	
 	}
-
+      
 	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
 	leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L F");
+	if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L");
       
 	gPad->SetLogy();
 	gPad->SetLogx();
@@ -1178,16 +1357,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	drawWhiteBox(900, 1100, minVal/10, minVal*.9);
 
+	std::cout << __LINE__ << std::endl;
+
 	label_p->DrawLatex(200, yBins[0]/4., "200");
 	label_p->DrawLatex(400, yBins[0]/4., "400");
 	label_p->DrawLatex(600, yBins[0]/4., "600");
 	label_p->DrawLatex(800, yBins[0]/4., "800");
 	label_p->DrawLatex(1000, yBins[0]/4., "1000");
-
-	std::string rStr = "R=";
-	if(getRVal(jetPbPbList.at(tI)) < 10) rStr = rStr + "0." + std::to_string(getRVal(jetPbPbList.at(tI)));
-	else rStr = rStr + "1.0";
-    
+          
 	label_p->DrawLatex(250, yBins[19], ("anti-k_{T} " + rStr).c_str());
 	label_p->DrawLatex(250, yBins[18], "|#eta_{jets}| < 2");
 
@@ -1213,6 +1390,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	saveName = "pdfDir/" + dateStr + "/" + saveName;
 
 	quietSaveAs(spectCanv_p, saveName);
+
+	std::cout << __LINE__ << std::endl;
 	
 	delete spectCanv_p;
 	delete label_p;
@@ -1224,6 +1403,68 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  }
 	}
       }
+    }
+
+    std::cout << __LINE__ << std::endl;
+
+    for(Int_t usI = 0; usI < nSystSmooth; ++usI){
+      TLatex* label_p = new TLatex();
+      label_p->SetTextFont(43);
+      label_p->SetTextSize(16);
+
+      resModCompCanv_p[usI]->cd();
+      resModCompPad_p[usI][0]->cd();
+      Double_t maxVal = resModHist_p[usI]->GetMaximum()*1.2;
+      resModHist_p[usI]->SetMaximum(maxVal);
+      resModHist_p[usI]->SetMinimum(0.0);
+
+      label_p->DrawLatex(500, .12, rStr.c_str());
+
+      std::cout << __LINE__ << std::endl;
+      legRes_p->Draw("SAME");
+      std::cout << __LINE__ << std::endl;
+
+      gPad->SetLogx();
+      gPad->Modified();
+
+      resModCompCanv_p[usI]->cd();
+      resModCompPad_p[usI][1]->cd();
+      gPad->SetLogx();
+
+      drawWhiteBox(900, 1100, 0.2, .39);
+
+      label_p->DrawLatex(200, .3, "200");
+      label_p->DrawLatex(400, .3, "400");
+      label_p->DrawLatex(600, .3, "600");
+      label_p->DrawLatex(800, .3, "800");
+    
+      std::string saveName = "resErrComp_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + idNameStr + "_" + plotAbsEtaStr + "_" + plotBayesStr + "_" + systSmooth[usI] + "_"+ dateStr + ".pdf";
+
+      if(usI == 0){
+	slideTitles.push_back("Resolution Error Comp.");
+	pdfPerSlide.push_back({});
+      }
+      
+      pdfPerSlide.at(pdfPerSlide.size() - 1).push_back(saveName);
+      
+      saveName = "pdfDir/" + dateStr + "/" + saveName;
+
+      quietSaveAs(resModCompCanv_p[usI], saveName);
+
+      for(Int_t pI = 0; pI < nPad; ++pI){
+	delete resModCompPad_p[usI][pI];
+      }
+
+      delete resModCompCanv_p[usI];
+      delete resModHist_p[usI];
+      std::cout << __LINE__ << std::endl;
+      std::cout << __LINE__ << std::endl;
+    }
+    delete legRes_p;
+
+    for(unsigned int i = 0; i < prevJERData.size(); ++i){
+      delete prevJERData.at(i);
+      prevJERData.at(i) = NULL;
     }
   }
 
