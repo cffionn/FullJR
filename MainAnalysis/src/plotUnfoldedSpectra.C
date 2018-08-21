@@ -199,6 +199,24 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     gStyle->SetOptStat(0);
     gPad->SetLogx();
   
+    double systMaxVal = -1;
+    unsigned int systMaxPos = -1;
+    double systSubMaxVal = -1;
+    unsigned int systSubMaxPos = -1;
+
+    for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+      if(systMaxVal < syst_p.at(sI)->GetMaximum()){
+	systSubMaxVal = systMaxVal;
+	systSubMaxPos = systMaxPos;
+
+	systMaxVal = syst_p.at(sI)->GetMaximum();
+	systMaxPos = sI;
+      }
+      else if(systSubMaxVal < syst_p.at(sI)->GetMaximum()){
+	systSubMaxVal = syst_p.at(sI)->GetMaximum();
+	systSubMaxPos = sI;
+      }
+    }
   
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
       Int_t binFillPos = 0;
@@ -224,7 +242,10 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
       syst_p.at(sI)->DrawCopy("HIST E1 P SAME");
       syst_p.at(sI)->DrawCopy("HIST E1 SAME");
       
-      leg_p->AddEntry(syst_p.at(sI), systStr.at(sI+1).c_str(), "P L");
+      std::string legStr = systStr.at(sI+1);
+      if(systMaxPos == sI) legStr = legStr + " (Dominant)";
+      else if(systSubMaxPos == sI) legStr = legStr + " (Sub-dominant)";
+      leg_p->AddEntry(syst_p.at(sI), legStr.c_str(), "P L");
     }
 
     tempHist_p->DrawCopy("HIST E1 SAME");
@@ -696,7 +717,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 		bayesPosPbPb[tI][cI][idI][mI][aI][sI] = -1;
 	      }
 	      else{
-		bayesPosPbPb[tI][cI][idI][mI][aI][sI] = histTagMapPbPb[tempHistTag];
+		int tempSet = histTagMapPbPb[tempHistTag];
+		std::cout << "tag \'" << tempHistTag << "\' found. Setting to " << tempSet << std::endl;
+		bayesPosPbPb[tI][cI][idI][mI][aI][sI] = tempSet;
 	      }	      
 	    }
 	  }
@@ -829,13 +852,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
 	  
 	  for(Int_t sI = 0; sI < nSystOrig; ++sI){
-	    const std::string tempHistTag = jetPPList.at(tI) + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + systStr.at(sI);
+	    const std::string tempHistTag = jetPPList.at(tI) + "_PP_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + systStr.at(sI);
 	    if(histTagMapPP.count(tempHistTag) == 0){
 	      std::cout << "WARNING: tag \'" << tempHistTag << "\' not found. Setting to -1" << std::endl;
 	      bayesPosPP[tI][idI][mI][aI][sI] = -1;
 	    }
 	    else{
-	      bayesPosPP[tI][idI][mI][aI][sI] = histTagMapPP[tempHistTag];
+	      int tempSet = histTagMapPP[tempHistTag];
+	      std::cout << "tag \'" << tempHistTag << "\' found. Setting to " << tempSet << std::endl;
+	      bayesPosPP[tI][idI][mI][aI][sI] = tempSet;
 	    }
 	  }
 	}
