@@ -36,6 +36,8 @@ class texSlideCreator
 
 double texSlideCreator::GetTextWidthFromNPDF(int npdf)
 {
+  double defVal = .175;
+
   if(npdf == 1) return .6;
   else if(npdf == 2) return .45;
   else if(npdf == 3) return .32;
@@ -45,13 +47,27 @@ double texSlideCreator::GetTextWidthFromNPDF(int npdf)
   else if(npdf == 7) return .24;
   else if(npdf == 8) return .24;
   else if(npdf == 9) return .32;
-  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning min value " << .24 << " for n=" << npdf << " plots." << std::endl;
+  else if(npdf == 10) return .24;
+  else if(npdf == 11) return .24;
+  else if(npdf == 12) return .24;
+  else if(npdf == 12) return .24;
+  else if(npdf == 13) return .185;
+  else if(npdf == 14) return .185;
+  else if(npdf == 15) return .185;
+  else if(npdf == 16) return .185;
+  else if(npdf == 17) return .175;
+  else if(npdf == 18) return .175;
+  else if(npdf == 19) return .175;
+  else if(npdf == 20) return .175;
+  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning min value " << defVal << " for n=" << npdf << " plots." << std::endl;
   
-  return .24;
+  return defVal;
 }
 
 int texSlideCreator::GetPlotsPerRowFromNPDF(int npdf)
 {
+  int defVal = 5;
+
   if(npdf == 1) return 1;
   else if(npdf == 2) return 2;
   else if(npdf == 3) return 3;
@@ -61,9 +77,20 @@ int texSlideCreator::GetPlotsPerRowFromNPDF(int npdf)
   else if(npdf == 7) return 4;
   else if(npdf == 8) return 4;
   else if(npdf == 9) return 3;
-  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning max plots per row value " << 4 << " for n=" << npdf << " plots." << std::endl;
+  else if(npdf == 10) return 4;
+  else if(npdf == 11) return 4;
+  else if(npdf == 12) return 4;
+  else if(npdf == 13) return 4;
+  else if(npdf == 14) return 4;
+  else if(npdf == 15) return 4;
+  else if(npdf == 16) return 4;
+  else if(npdf == 17) return 5;
+  else if(npdf == 18) return 5;
+  else if(npdf == 19) return 5;
+  else if(npdf == 20) return 5;
+  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning max plots per row value " << defVal << " for n=" << npdf << " plots." << std::endl;
 
-  return 4;
+  return defVal;
 }
 
 bool texSlideCreator::CreateTexSlides()

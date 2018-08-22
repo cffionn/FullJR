@@ -8,6 +8,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TDatime.h"
 #include "TDirectory.h"
 #include "TCanvas.h"
@@ -230,17 +231,19 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  const Int_t nBayes = 35;
-  const Int_t bigBayesSymm = 2;
-  const Int_t nBayesBig = nBayes - (2*bigBayesSymm + 1);
+  const Int_t nBayes = 37;
+  const Int_t nBigBayesSymm = 3;
+  const Int_t nBayesBig = nBayes - (2*nBigBayesSymm + 1);
   Int_t temp100Pos = -1;
   Int_t bayesVal[nBayes];
   for(Int_t bI = 0; bI < nBayes; ++bI){
-    if(bI >= nBayesBig) bayesVal[bI] = 100 + 1 + bigBayesSymm - (nBayes - bI);
+    if(bI >= nBayesBig) bayesVal[bI] = 100 + 1 + nBigBayesSymm - (nBayes - bI);
     else bayesVal[bI] = bI+1;
 
     if(bayesVal[bI] == 100) temp100Pos = bI;
   }
+
+  const Int_t nSuperBayes = 0;
 
   const Int_t bayes100Pos = temp100Pos;
 
@@ -249,6 +252,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     std::cout << " " << bI << "/" << nBayes << ": " << bayesVal[bI] << std::endl;
   }
 
+  std::cout << "N Super Bayes: " << nSuperBayes << std::endl;
+
   //  return 0;
 
   const Int_t nHistDim = nDataJet*nCentBins*nID*nResponseMod*nJtAbsEtaBins*nSyst;
@@ -256,7 +261,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<int> histBestBayes;
   
   cutPropData.SetNBayes(nBayes);
+  cutPropData.SetNBigBayesSymm(nBigBayesSymm);
   cutPropData.SetBayesVal(nBayes, bayesVal);
+  cutPropData.SetNSuperBayes(nSuperBayes);
 
   cutPropData.SetNResponseMod(nResponseMod);
   cutPropData.SetResponseMod(responseMod);
@@ -372,17 +379,54 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
-	      for(Int_t bI = 0; bI < nBayes; ++bI){	    
-		RooUnfoldBayes bayes(rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI], jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], bayesVal[bI], false, "name");
-		bayes.SetVerbose(0);	    
+	      RooUnfoldResponse* rooResSuperClone_p = (RooUnfoldResponse*)rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI]->Clone("rooResSuperClone_p");
+	      TH2D* initRes_p = (TH2D*)rooResSuperClone_p->Hresponse()->Clone("initRes_p");
+	      TH1D* initMeas_p = (TH1D*)rooResSuperClone_p->Hmeasured()->Clone("initMeas_p");
+	      
+	      for(Int_t bsI = 0; bsI < nSuperBayes; ++bsI){
+		RooUnfoldBayes superBayes(rooResSuperClone_p, jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 3, false, "name");
+		superBayes.SetVerbose(-1);
+		TH1D* unfold_h = (TH1D*)superBayes.Hreco(RooUnfold::kCovToy);
+		Double_t tot = unfold_h->Integral();
+		unfold_h->Scale(1./tot);
+
+		for(Int_t bIY = 0; bIY < initRes_p->GetNbinsY(); ++bIY){
+		  Double_t sumOverX = 0.0;
+		  for(Int_t bIX = 0; bIX < initRes_p->GetNbinsX(); ++bIX){
+		    sumOverX += initRes_p->GetBinContent(bIX+1, bIY+1);
+		  }
+
+		  Double_t scaleFactor = unfold_h->GetBinContent(bIY+1)/sumOverX;
+
+		  for(Int_t bIX = 0; bIX < initRes_p->GetNbinsX(); ++bIX){
+		    initRes_p->SetBinContent(bIX+1, bIY+1, initRes_p->GetBinContent(bIX+1, bIY+1)*scaleFactor);
+		  }
+		}
+		
+		delete rooResSuperClone_p;
+		rooResSuperClone_p = NULL;
+		rooResSuperClone_p = new RooUnfoldResponse(initMeas_p, unfold_h, initRes_p, "rooResSuperClone_p");
+	      }
+	    
+
+	      delete initRes_p;
+	      delete initMeas_p;
+
+	      for(Int_t bI = 0; bI < nBayes; ++bI){	    		
+		RooUnfoldResponse* rooResClone_p = (RooUnfoldResponse*)rooResSuperClone_p->Clone("rooResClone_p");
+
+		RooUnfoldBayes bayes(rooResClone_p, jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], bayesVal[bI], false, ("name_" + std::to_string(bI)).c_str());
+		bayes.SetVerbose(-1);	    
 		TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
 		
 		for(Int_t bIX = 0; bIX < unfold_h->GetNbinsX(); ++bIX){
 		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
 		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
 		}
+		delete rooResClone_p;
 	      }
-	    }	    
+	      delete rooResSuperClone_p;
+	    }
 	  }
 	}
       }
@@ -617,7 +661,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      TH1D* bandValLow_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValLow");
 	      TH1D* bandValHi_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValHi");
 
-	      for(Int_t bI = bayes100Pos-bigBayesSymm; bI <= bayes100Pos+bigBayesSymm; ++bI){
+	      for(Int_t bI = bayes100Pos-nBigBayesSymm; bI <= bayes100Pos+nBigBayesSymm; ++bI){
 		for(Int_t bIX = 0; bIX < bandValLow_p->GetNbinsX(); ++bIX){
 		  if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) < bandValLow_p->GetBinContent(bIX+1)){
 		    bandValLow_p->SetBinContent(bIX+1, jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));

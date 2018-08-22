@@ -36,9 +36,17 @@
 #include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/returnRootFileContentsList.h"
 
-
-std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vector<std::string> systStr, Double_t minXVal, Double_t maxXVal, std::vector<std::string>* plotNames, bool doSmoothing)
+std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vector<std::string> systStr, Double_t minXVal, Double_t maxXVal, std::vector<std::string>* plotNames, bool doSmoothing, std::vector<std::vector<std::string > > systToCombo)
 {
+  std::cout << "Starting getSyst: " << std::endl;
+  std::cout << "SystHist input: " << std::endl;
+  for(unsigned int i = 0; i < syst_p.size(); ++i){
+    std::cout << syst_p.at(i)->GetName() << std::endl;
+  }
+  for(unsigned int sI = 0; sI < systStr.size(); ++sI){
+    std::cout << systStr.at(sI) << std::endl;
+  }
+
   //Setting some style and color for TH1
   vanGoghPalette vg;
   const Int_t nColor = 5;
@@ -87,6 +95,50 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
   std::cout << std::endl;
 
   const Int_t nSystHist = syst_p.size();
+  bool systToBeCombined[nSystHist];
+  std::vector<std::vector<int> > postToCombine;
+  std::string systLegStr[nSystHist];
+  bool systToBeSkipped[nSystHist];
+
+  for(Int_t sI = 0; sI < nSystHist; ++sI){
+    systToBeCombined[sI] = false;
+    systLegStr[sI] = systStr.at(sI);
+    systToBeSkipped[sI] = false;
+    postToCombine.push_back({});
+
+    for(unsigned int cI = 0; cI < systToCombo.size(); ++cI){
+      if(isStrSame(systStr.at(sI), systToCombo.at(cI).at(0))){
+	systToBeCombined[sI] = true;
+	systLegStr[sI] = systToCombo.at(cI).at(systToCombo.at(cI).size()-1);
+
+	for(Int_t sI2 = 0; sI2 < nSystHist; ++sI2){
+	  bool doCombine = false;
+	  for(unsigned int skI = 1; skI < systToCombo.at(cI).size()-1; ++skI){
+	    if(isStrSame(systStr.at(sI2), systToCombo.at(cI).at(skI))){
+	      doCombine = true;
+	      break;
+	    }
+	  }
+
+	  if(doCombine) postToCombine.at(postToCombine.size()-1).push_back(sI2);
+	}
+
+	break;
+      }
+      else{
+	bool doBreak = false;
+	for(unsigned int skI = 1; skI < systToCombo.at(cI).size()-1; ++skI){
+	  if(isStrSame(systStr.at(sI), systToCombo.at(cI).at(skI))){
+	    systToBeSkipped[sI] = true;
+	    doBreak = true;
+	    break;
+	  }
+	}
+	if(doBreak) break;
+      }
+    }
+  }
+
   TH1D* systHist_p[nSystHist];
 
   for(Int_t sI = 0; sI < nSystHist; ++sI){
@@ -126,6 +178,26 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     delete systHist_p[sI];
   }
 
+  for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+    if(!systToBeCombined[sI]) continue;
+
+    for(unsigned int cI = 0; cI < postToCombine.at(sI).size(); ++cI){
+      std::cout << "Combining " << systStr.at(sI) << " and " << systStr.at(postToCombine.at(sI).at(cI)) << std::endl;
+
+      for(Int_t bIX = 0; bIX < syst_p.at(sI)->GetNbinsX(); ++bIX){
+	Double_t binCenter = syst_p.at(sI)->GetBinCenter(bIX+1);
+	if(binCenter > maxXVal || binCenter < minXVal) continue;
+
+	Double_t binC1 = syst_p.at(sI)->GetBinContent(bIX+1);
+	Double_t binC2 = syst_p.at(postToCombine.at(sI).at(cI))->GetBinContent(bIX+1);
+	
+	if(binC2 > binC1){
+	  syst_p.at(sI)->SetBinContent(bIX+1, binC2);
+	  syst_p.at(sI)->SetBinError(bIX+1, syst_p.at(sI)->GetBinError(bIX+1)*binC2/binC1);
+	}
+      }
+    }
+  }
 
   for(Int_t bIX = 0; bIX < nominal_p->GetNbinsX(); ++bIX){
     Double_t binCenter = nominal_p->GetBinCenter(bIX+1);
@@ -139,11 +211,11 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
 
     Double_t tempVal = 0.0;
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
-      tempVal = TMath::Sqrt(tempVal*tempVal + syst_p.at(sI)->GetBinContent(bIX+1)*syst_p.at(sI)->GetBinContent(bIX+1));
-
       Double_t binVal = syst_p.at(sI)->GetBinContent(bIX+1)/nominal_p->GetBinContent(bIX+1);
       Double_t tempRelErr = syst_p.at(sI)->GetBinError(bIX+1)/nominal_p->GetBinContent(bIX+1);
       
+      if(!systToBeSkipped[sI]) tempVal = TMath::Sqrt(tempVal*tempVal + syst_p.at(sI)->GetBinContent(bIX+1)*syst_p.at(sI)->GetBinContent(bIX+1));
+
       syst_p.at(sI)->SetBinContent(bIX+1, binVal);
       syst_p.at(sI)->SetBinError(bIX+1, tempRelErr);
       if(syst_p.at(sI)->GetBinContent(bIX+1) <= 0){
@@ -152,6 +224,7 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
       }
     }
   
+    std::cout << "Pushing back: " << tempVal << ", " << nominal_p->GetBinLowEdge(bIX+1) << "-" << nominal_p->GetBinLowEdge(bIX+2) << std::endl;
     systVect.push_back(tempVal);
     nomValVect.push_back(nominal_p->GetBinContent(bIX+1));
   }
@@ -159,6 +232,7 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
   double maxVal = -1;
 
   for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+    if(systToBeSkipped[sI]) continue;
     if(syst_p.at(sI)->GetMaximum() > maxVal) maxVal = syst_p.at(sI)->GetMaximum();
   }
 
@@ -205,6 +279,8 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     unsigned int systSubMaxPos = -1;
 
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+      if(systToBeSkipped[sI]) continue;
+
       if(systMaxVal < syst_p.at(sI)->GetMaximum()){
 	systSubMaxVal = systMaxVal;
 	systSubMaxPos = systMaxPos;
@@ -219,6 +295,8 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     }
   
     for(unsigned int sI = 0; sI < syst_p.size(); ++sI){
+      if(systToBeSkipped[sI]) continue;
+
       Int_t binFillPos = 0;
       for(Int_t bIX = 0; bIX < syst_p.at(sI)->GetNbinsX(); ++bIX){
 	Double_t binCenter = syst_p.at(sI)->GetBinCenter(bIX+1);
@@ -238,11 +316,11 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
       syst_p.at(sI)->SetMarkerStyle(styles[sI%nStyle]);
       syst_p.at(sI)->SetLineColor(colors[sI%nColor]);
       syst_p.at(sI)->SetMarkerSize(0.8);
-
+   
       syst_p.at(sI)->DrawCopy("HIST E1 P SAME");
       syst_p.at(sI)->DrawCopy("HIST E1 SAME");
       
-      std::string legStr = systStr.at(sI+1);
+      std::string legStr = systLegStr[sI];
       if(systMaxPos == sI) legStr = legStr + " (Dominant)";
       else if(systSubMaxPos == sI) legStr = legStr + " (Sub-dominant)";
       leg_p->AddEntry(syst_p.at(sI), legStr.c_str(), "P L");
@@ -334,6 +412,126 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
     tempBox_p->DrawBox(binLowEdge, binContent - syst_.at(binFillPos), binHiEdge, binContent + syst_.at(binFillPos));
     ++binFillPos;
   }
+
+  return;
+}
+
+
+void doRatioPlotting(std::vector<TH1D*> inHist_p, int divPos, const std::string xStr, const std::string yStr, const int xMin, const int xMax, const std::string labelStr, std::string saveName)
+{
+  TDatime* date = new TDatime();
+  const std::string dateStr = std::to_string(date->GetDate());
+  delete date;
+
+  TCanvas* canv_p = new TCanvas("convCanv_p", "", 450, 450);
+  canv_p->SetTopMargin(0.01);
+  canv_p->SetRightMargin(0.01);
+  canv_p->SetLeftMargin(0.14);
+  canv_p->SetBottomMargin(0.14);
+  canv_p->cd();
+	  
+  TLatex* label_p = new TLatex();
+  label_p->SetTextFont(43);
+  label_p->SetTextSize(16);
+	  
+  TH1D* tempHist_p = new TH1D("tempHist_p", (";" + xStr + ";" + yStr).c_str(), 10, xMin, xMax);
+
+  centerTitles(tempHist_p);
+  tempHist_p->Draw("HIST");
+
+  Double_t maxVal = -1;
+  Double_t minVal = 1000000;
+	  
+  const Int_t nTempStyle = 3;
+  const Int_t tempStyle[nTempStyle] = {20, 21, 34};
+
+  kirchnerPalette kPalette;  
+  const Int_t nTempColor = 4;
+  const Int_t tempColor[nTempColor] = {kPalette.getColor(0), kPalette.getColor(1), kPalette.getColor(2), kPalette.getColor(3)};
+
+  const Int_t nClones = inHist_p.size();
+  std::vector<TH1D*> clones_p;
+  clones_p.reserve(nClones);
+  for(Int_t bI = 0; bI < nClones; ++bI){
+    clones_p.push_back((TH1D*)inHist_p.at(bI)->Clone(("clone_" + std::to_string(bI)).c_str()));
+  }
+	
+  for(unsigned int bI = 0; bI < clones_p.size(); ++bI){
+    clones_p.at(bI)->SetMarkerStyle(tempStyle[bI%nTempStyle]);
+    clones_p.at(bI)->SetMarkerSize(0.8);
+    clones_p.at(bI)->SetMarkerColor(tempColor[bI%nTempColor]);
+    clones_p.at(bI)->SetLineColor(tempColor[bI%nTempColor]);
+    
+    if(bI == (unsigned int)divPos) continue;
+    
+    clones_p.at(bI)->Divide(clones_p.at(divPos));
+    
+    for(Int_t bIX = 0; bIX < clones_p.at(bI)->GetNbinsX(); ++bIX){
+      Double_t binCenter = clones_p.at(bI)->GetBinCenter(bIX+1);
+      
+      clones_p.at(bI)->SetBinError(bIX+1, 0.0);
+      if(binCenter >= xMin) continue;
+      if(binCenter <= xMax) continue;
+      
+      clones_p.at(bI)->SetBinContent(bIX+1, 0.0);
+    }
+    
+    Double_t tempMaxVal = clones_p.at(bI)->GetMaximum();
+    Double_t tempMinVal = getMinGTZero(clones_p.at(bI));
+    if(tempMaxVal > maxVal) maxVal = tempMaxVal;
+    if(tempMinVal < minVal) minVal = tempMinVal;
+  }
+  
+  clones_p.at(divPos)->Divide(clones_p.at(divPos));
+  
+  for(Int_t bIX = 0; bIX < clones_p.at(divPos)->GetNbinsX(); ++bIX){
+    Double_t binCenter = clones_p.at(divPos)->GetBinCenter(bIX+1);
+    
+    clones_p.at(divPos)->SetBinError(bIX+1, 0.0);
+    if(binCenter >= 200.) continue;
+    if(binCenter <= 1000.) continue;
+    
+    clones_p.at(divPos)->SetBinContent(bIX+1, 0.0);
+  }
+
+  const std::string maxValStr = "Max: " + prettyString(maxVal, 3, false); 
+  const std::string minValStr = "Min: " + prettyString(minVal, 3, false);
+ 
+  Double_t interval = maxVal - minVal;
+  maxVal += interval/10.;
+  minVal = TMath::Max(0., minVal - interval/10.);
+
+  
+  if(maxVal < 1.0001 && minVal > .9999){
+    maxVal = 1.0001;
+    minVal = 0.9999;
+  }
+  
+
+  tempHist_p->SetMaximum(maxVal);
+  tempHist_p->SetMinimum(minVal);
+  
+  for(Int_t bI = 0; bI < nClones; ++bI){
+    clones_p.at(bI)->DrawCopy("HIST E1 P SAME");
+  }
+  
+  const Int_t nTempBins = 20;
+  Double_t tempBins[nTempBins+1];
+
+  getLinBins(minVal, maxVal, nTempBins, tempBins);
+  label_p->DrawLatex(250, tempBins[19], labelStr.c_str());
+  label_p->DrawLatex(250, tempBins[18], maxValStr.c_str());
+  label_p->DrawLatex(250, tempBins[17], minValStr.c_str());
+
+  gStyle->SetOptStat(0);
+  gPad->SetLogx();
+	  
+  saveName = "pdfDir/" + dateStr + "/" + saveName;
+  quietSaveAs(canv_p, saveName);
+  
+  delete tempHist_p;
+  delete canv_p;
+  delete label_p;
 
   return;
 }
@@ -453,11 +651,18 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t nJtPP = jetPPList.size();
   const Int_t nJtPbPb = jetPbPbList.size();
 
-  const Int_t nSystOrig = cutPropPbPb.GetNSyst();
+  const Int_t nSystOrig = cutPropPbPb.GetNSyst() - 1; // Minus 1 because removing priorflat
   //  const Int_t nSyst = TMath::Min(minForForLoop, nSystOrig + nAdditionalSyst);
-  const Int_t nSyst = nSystOrig + nAdditionalSyst;
+  const Int_t nSyst = nSystOrig + nAdditionalSyst; 
   std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
   Int_t jerDataPos = -1;
+
+  for(unsigned int sI = 0; sI < systStr.size(); ++sI){
+    if(isStrSame(systStr.at(sI), "PriorFlat")){
+      systStr.erase(systStr.begin()+sI);
+      break;
+    }
+  }
 
   for(Int_t sI = 0; sI < nAdditionalSyst; ++sI){
     systStr.push_back(additionalSyst[sI]);
@@ -475,6 +680,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
   const Int_t nBayesCap = 10000;
   const Int_t nBayes = TMath::Min(nBayesCap, cutPropPbPb.GetNBayes());
+  const Int_t nBigBayesSymm = cutPropPbPb.GetNBigBayesSymm();
   std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
 
   const Int_t nResponseMod = TMath::Min(minForForLoop, cutPropPbPb.GetNResponseMod());
@@ -670,7 +876,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  break;
 	}
       }
-      if(systPos < 0) systPos = 0;
+      if(systPos < 0 && name.find("PriorFlat") == std::string::npos) systPos = 0;
 
       for(Int_t bI = 0; bI < nBayes; ++bI){
 	const std::string bayesStr = "_Bayes" + std::to_string(bayesVal.at(bI)) + "_";
@@ -692,7 +898,10 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       if(idPos < 0) std::cout << "Warning: Cannot find idPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(modPos < 0) std::cout << "Warning: Cannot find modPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(absEtaPos < 0) std::cout << "Warning: Cannot find absEtaPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(systPos < 0) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
+      if(systPos < 0){
+	if(name.find("PriorFlat") == std::string::npos) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
+	else continue;
+      }
       if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(centPos < 0) std::cout << "Warning: Cannot find centPos for \'" << name << "\'. Code will likely break" << std::endl;
 
@@ -824,7 +1033,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  break;
 	}
       }
-      if(systPos < 0) systPos = 0;
+      if(systPos < 0 && name.find("PriorFlat") == std::string::npos) systPos = 0;
 
       for(Int_t bI = 0; bI < nBayes; ++bI){
 	const std::string bayesStr = "_Bayes" + std::to_string(bayesVal.at(bI)) + "_";
@@ -837,7 +1046,10 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       if(idPos < 0) std::cout << "Warning: Cannot find idPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(modPos < 0) std::cout << "Warning: Cannot find modPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(absEtaPos < 0) std::cout << "Warning: Cannot find absEtaPos for \'" << name << "\'. Code will likely break" << std::endl;
-      if(systPos < 0) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
+      if(systPos < 0){
+	if(name.find("PriorFlat") == std::string::npos) std::cout << "Warning: Cannot find systPos for \'" << name << "\'. Code will likely break" << std::endl;
+	else continue;
+      }
       if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
 
       jtPtUnfolded_RecoTrunc_PP_h[tI][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
@@ -1006,12 +1218,11 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   std::cout << "Plotting... " << std::endl;
   const std::string plotID = "LightMUAndCHID";
   const std::string plotAbsEtaStr = "AbsEta0p0to2p0";
-  const Int_t plotBayesVal = 4;
+  const Int_t plotBayesVal = 100;
 
   Int_t idPos = -1;
   Int_t absEtaPos = -1;
   Int_t bayesPos = -1;
-  Int_t tempBayesPos = -1;
 
   for(Int_t idI = 0; idI < nID; ++idI){
     if(isStrSame(idStr.at(idI), plotID)){
@@ -1053,6 +1264,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     return 1;
   }
 
+  std::vector<std::vector<std::string> > systToCombo = {{"JECUpMC", "JECDownMC", "JECMC"}, {"JECUpData", "JECDownData", "JECData"}, {"JECUpUE", "JECDownUE", "JECUE"}, {"PriorUp1PowerPthat", "PriorDown1PowerPthat", "Prior1PowerPthat"}, {"LumiUp", "LumiDown", "Lumi"}, {"TAAUp", "TAADown", "TAA"}};
+
   const std::string idNameStr = idStr.at(idPos);
   const std::string plotBayesStr = "Bayes" + std::to_string(plotBayesVal);
 
@@ -1060,6 +1273,82 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const std::string systSmooth[nSystSmooth] = {"Unsmoothed", "Smoothed"};
   const bool systSmoothBool[nSystSmooth] = {false, true};
 
+  //Check convergence bands...
+  std::cout << "Do convergence bands" << std::endl;
+  for(Int_t tI = 0; tI < nJtPbPb; ++tI){
+    const Int_t rVal = getRVal(jetPbPbList.at(tI));
+    //    const Int_t ppPos = jetPPMatchedToPbPb.at(tI);
+    const std::string rValStr = std::to_string(rVal);
+
+    std::string rStr = "R=";
+    if(getRVal(jetPbPbList.at(tI)) < 10) rStr = rStr + "0." + std::to_string(getRVal(jetPbPbList.at(tI)));
+    else rStr = rStr + "1.0";
+
+    const std::string jetStrPbPb = jetPbPbList.at(tI).substr(0, jetPbPbList.at(tI).find("JetAna"));;
+
+    //	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+
+    for(Int_t mI = 0; mI < nResponseMod; ++mI){
+      for(Int_t cI = 0; cI < nCentBins; ++ cI){
+	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+	const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+
+	
+	slideTitles.push_back("Conv. " + jetStrPbPb + " (ModRes " + prettyString(responseMod[mI],2,false) + ", " + centStr2 + ")");
+	pdfPerSlide.push_back({});
+
+	for(Int_t sI = 0; sI < nSyst; ++sI){	  
+	  const Int_t totBigBayes = 1 + 2*nBigBayesSymm;
+	  std::vector<TH1D*> bigBayesClones_p;
+	  bigBayesClones_p.reserve(totBigBayes);
+	  for(Int_t bI = 0; bI < totBigBayes; ++bI){
+	    Int_t binPos = nBayes - 1 -2*nBigBayesSymm + bI;
+	    bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
+	  }      
+
+	  std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+
+	  doRatioPlotting(bigBayesClones_p, nBigBayesSymm, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 #pm" + std::to_string(nBigBayesSymm) + ")", 200., 1000., systStr.at(sI), saveName);
+	  for(unsigned int ucI = 0; ucI < bigBayesClones_p.size(); ++ucI){
+	    delete bigBayesClones_p.at(ucI);
+	    bigBayesClones_p.at(ucI) = NULL;
+	  }
+	}
+
+	slideTitles.push_back("BestComp. " + jetStrPbPb + " (ModRes " + prettyString(responseMod[mI],2,false) + ", " + centStr2 + ")");
+	pdfPerSlide.push_back({});
+
+	for(Int_t sI = 0; sI < nSyst; ++sI){	  
+	  std::vector<TH1D*> clones_p;
+
+	  Int_t binPos = nBayes - 1 -nBigBayesSymm;	  
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("clone_" + std::to_string(binPos)).c_str()));
+	  
+	  if(bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] < 0) bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] = 25;
+
+	  Int_t tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
+
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
+
+	  std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+
+	  std::string labelStr = systStr.at(sI) + ", Bayes" + std::to_string(tempBayesPos);
+	  doRatioPlotting(clones_p, 0, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 w/ " + std::to_string(tempBayesPos) + ")", 200., 1000., labelStr, saveName);
+
+	  for(unsigned int ucI = 0; ucI < clones_p.size(); ++ucI){
+	    delete clones_p.at(ucI);
+	    clones_p.at(ucI) = NULL;
+	  }
+
+	}
+      }
+    }
+  }
+
+
+  //Actual spectra plots...
   for(Int_t tI = 0; tI < nJtPbPb; ++tI){
     const Int_t rVal = getRVal(jetPbPbList.at(tI));
     const Int_t ppPos = jetPPMatchedToPbPb.at(tI);
@@ -1176,46 +1465,36 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
 	tempHist_p->GetYaxis()->SetTitleOffset(1.6);
     
-	tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][0];
-	if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->GetNbinsX(); ++bIX){
-	  bool binIsBad = jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
-	  binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
+	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
+	  bool binIsBad = jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
+	  binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
 	  if(binIsBad){
-	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetBinContent(bIX+1, 0.0);
-	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetBinError(bIX+1, 0.0);
+	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
+	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
 	  }
 	}
 
-	Double_t minVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]);
-	Double_t maxVal = getMax(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]);
+	Double_t minVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
+	Double_t maxVal = getMax(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
-
-	    tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
-	    if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
 	    scaleCentralAndErrorValues(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], centBinsScalingFact.at(cI));
 	  }
 	  
-	  tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][0];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->GetNbinsX(); ++bIX){
-	    bool binIsBad = jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
-	    binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
+	  for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
+	    bool binIsBad = jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
+	    binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
 	    if(binIsBad){
-	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetBinContent(bIX+1, 0.0);
-	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetBinError(bIX+1, 0.0);
+	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
+	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
 	    }
 	  }
 
 	  
 
-	  Double_t tempMinVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]);
-	  Double_t tempMaxVal = getMax(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]);
+	  Double_t tempMinVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
+	  Double_t tempMaxVal = getMax(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
 	  if(minVal > tempMinVal) minVal = tempMinVal;
 	  if(maxVal < tempMaxVal) maxVal = tempMaxVal;
 	}
@@ -1242,32 +1521,24 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	leg_p->SetTextFont(43);
 	leg_p->SetTextSize(16);
 
-	tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][0];
-	if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerStyle(getStyleFromCent("", true));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerSize(1);
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent("", true));
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
 
 	std::vector<TH1D*> systHistVectPP;
 	systHistVectPP.reserve(nSyst-1);
 	for(Int_t sI = 1; sI < nSyst; ++sI){
-	  tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][sI];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
+	  systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
 	}      
 
 	Int_t slideSubVal = 0;
 	if(usI == 0) pdfPerSlide.push_back({});
 	else slideSubVal = nCentBins+1;
 
-	tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][0];
-	if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
 	std::cout << __LINE__ << std::endl;
-	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos], systHistVectPP, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI]);
+	std::vector<std::string> tempSystStr(systStr.begin()+1, systStr.end());
+	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
 	std::cout << __LINE__ << std::endl;
     
 	resModCompCanv_p[usI]->cd();
@@ -1307,28 +1578,21 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	}
 
 
-	drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
+	drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 	  const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 
-
-	  tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][0];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerStyle(getStyleFromCent(centStr, false));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetMarkerSize(1);
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent(centStr, false));
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
 
 	  std::vector<TH1D*> systHistVectPbPb;
 	  systHistVectPbPb.reserve(nSyst-1);
 	  for(Int_t sI = 1; sI < nSyst; ++sI){
-	    tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
-	    if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	    systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
+	    systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
 	  }      
 	
 	  Int_t centSlideSubVal = 0;
@@ -1337,10 +1601,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	  std::cout << __LINE__ << std::endl;
 
-	  tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][0];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos], systHistVectPbPb, systStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI]);
+	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
 	  std::cout << __LINE__ << std::endl;
 	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
 
@@ -1380,21 +1641,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	    delete systHistVectPbPb.at(sI);
 	  }
-	  drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
+	  drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
 
 	  std::cout << __LINE__ << std::endl;
 	}
 
-	tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][0];
-	if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->DrawCopy("HIST E1 P SAME");
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
-	  tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][0];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->DrawCopy("HIST E1 P SAME");
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
 	}
       
 	
@@ -1404,20 +1659,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  const std::string centLegStr = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "% x 10^{" + std::to_string(cI+1) + "}";
 	  const std::string centLegStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 
-	  tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][0];
-	  if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos]->GetMarkerColor(), .25);      
-	  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos], centLegStr.c_str(), "P L F");	
-	  if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][tempBayesPos], centLegStr2.c_str(), "P L");	
+	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+	  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr.c_str(), "P L F");	
+	  if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr2.c_str(), "P L");	
 	}
 	
-	tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][0];
-	if(tempBayesPos == -1) tempBayesPos = bayesPos;
-      
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos]->GetMarkerColor(), .25);      
-	leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos], "pp", "P L F");
-	if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][tempBayesPos], "pp", "P L");
+	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+	leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L F");
+	if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L");
       
 	gPad->SetLogy();
 	gPad->SetLogx();
@@ -1467,10 +1716,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
-	    tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
-	    if(tempBayesPos == -1) tempBayesPos = bayesPos;
-
-	    scaleCentralAndErrorValues(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][tempBayesPos], 1./centBinsScalingFact.at(cI));
+	    scaleCentralAndErrorValues(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], 1./centBinsScalingFact.at(cI));
 	  }
 	}
       }

@@ -92,7 +92,10 @@ class cutPropagator
   std::vector<std::string> systStr;
 
   int nBayes;
+  int nBigBayesSymm;
   std::vector<int> bayesVal;
+
+  int nSuperBayes;
 
   int nHistDim;
   std::vector<std::string> histTag;
@@ -165,8 +168,12 @@ class cutPropagator
   bool CheckSystStr(cutPropagator inCutProp);
   bool CheckNBayes(int inNBayes);
   bool CheckNBayes(cutPropagator inCutProp);
+  bool CheckNBigBayesSymm(int inNBigBayesSymm);
+  bool CheckNBigBayesSymm(cutPropagator inCutProp);
   bool CheckBayesVal(std::vector<int> inBayesVal);
   bool CheckBayesVal(cutPropagator inCutProp);
+  bool CheckNSuperBayes(int inNSuperBayes);
+  bool CheckNSuperBayes(cutPropagator inCutProp);
   bool CheckNHistDim(int inNHistDim);
   bool CheckNHistDim(cutPropagator inCutProp);
   bool CheckHistTag(std::vector<int> inHistTag);
@@ -277,7 +284,10 @@ class cutPropagator
   std::vector<std::string> GetSystStr(){return systStr;}
 
   int GetNBayes(){return nBayes;}
+  int GetNBigBayesSymm(){return nBigBayesSymm;}
   std::vector<int> GetBayesVal(){return bayesVal;}
+
+  int GetNSuperBayes(){return nSuperBayes;}
 
   int GetNHistDim(){return nHistDim;}
   std::vector<std::string> GetHistTag(){return histTag;}
@@ -376,8 +386,10 @@ class cutPropagator
   void SetSystStr(int inN, const std::string inSystStr[]);
 
   void SetNBayes(int inNBayes){nBayes = inNBayes; return;}
+  void SetNBigBayesSymm(int inNBigBayesSymm){nBigBayesSymm = inNBigBayesSymm; return;}
   void SetBayesVal(std::vector<int> inBayesVal){bayesVal = inBayesVal; return;};
   void SetBayesVal(int inN, const int inBayesVal[]);
+  void SetNSuperBayes(int inNSuperBayes){nSuperBayes = inNSuperBayes; return;}
 
   void SetNHistDim(int inNHistDim){nHistDim = inNHistDim; return;}
   void SetHistTag(std::vector<std::string> inHistTag){histTag = inHistTag; return;};
@@ -457,7 +469,10 @@ void cutPropagator::Clean()
   systStr.clear();
 
   nBayes = -1;
+  nBigBayesSymm = -1;
   bayesVal.clear();
+
+  nSuperBayes = -1;
 
   nHistDim = -1;
   histTag.clear();
@@ -559,7 +574,9 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("nSyst", tempStr)) nSyst = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("systStr", tempStr)) systStr = StringToStringVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nBayes", tempStr)) nBayes = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nBigBayesSymm", tempStr)) nBigBayesSymm = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("bayesVal", tempStr)) bayesVal = StringToIntVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nSuperBayes", tempStr)) nSuperBayes = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nHistDim", tempStr)) nHistDim = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("histTag", tempStr)) histTag = StringToStringVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("histBestBayes", tempStr)) histBestBayes = StringToIntVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
@@ -739,6 +756,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::string nBayesStr = std::to_string(nBayes);
+  std::string nBigBayesSymmStr = std::to_string(nBigBayesSymm);
+  std::string nSuperBayesStr = std::to_string(nSuperBayes);
   std::string bayesVal2 = "";
 
   for(int sI = 0; sI < nBayes; ++sI){
@@ -798,6 +817,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   TNamed nSystName("nSyst", nSystStr.c_str());
   TNamed systStrName("systStr", systStr2.c_str());
   TNamed nBayesName("nBayes", nBayesStr.c_str());
+  TNamed nBigBayesSymmName("nBigBayesSymm", nBigBayesSymmStr.c_str());
+  TNamed nSuperBayesName("nSuperBayes", nSuperBayesStr.c_str());
   TNamed bayesValName("bayesVal", bayesVal2.c_str());
   TNamed nHistDimName("nHistDim", nHistDimStr.c_str());
   
@@ -852,6 +873,8 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   nSystName.Write("", TObject::kOverwrite);
   systStrName.Write("", TObject::kOverwrite);
   nBayesName.Write("", TObject::kOverwrite);
+  nSuperBayesName.Write("", TObject::kOverwrite);
+  nBigBayesSymmName.Write("", TObject::kOverwrite);
   bayesValName.Write("", TObject::kOverwrite);
   nHistDimName.Write("", TObject::kOverwrite);
 
@@ -927,7 +950,9 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(!CheckJtPfMinChgMult(inCutProp)) return false;
 
   if(!CheckNBayes(inCutProp)) return false;
+  if(!CheckNBigBayesSymm(inCutProp)) return false;
   if(!CheckBayesVal(inCutProp)) return false;
+  if(!CheckNSuperBayes(inCutProp)) return false;
 
   if(doBothMCOrBothData){
     if(!CheckNSyst(inCutProp)) return false;
@@ -1056,8 +1081,12 @@ bool cutPropagator::CheckSystStr(std::vector<std::string> inSystStr){return Chec
 bool cutPropagator::CheckSystStr(cutPropagator inCutProp){return CheckSystStr(inCutProp.GetSystStr());}
 bool cutPropagator::CheckNBayes(int inNBayes){return CheckInt(inNBayes, nBayes);}
 bool cutPropagator::CheckNBayes(cutPropagator inCutProp){return CheckNBayes(inCutProp.GetNBayes());}
+bool cutPropagator::CheckNBigBayesSymm(int inNBigBayesSymm){return CheckInt(inNBigBayesSymm, nBigBayesSymm);}
+bool cutPropagator::CheckNBigBayesSymm(cutPropagator inCutProp){return CheckNBigBayesSymm(inCutProp.GetNBigBayesSymm());}
 bool cutPropagator::CheckBayesVal(std::vector<int> inBayesVal){return CheckVectInt(inBayesVal, bayesVal);}
 bool cutPropagator::CheckBayesVal(cutPropagator inCutProp){return CheckBayesVal(inCutProp.GetBayesVal());}
+bool cutPropagator::CheckNSuperBayes(int inNSuperBayes){return CheckInt(inNSuperBayes, nSuperBayes);}
+bool cutPropagator::CheckNSuperBayes(cutPropagator inCutProp){return CheckNSuperBayes(inCutProp.GetNSuperBayes());}
 bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName){return CheckString(inRCDiffFileName, rcDiffFileName);}
 bool cutPropagator::CheckRCDiffFileName(cutPropagator inCutProp){return CheckRCDiffFileName(inCutProp.GetRCDiffFileName());}
 bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName){return CheckString(inFlatPriorFileName, flatPriorFileName);}
