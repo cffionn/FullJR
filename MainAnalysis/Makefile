@@ -16,7 +16,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -70,10 +70,13 @@ bin/checkUnfoldTermination.exe: src/checkUnfoldTermination.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkUnfoldTermination.exe src/checkUnfoldTermination.C
 
 bin/combineFiles.exe: src/combineFiles.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/combineFiles.exe src/combineFiles.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/combineFiles.exe src/combineFiles.C
 
 bin/testRooUnfResUnderflow.exe: src/testRooUnfResUnderflow.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/testRooUnfResUnderflow.exe src/testRooUnfResUnderflow.C
+
+bin/checkFileNClassContents.exe: src/checkFileNClassContents.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkFileNClassContents.exe src/checkFileNClassContents.C
 
 clean:
 	rm -f ./*~

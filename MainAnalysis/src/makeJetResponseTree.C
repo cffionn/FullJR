@@ -1,4 +1,3 @@
-
 //cpp dependencies
 #include <iostream>
 #include <string>
@@ -246,7 +245,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const double fracParaFills = 0.1;
 
   TDatime* date = new TDatime();
-  const std::string dateStr = std::to_string(date->GetDate()) + "_" + std::to_string(date->GetHour());
+  //  const std::string dateStr = std::to_string(date->GetDate()) + "_" + std::to_string(date->GetHour());
+  const std::string dateStr = std::to_string(date->GetDate());
   delete date;
   const std::string fullPath = std::getenv("FULLJRDIR");
 

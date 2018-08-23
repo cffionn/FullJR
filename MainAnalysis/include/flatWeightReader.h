@@ -84,8 +84,8 @@ bool flatWeightReader::Init(std::string inWeightFileName, cutPropagator inCutPro
   else if(!cutPropIn.CheckNPthats(cutPropWeight)) cutsMatch = false;
   else if(!cutPropIn.CheckPthats(cutPropWeight)) cutsMatch = false; 
   else if(!cutPropIn.CheckPthatWeights(cutPropWeight)) cutsMatch = false;
-  else if(!cutPropIn.CheckNJtAlgos(cutPropWeight)) cutsMatch = false;
-  else if(!cutPropIn.CheckJtAlgos(cutPropWeight)) cutsMatch = false;
+  //  else if(!cutPropIn.CheckNJtAlgos(cutPropWeight)) cutsMatch = false;
+  //  else if(!cutPropIn.CheckJtAlgos(cutPropWeight)) cutsMatch = false;
   else if(!cutPropIn.CheckIsPP(cutPropWeight)) cutsMatch = false;
   else if(!cutPropIn.CheckNCentBins(cutPropWeight)) cutsMatch = false;
   else if(!cutPropIn.CheckCentBinsLow(cutPropWeight)) cutsMatch = false;

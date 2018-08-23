@@ -682,6 +682,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t nBayes = TMath::Min(nBayesCap, cutPropPbPb.GetNBayes());
   const Int_t nBigBayesSymm = cutPropPbPb.GetNBigBayesSymm();
   std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
+  const Int_t nSuperBayes = cutPropPbPb.GetNSuperBayes();
 
   const Int_t nResponseMod = TMath::Min(minForForLoop, cutPropPbPb.GetNResponseMod());
   //  const Int_t nResponseMod = cutPropPbPb.GetNResponseMod();
@@ -776,7 +777,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_PlotUnfoldedSpectra_" + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_NSuperBayes" + std::to_string(nSuperBayes) + "_PlotUnfoldedSpectra_" + dateStr + ".root";
 
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");

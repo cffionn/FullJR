@@ -1027,106 +1027,408 @@ bool cutPropagator::CheckVectString(std::vector<std::string> in1, std::vector<st
   return true;
 }
 
-bool cutPropagator::CheckJtAbsEtaMax(double inJtAbsEtaMax){return CheckDouble(jtAbsEtaMax, inJtAbsEtaMax);}
+//Series of checks
+bool cutPropagator::CheckJtAbsEtaMax(double inJtAbsEtaMax)
+{
+  bool checkVal = CheckDouble(jtAbsEtaMax, inJtAbsEtaMax);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtAbsEtaMax" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtAbsEtaMax(cutPropagator inCutProp){return CheckJtAbsEtaMax(inCutProp.GetJtAbsEtaMax());}
-bool cutPropagator::CheckNJtPtBins(int inNJtPtBins){return CheckInt(nJtPtBins, inNJtPtBins);}
+
+bool cutPropagator::CheckNJtPtBins(int inNJtPtBins)
+{
+  bool checkVal = CheckInt(nJtPtBins, inNJtPtBins);
+  if(!checkVal) std::cout << "cutPropagator check failed on nJtPtBins" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNJtPtBins(cutPropagator inCutProp){return CheckNJtPtBins(inCutProp.GetNJtPtBins());}
-bool cutPropagator::CheckNJtAbsEtaBins(int inNJtAbsEtaBins){return CheckInt(nJtAbsEtaBins, inNJtAbsEtaBins);}
+
+bool cutPropagator::CheckNJtAbsEtaBins(int inNJtAbsEtaBins)
+{
+  bool checkVal = CheckInt(nJtAbsEtaBins, inNJtAbsEtaBins);
+  if(!checkVal) std::cout << "cutPropagator check failed on nJtAbsEtaBins" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNJtAbsEtaBins(cutPropagator inCutProp){return CheckNJtAbsEtaBins(inCutProp.GetNJtAbsEtaBins());}
-bool cutPropagator::CheckNID(int inNID){return CheckInt(nID, inNID);}
+
+bool cutPropagator::CheckNID(int inNID)
+{
+  bool checkVal = CheckInt(nID, inNID);
+  if(!checkVal) std::cout << "cutPropagator check failed on nID" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNID(cutPropagator inCutProp){return CheckNID(inCutProp.GetNID());}
-bool cutPropagator::CheckJtPtBins(std::vector<double> inJtPtBins){return CheckVectDouble(jtPtBins, inJtPtBins);}
+
+bool cutPropagator::CheckJtPtBins(std::vector<double> inJtPtBins)
+{
+  bool checkVal = CheckVectDouble(jtPtBins, inJtPtBins);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPtBins" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPtBins(cutPropagator inCutProp){return CheckJtPtBins(inCutProp.GetJtPtBins());}
-bool cutPropagator::CheckJtAbsEtaBinsLow(std::vector<double> inJtAbsEtaBinsLow){return CheckVectDouble(jtAbsEtaBinsLow, inJtAbsEtaBinsLow);}
+
+bool cutPropagator::CheckJtAbsEtaBinsLow(std::vector<double> inJtAbsEtaBinsLow)
+{
+  bool checkVal = CheckVectDouble(jtAbsEtaBinsLow, inJtAbsEtaBinsLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtAbsEtaBinsLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtAbsEtaBinsLow(cutPropagator inCutProp){return CheckJtAbsEtaBinsLow(inCutProp.GetJtAbsEtaBinsLow());}
-bool cutPropagator::CheckJtAbsEtaBinsHi(std::vector<double> inJtAbsEtaBinsHi){return CheckVectDouble(jtAbsEtaBinsHi, inJtAbsEtaBinsHi);}
+
+bool cutPropagator::CheckJtAbsEtaBinsHi(std::vector<double> inJtAbsEtaBinsHi)
+{
+  bool checkVal = CheckVectDouble(jtAbsEtaBinsHi, inJtAbsEtaBinsHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtAbsEtaBinsHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtAbsEtaBinsHi(cutPropagator inCutProp){return CheckJtAbsEtaBinsHi(inCutProp.GetJtAbsEtaBinsHi());}
-bool cutPropagator::CheckIdStr(std::vector<std::string> inIDStr){return CheckVectString(idStr, inIDStr);}
+
+bool cutPropagator::CheckIdStr(std::vector<std::string> inIDStr)
+{
+  bool checkVal = CheckVectString(idStr, inIDStr);
+  if(!checkVal) std::cout << "cutPropagator check failed on idStr" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckIdStr(cutPropagator inCutProp){return CheckIdStr(inCutProp.GetIdStr());}
-bool cutPropagator::CheckJtPfCHMFCutLow(std::vector<double> inJtPfCHMFCutLow){return CheckVectDouble(jtPfCHMFCutLow, inJtPfCHMFCutLow);}
+
+bool cutPropagator::CheckJtPfCHMFCutLow(std::vector<double> inJtPfCHMFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfCHMFCutLow, inJtPfCHMFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCHMFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCHMFCutLow(cutPropagator inCutProp){return CheckJtPfCHMFCutLow(inCutProp.GetJtPfCHMFCutLow());}
-bool cutPropagator::CheckJtPfCHMFCutHi(std::vector<double> inJtPfCHMFCutHi){return CheckVectDouble(jtPfCHMFCutHi, inJtPfCHMFCutHi);}
+
+bool cutPropagator::CheckJtPfCHMFCutHi(std::vector<double> inJtPfCHMFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfCHMFCutHi, inJtPfCHMFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCHMFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCHMFCutHi(cutPropagator inCutProp){return CheckJtPfCHMFCutHi(inCutProp.GetJtPfCHMFCutHi());}
-bool cutPropagator::CheckJtPfMUMFCutLow(std::vector<double> inJtPfMUMFCutLow){return CheckVectDouble(jtPfMUMFCutLow, inJtPfMUMFCutLow);}
+
+bool cutPropagator::CheckJtPfMUMFCutLow(std::vector<double> inJtPfMUMFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfMUMFCutLow, inJtPfMUMFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMUMFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfMUMFCutLow(cutPropagator inCutProp){return CheckJtPfMUMFCutLow(inCutProp.GetJtPfMUMFCutLow());}
-bool cutPropagator::CheckJtPfMUMFCutHi(std::vector<double> inJtPfMUMFCutHi){return CheckVectDouble(jtPfMUMFCutHi, inJtPfMUMFCutHi);}
+
+bool cutPropagator::CheckJtPfMUMFCutHi(std::vector<double> inJtPfMUMFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfMUMFCutHi, inJtPfMUMFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMUMFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfMUMFCutHi(cutPropagator inCutProp){return CheckJtPfMUMFCutHi(inCutProp.GetJtPfMUMFCutHi());}
-bool cutPropagator::CheckJtPfNHFCutLow(std::vector<double> inJtPfNHFCutLow){return CheckVectDouble(jtPfNHFCutLow, inJtPfNHFCutLow);}
+
+bool cutPropagator::CheckJtPfNHFCutLow(std::vector<double> inJtPfNHFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfNHFCutLow, inJtPfNHFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfNHFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfNHFCutLow(cutPropagator inCutProp){return CheckJtPfNHFCutLow(inCutProp.GetJtPfNHFCutLow());}
-bool cutPropagator::CheckJtPfNHFCutHi(std::vector<double> inJtPfNHFCutHi){return CheckVectDouble(jtPfNHFCutHi, inJtPfNHFCutHi);}
+
+bool cutPropagator::CheckJtPfNHFCutHi(std::vector<double> inJtPfNHFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfNHFCutHi, inJtPfNHFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfNHFCutHi" << std::endl;
+ return checkVal;
+}
 bool cutPropagator::CheckJtPfNHFCutHi(cutPropagator inCutProp){return CheckJtPfNHFCutHi(inCutProp.GetJtPfNHFCutHi());}
-bool cutPropagator::CheckJtPfNEFCutLow(std::vector<double> inJtPfNEFCutLow){return CheckVectDouble(jtPfNEFCutLow, inJtPfNEFCutLow);}
+
+bool cutPropagator::CheckJtPfNEFCutLow(std::vector<double> inJtPfNEFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfNEFCutLow, inJtPfNEFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfNEFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfNEFCutLow(cutPropagator inCutProp){return CheckJtPfNEFCutLow(inCutProp.GetJtPfNEFCutLow());}
-bool cutPropagator::CheckJtPfNEFCutHi(std::vector<double> inJtPfNEFCutHi){return CheckVectDouble(jtPfNEFCutHi, inJtPfNEFCutHi);}
+
+bool cutPropagator::CheckJtPfNEFCutHi(std::vector<double> inJtPfNEFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfNEFCutHi, inJtPfNEFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfNEFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfNEFCutHi(cutPropagator inCutProp){return CheckJtPfNEFCutHi(inCutProp.GetJtPfNEFCutHi());}
-bool cutPropagator::CheckJtPfMUFCutLow(std::vector<double> inJtPfMUFCutLow){return CheckVectDouble(jtPfMUFCutLow, inJtPfMUFCutLow);}
+
+bool cutPropagator::CheckJtPfMUFCutLow(std::vector<double> inJtPfMUFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfMUFCutLow, inJtPfMUFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMUFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfMUFCutLow(cutPropagator inCutProp){return CheckJtPfMUFCutLow(inCutProp.GetJtPfMUFCutLow());}
-bool cutPropagator::CheckJtPfMUFCutHi(std::vector<double> inJtPfMUFCutHi){return CheckVectDouble(jtPfMUFCutHi, inJtPfMUFCutHi);}
+
+bool cutPropagator::CheckJtPfMUFCutHi(std::vector<double> inJtPfMUFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfMUFCutHi, inJtPfMUFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMUFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfMUFCutHi(cutPropagator inCutProp){return CheckJtPfMUFCutHi(inCutProp.GetJtPfMUFCutHi());}
-bool cutPropagator::CheckJtPfCHFCutLow(std::vector<double> inJtPfCHFCutLow){return CheckVectDouble(jtPfCHFCutLow, inJtPfCHFCutLow);}
+
+bool cutPropagator::CheckJtPfCHFCutLow(std::vector<double> inJtPfCHFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfCHFCutLow, inJtPfCHFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCHFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCHFCutLow(cutPropagator inCutProp){return CheckJtPfCHFCutLow(inCutProp.GetJtPfCHFCutLow());}
-bool cutPropagator::CheckJtPfCHFCutHi(std::vector<double> inJtPfCHFCutHi){return CheckVectDouble(jtPfCHFCutHi, inJtPfCHFCutHi);}
+
+bool cutPropagator::CheckJtPfCHFCutHi(std::vector<double> inJtPfCHFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfCHFCutHi, inJtPfCHFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCHFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCHFCutHi(cutPropagator inCutProp){return CheckJtPfCHFCutHi(inCutProp.GetJtPfCHFCutHi());}
-bool cutPropagator::CheckJtPfCEFCutLow(std::vector<double> inJtPfCEFCutLow){return CheckVectDouble(jtPfCEFCutLow, inJtPfCEFCutLow);}
+
+bool cutPropagator::CheckJtPfCEFCutLow(std::vector<double> inJtPfCEFCutLow)
+{
+  bool checkVal = CheckVectDouble(jtPfCEFCutLow, inJtPfCEFCutLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCEFCutLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCEFCutLow(cutPropagator inCutProp){return CheckJtPfCEFCutLow(inCutProp.GetJtPfCEFCutLow());}
-bool cutPropagator::CheckJtPfCEFCutHi(std::vector<double> inJtPfCEFCutHi){return CheckVectDouble(jtPfCEFCutHi, inJtPfCEFCutHi);}
+
+bool cutPropagator::CheckJtPfCEFCutHi(std::vector<double> inJtPfCEFCutHi)
+{
+  bool checkVal = CheckVectDouble(jtPfCEFCutHi, inJtPfCEFCutHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfCEFCutHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfCEFCutHi(cutPropagator inCutProp){return CheckJtPfCEFCutHi(inCutProp.GetJtPfCEFCutHi());}
-bool cutPropagator::CheckJtPfMinMult(std::vector<int> inJtPfMinMult){return CheckVectInt(jtPfMinMult, inJtPfMinMult);}
+
+bool cutPropagator::CheckJtPfMinMult(std::vector<int> inJtPfMinMult)
+{
+  bool checkVal = CheckVectInt(jtPfMinMult, inJtPfMinMult);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMinMult" << std::endl;
+ return checkVal;
+}
 bool cutPropagator::CheckJtPfMinMult(cutPropagator inCutProp){return CheckJtPfMinMult(inCutProp.GetJtPfMinMult());}
-bool cutPropagator::CheckJtPfMinChgMult(std::vector<int> inJtPfMinChgMult){return CheckVectInt(jtPfMinChgMult, inJtPfMinChgMult);}
+
+bool cutPropagator::CheckJtPfMinChgMult(std::vector<int> inJtPfMinChgMult)
+{
+  bool checkVal = CheckVectInt(jtPfMinChgMult, inJtPfMinChgMult);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtPfMinChgMult" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtPfMinChgMult(cutPropagator inCutProp){return CheckJtPfMinChgMult(inCutProp.GetJtPfMinChgMult());}
-bool cutPropagator::CheckNSyst(int inNSyst){return CheckInt(inNSyst, nSyst);}
+
+bool cutPropagator::CheckNSyst(int inNSyst)
+{
+  bool checkVal = CheckInt(inNSyst, nSyst);
+  if(!checkVal) std::cout << "cutPropagator check failed on nSyst" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNSyst(cutPropagator inCutProp){return CheckNSyst(inCutProp.GetNSyst());}
-bool cutPropagator::CheckSystStr(std::vector<std::string> inSystStr){return CheckVectString(inSystStr, systStr);}
+
+bool cutPropagator::CheckSystStr(std::vector<std::string> inSystStr)
+{
+  bool checkVal = CheckVectString(inSystStr, systStr);
+  if(!checkVal) std::cout << "cutPropagator check failed on systStr" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckSystStr(cutPropagator inCutProp){return CheckSystStr(inCutProp.GetSystStr());}
-bool cutPropagator::CheckNBayes(int inNBayes){return CheckInt(inNBayes, nBayes);}
+
+bool cutPropagator::CheckNBayes(int inNBayes)
+{
+  bool checkVal = CheckInt(inNBayes, nBayes);
+  if(!checkVal) std::cout << "cutPropagator check failed on nBayes" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNBayes(cutPropagator inCutProp){return CheckNBayes(inCutProp.GetNBayes());}
-bool cutPropagator::CheckNBigBayesSymm(int inNBigBayesSymm){return CheckInt(inNBigBayesSymm, nBigBayesSymm);}
+
+bool cutPropagator::CheckNBigBayesSymm(int inNBigBayesSymm)
+{
+  bool checkVal = CheckInt(inNBigBayesSymm, nBigBayesSymm);
+  if(!checkVal) std::cout << "cutPropagator check failed on nBigBayesSymm" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNBigBayesSymm(cutPropagator inCutProp){return CheckNBigBayesSymm(inCutProp.GetNBigBayesSymm());}
-bool cutPropagator::CheckBayesVal(std::vector<int> inBayesVal){return CheckVectInt(inBayesVal, bayesVal);}
+
+bool cutPropagator::CheckBayesVal(std::vector<int> inBayesVal)
+{
+  bool checkVal = CheckVectInt(inBayesVal, bayesVal);
+  if(!checkVal) std::cout << "cutPropagator check failed on bayesVal" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckBayesVal(cutPropagator inCutProp){return CheckBayesVal(inCutProp.GetBayesVal());}
-bool cutPropagator::CheckNSuperBayes(int inNSuperBayes){return CheckInt(inNSuperBayes, nSuperBayes);}
+
+bool cutPropagator::CheckNSuperBayes(int inNSuperBayes)
+{
+  bool checkVal = CheckInt(inNSuperBayes, nSuperBayes);
+  if(!checkVal) std::cout << "cutPropagator check failed on nSuperBayes" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNSuperBayes(cutPropagator inCutProp){return CheckNSuperBayes(inCutProp.GetNSuperBayes());}
-bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName){return CheckString(inRCDiffFileName, rcDiffFileName);}
+
+bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName)
+{
+  bool checkVal = CheckString(inRCDiffFileName, rcDiffFileName);
+  if(!checkVal) std::cout << "cutPropagator check failed on rcDiffFileName" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckRCDiffFileName(cutPropagator inCutProp){return CheckRCDiffFileName(inCutProp.GetRCDiffFileName());}
-bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName){return CheckString(inFlatPriorFileName, flatPriorFileName);}
+
+bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName)
+{
+  bool checkVal = CheckString(inFlatPriorFileName, flatPriorFileName);
+  if(!checkVal) std::cout << "cutPropagator check failed on flatPriorFileName" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckFlatPriorFileName(cutPropagator inCutProp){return CheckFlatPriorFileName(inCutProp.GetFlatPriorFileName());}
-bool cutPropagator::CheckJECVarMC(double inJECVarMC){return CheckDouble(inJECVarMC, jecVarMC);}
+
+bool cutPropagator::CheckJECVarMC(double inJECVarMC)
+{
+  bool checkVal = CheckDouble(inJECVarMC, jecVarMC);
+  if(!checkVal) std::cout << "cutPropagator check failed on jecVarMC" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJECVarMC(cutPropagator inCutProp){return CheckJECVarMC(inCutProp.GetJECVarMC());}
-bool cutPropagator::CheckJERVarMC(double inJERVarMC){return CheckDouble(inJERVarMC, jerVarMC);}
+
+bool cutPropagator::CheckJERVarMC(double inJERVarMC)
+{
+  bool checkVal = CheckDouble(inJERVarMC, jerVarMC);
+  if(!checkVal) std::cout << "cutPropagator check failed on jerVarMC" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJERVarMC(cutPropagator inCutProp){return CheckJERVarMC(inCutProp.GetJERVarMC());}
-bool cutPropagator::CheckJECVarData(double inJECVarData){return CheckDouble(inJECVarData, jecVarData);}
+
+bool cutPropagator::CheckJECVarData(double inJECVarData)
+{
+  bool checkVal = CheckDouble(inJECVarData, jecVarData);
+  if(!checkVal) std::cout << "cutPropagator check failed on jecVarData" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJECVarData(cutPropagator inCutProp){return CheckJECVarData(inCutProp.GetJECVarData());}
-bool cutPropagator::CheckNResponseMod(int inNResponseMod){return CheckInt(inNResponseMod, nResponseMod);}
+
+bool cutPropagator::CheckNResponseMod(int inNResponseMod)
+{
+  bool checkVal = CheckInt(inNResponseMod, nResponseMod);
+  if(!checkVal) std::cout << "cutPropagator check failed on nResponseMod" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNResponseMod(cutPropagator inCutProp){return CheckNResponseMod(inCutProp.GetNResponseMod());}
-bool cutPropagator::CheckResponseMod(std::vector<double> inResponseMod){return CheckVectDouble(inResponseMod, responseMod);}
+
+bool cutPropagator::CheckResponseMod(std::vector<double> inResponseMod)
+{
+  bool checkVal = CheckVectDouble(inResponseMod, responseMod);
+  if(!checkVal) std::cout << "cutPropagator check failed on responseMod" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckResponseMod(cutPropagator inCutProp){return CheckResponseMod(inCutProp.GetResponseMod());}
-bool cutPropagator::CheckJERVarData(std::vector<double> inJERVarData){return CheckVectDouble(inJERVarData, jerVarData);}
+
+bool cutPropagator::CheckJERVarData(std::vector<double> inJERVarData)
+{
+  bool checkVal = CheckVectDouble(inJERVarData, jerVarData);
+  if(!checkVal) std::cout << "cutPropagator check failed on jerVarData" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJERVarData(cutPropagator inCutProp){return CheckJERVarData(inCutProp.GetJERVarData());}
-bool cutPropagator::CheckNPthats(int inNPthats){return CheckInt(inNPthats, nPthats);}
+
+bool cutPropagator::CheckNPthats(int inNPthats)
+{
+  bool checkVal = CheckInt(inNPthats, nPthats);
+  if(!checkVal) std::cout << "cutPropagator check failed on nPthats" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNPthats(cutPropagator inCutProp){return CheckNPthats(inCutProp.GetNPthats());}
-bool cutPropagator::CheckPthats(std::vector<double> inPthats){return CheckVectDouble(inPthats, pthats);}
+
+bool cutPropagator::CheckPthats(std::vector<double> inPthats)
+{
+  bool checkVal = CheckVectDouble(inPthats, pthats);
+  if(!checkVal) std::cout << "cutPropagator check failed on pthats" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckPthats(cutPropagator inCutProp){return CheckPthats(inCutProp.GetPthats());}
-bool cutPropagator::CheckPthatWeights(std::vector<double> inPthatWeights){return CheckVectDouble(inPthatWeights, pthatWeights);}
+
+bool cutPropagator::CheckPthatWeights(std::vector<double> inPthatWeights)
+{
+  bool checkVal = CheckVectDouble(inPthatWeights, pthatWeights);
+  if(!checkVal) std::cout << "cutPropagator check failed on pthatWeights" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckPthatWeights(cutPropagator inCutProp){return CheckPthatWeights(inCutProp.GetPthatWeights());}
-bool cutPropagator::CheckNJtAlgos(int inNJtAlgos){return CheckInt(inNJtAlgos, nJtAlgos);}
+
+bool cutPropagator::CheckNJtAlgos(int inNJtAlgos)
+{
+  bool checkVal = CheckInt(inNJtAlgos, nJtAlgos);
+  if(!checkVal) std::cout << "cutPropagator check failed on nJtAlgos" << std::endl;
+ return checkVal;
+}
 bool cutPropagator::CheckNJtAlgos(cutPropagator inCutProp){return CheckNJtAlgos(inCutProp.GetNJtAlgos());}
-bool cutPropagator::CheckJtAlgos(std::vector<std::string> inJtAlgos){return CheckVectString(inJtAlgos, jtAlgos);}
+
+bool cutPropagator::CheckJtAlgos(std::vector<std::string> inJtAlgos)
+{
+  bool checkVal = CheckVectString(inJtAlgos, jtAlgos);
+  if(!checkVal) std::cout << "cutPropagator check failed on jtAlgos" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckJtAlgos(cutPropagator inCutProp){return CheckJtAlgos(inCutProp.GetJtAlgos());}
-bool cutPropagator::CheckMinJtPtCut(std::vector<double> inMinJtPtCut){return CheckVectDouble(inMinJtPtCut, minJtPtCut);}
+
+bool cutPropagator::CheckMinJtPtCut(std::vector<double> inMinJtPtCut)
+{
+  bool checkVal = CheckVectDouble(inMinJtPtCut, minJtPtCut);
+  if(!checkVal) std::cout << "cutPropagator check failed on minJtPtCut" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckMinJtPtCut(cutPropagator inCutProp){return CheckMinJtPtCut(inCutProp.GetMinJtPtCut());}
-bool cutPropagator::CheckMultiJtPtCut(std::vector<double> inMultiJtPtCut){return CheckVectDouble(inMultiJtPtCut, multiJtPtCut);}
+
+bool cutPropagator::CheckMultiJtPtCut(std::vector<double> inMultiJtPtCut)
+{
+  bool checkVal = CheckVectDouble(inMultiJtPtCut, multiJtPtCut);
+  if(!checkVal) std::cout << "cutPropagator check failed on multiJtPtCut" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckMultiJtPtCut(cutPropagator inCutProp){return CheckMultiJtPtCut(inCutProp.GetMultiJtPtCut());}
-bool cutPropagator::CheckRecoTruncPos(std::vector<int> inRecoTruncPos){return CheckVectInt(inRecoTruncPos, recoTruncPos);}
+
+bool cutPropagator::CheckRecoTruncPos(std::vector<int> inRecoTruncPos)
+{
+  bool checkVal = CheckVectInt(inRecoTruncPos, recoTruncPos);
+  if(!checkVal) std::cout << "cutPropagator check failed on recoTruncPos" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckRecoTruncPos(cutPropagator inCutProp){return CheckRecoTruncPos(inCutProp.GetRecoTruncPos());}
-bool cutPropagator::CheckIsPP(bool inIsPP){return CheckBool(inIsPP, isPP);}
+
+bool cutPropagator::CheckIsPP(bool inIsPP)
+{
+  bool checkVal = CheckBool(inIsPP, isPP);
+  if(!checkVal) std::cout << "cutPropagator check failed on isPP" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckIsPP(cutPropagator inCutProp){return CheckIsPP(inCutProp.GetIsPP());}
-bool cutPropagator::CheckNCentBins(int inNCentBins){return CheckInt(inNCentBins, nCentBins);}
+
+bool cutPropagator::CheckNCentBins(int inNCentBins)
+{
+  bool checkVal = CheckInt(inNCentBins, nCentBins);
+  if(!checkVal) std::cout << "cutPropagator check failed on nCentBins" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckNCentBins(cutPropagator inCutProp){return CheckNCentBins(inCutProp.GetNCentBins());}
-bool cutPropagator::CheckCentBinsLow(std::vector<int> inCentBinsLow){return CheckVectInt(inCentBinsLow, centBinsLow);}
+
+bool cutPropagator::CheckCentBinsLow(std::vector<int> inCentBinsLow)
+{
+  bool checkVal = CheckVectInt(inCentBinsLow, centBinsLow);
+  if(!checkVal) std::cout << "cutPropagator check failed on centBinsLow" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckCentBinsLow(cutPropagator inCutProp){return CheckCentBinsLow(inCutProp.GetCentBinsLow());}
-bool cutPropagator::CheckCentBinsHi(std::vector<int> inCentBinsHi){return CheckVectInt(inCentBinsHi, centBinsHi);}
+
+bool cutPropagator::CheckCentBinsHi(std::vector<int> inCentBinsHi)
+{
+  bool checkVal = CheckVectInt(inCentBinsHi, centBinsHi);
+  if(!checkVal) std::cout << "cutPropagator check failed on centBinsHi" << std::endl;
+  return checkVal;
+}
 bool cutPropagator::CheckCentBinsHi(cutPropagator inCutProp){return CheckCentBinsHi(inCutProp.GetCentBinsHi());}
+//end checks
+
 
 void cutPropagator::SetResponseMod(int inN, const Double_t inResponseMod[])
 {

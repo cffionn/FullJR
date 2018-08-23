@@ -219,7 +219,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_" + selectJtAlgoStr + debugStr + dateStr + ".root";
+
+  const Int_t nSuperBayes = 1;
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_NSuperBayes" + std::to_string(nSuperBayes) + "_" + selectJtAlgoStr + debugStr + dateStr + ".root";
 
   while(outFileName.find("__") != std::string::npos){outFileName.replace(outFileName.find("__"), 2, "_");}
 
@@ -243,7 +245,6 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     if(bayesVal[bI] == 100) temp100Pos = bI;
   }
 
-  const Int_t nSuperBayes = 0;
 
   const Int_t bayes100Pos = temp100Pos;
 
@@ -379,9 +380,47 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
+	      std::string histName = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetName();
+	      bool highLight = true;
+	      if(histName.find("ak3PFJetAnalyzer") == std::string::npos) highLight = false;
+	      else if(histName.find("NoID") == std::string::npos) highLight = false;
+	      else if(histName.find("ResponseMod0p00") == std::string::npos) highLight = false;
+	      else if(histName.find("AbsEta0p5to1p0") == std::string::npos) highLight = false;
+	      else if(histName.find("JECUpMC") == std::string::npos) highLight = false;
+
 	      RooUnfoldResponse* rooResSuperClone_p = (RooUnfoldResponse*)rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI]->Clone("rooResSuperClone_p");
 	      TH2D* initRes_p = (TH2D*)rooResSuperClone_p->Hresponse()->Clone("initRes_p");
 	      TH1D* initMeas_p = (TH1D*)rooResSuperClone_p->Hmeasured()->Clone("initMeas_p");
+	      TH1D* initTrue_p = (TH1D*)rooResSuperClone_p->Htruth()->Clone("initTrue_p");
+
+	      if(highLight){
+		std::cout << "DOING PRE-HIGHLIGHT" << std::endl;
+		std::cout << " Print initTrue: " << std::endl;
+		initTrue_p->Print("ALL");
+
+		std::cout << " Print initMeas: " << std::endl;
+		initMeas_p->Print("ALL");
+
+		std::cout << " Print from rooUnfold: " << std::endl;
+		rooResSuperClone_p->Print("ALL");
+
+		std::cout << " Print from TH2" << std::endl;
+		for(Int_t bIY = 0; bIY < initRes_p->GetYaxis()->GetNbins(); ++bIY){
+		  std::string firstString = std::to_string(bIY+1);
+		  if(firstString.size() == 0) firstString = " " + firstString;
+		  std::cout << firstString;
+
+		  for(Int_t bIX = 0; bIX < initRes_p->GetXaxis()->GetNbins(); ++bIX){
+		    std::string value = prettyString(initRes_p->GetBinContent(bIX+1, bIY+1), 6, false);
+		    
+		    while(value.size() < 10){value = " " + value;}
+		    while(value.size() > 10){value.replace(value.size()-2, 1, "");}
+		    value = "'" + value + "'";
+		    std::cout << value;
+		  }
+		  std::cout << std::endl;
+		}
+	      }
 	      
 	      for(Int_t bsI = 0; bsI < nSuperBayes; ++bsI){
 		RooUnfoldBayes superBayes(rooResSuperClone_p, jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 3, false, "name");
@@ -389,17 +428,21 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		TH1D* unfold_h = (TH1D*)superBayes.Hreco(RooUnfold::kCovToy);
 		Double_t tot = unfold_h->Integral();
 		unfold_h->Scale(1./tot);
-
+		
 		for(Int_t bIY = 0; bIY < initRes_p->GetNbinsY(); ++bIY){
 		  Double_t sumOverX = 0.0;
 		  for(Int_t bIX = 0; bIX < initRes_p->GetNbinsX(); ++bIX){
 		    sumOverX += initRes_p->GetBinContent(bIX+1, bIY+1);
 		  }
 
-		  Double_t scaleFactor = unfold_h->GetBinContent(bIY+1)/sumOverX;
+		  Double_t scaleFactor = 1;
+		  if(sumOverX > 0) scaleFactor = unfold_h->GetBinContent(bIY+1)/sumOverX;
+
+		  //		  std::cout << "Check bin width match: " << unfold_h->GetBinLowEdge(bIY+1) << "-" << unfold_h->GetBinLowEdge(bIY+2) << ", " << initRes_p->GetYaxis()->GetBinLowEdge(bIY+1) << "-" << initRes_p->GetYaxis()->GetBinLowEdge(bIY+2) << "." << std::endl;
 
 		  for(Int_t bIX = 0; bIX < initRes_p->GetNbinsX(); ++bIX){
 		    initRes_p->SetBinContent(bIX+1, bIY+1, initRes_p->GetBinContent(bIX+1, bIY+1)*scaleFactor);
+		    initRes_p->SetBinError(bIX+1, bIY+1, initRes_p->GetBinError(bIX+1, bIY+1)*scaleFactor);
 		  }
 		}
 		
@@ -407,10 +450,33 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		rooResSuperClone_p = NULL;
 		rooResSuperClone_p = new RooUnfoldResponse(initMeas_p, unfold_h, initRes_p, "rooResSuperClone_p");
 	      }
-	    
 
+	      if(highLight){
+		std::cout << "DOING POST-HIGHLIGHT" << std::endl;
+		std::cout << " Print from roo" << std::endl;
+		rooResSuperClone_p->Print("ALL");
+
+		std::cout << " Print from TH2" << std::endl;
+		for(Int_t bIY = 0; bIY < initRes_p->GetYaxis()->GetNbins(); ++bIY){
+		  std::string firstString = std::to_string(bIY+1);
+		  if(firstString.size() == 0) firstString = " " + firstString;
+		  std::cout << firstString;
+
+		  for(Int_t bIX = 0; bIX < initRes_p->GetXaxis()->GetNbins(); ++bIX){
+		    std::string value = prettyString(initRes_p->GetBinContent(bIX+1, bIY+1), 6, false);
+		    
+		    while(value.size() < 10){value = " " + value;}
+		    while(value.size() > 10){value.replace(value.size()-2, 1, "");}
+		    value = "'" + value + "'";
+		    std::cout << value;
+		  }
+		  std::cout << std::endl;
+		}
+	      }
+	    
 	      delete initRes_p;
 	      delete initMeas_p;
+	      delete initTrue_p;
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){	    		
 		RooUnfoldResponse* rooResClone_p = (RooUnfoldResponse*)rooResSuperClone_p->Clone("rooResClone_p");
@@ -579,6 +645,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		  }
 		  else jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P SAME"); 		
 		  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bayesVal[bI])).c_str(), "P L");
+
 		}
 	      }
 
@@ -589,6 +656,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      gPad->SetTicks(1,2);
 	      bool doLogX = false;
 	      if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(1)*3 < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetNbinsX()-1)) doLogX = true;
+
 	      if(doLogX) gPad->SetLogx();
 
 	      leg_p->Draw("SAME");

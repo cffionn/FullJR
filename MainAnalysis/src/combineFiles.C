@@ -17,6 +17,9 @@
 #include "TKey.h"
 #include "TCollection.h"
 
+//RooUnfold dependencies
+#include "src/RooUnfoldResponse.h"
+
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
 #include "MainAnalysis/include/doLocalDebug.h"
@@ -54,23 +57,99 @@ int recursiveCombineDir(TFile* inFile_p, const std::string dirName, TFile* outFi
     const std::string name = key->GetName();
     const std::string className = key->GetClassName();
 
-    if(className.find("TDirectory") != std::string::npos){
-      retVal += recursiveCombineDir(inFile_p, dirName + "/" + name, outFile_p, nDir, dirs_p);
+    if(className.find("TDirectory") != std::string::npos){retVal += recursiveCombineDir(inFile_p, dirName + "/" + name, outFile_p, nDir, dirs_p);}
+
+    if(className.find("TH1I") != std::string::npos){
+      TH1I* hist_p = (TH1I*)key->ReadObj();
+
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
     }
+    else if(className.find("TH1F") != std::string::npos){
+      TH1F* hist_p = (TH1F*)key->ReadObj();
 
-    if(className.find("TH1") == std::string::npos) continue;
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
+    }
+    else if(className.find("TH1D") != std::string::npos){
+      TH1D* hist_p = (TH1D*)key->ReadObj();
 
-    TH1* hist_p = (TH1*)key->ReadObj();
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
+    }
+    else if(className.find("TH2I") != std::string::npos){
+      TH2I* hist_p = (TH2I*)key->ReadObj();
 
-    outFile_p->cd();
-    dirs_p[dirPos]->cd();
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
+    }
+    else if(className.find("TH2F") != std::string::npos){
+      TH2F* hist_p = (TH2F*)key->ReadObj();
 
-    hist_p->Write("", TObject::kOverwrite);
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
+    }
+    else if(className.find("TH2D") != std::string::npos){
+      TH2D* hist_p = (TH2D*)key->ReadObj();
 
-    inFile_p->cd();
-    dir_p->cd();
-    //pretty clear memory leak w/o delete here
-    delete hist_p;
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      hist_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete hist_p;
+    }
+    else if(className.find("RooUnfoldResponse") != std::string::npos){
+      RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)key->ReadObj();
+
+      outFile_p->cd();
+      dirs_p[dirPos]->cd();
+      
+      rooRes_p->Write("", TObject::kOverwrite);
+      
+      inFile_p->cd();
+      dir_p->cd();
+      //pretty clear memory leak w/o delete here
+      delete rooRes_p;
+    }
   }
 
   return retVal;
@@ -96,7 +175,6 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
 
   std::vector<std::string> tdirNameVect;
   std::vector<std::vector<std::string> > tdirNamePerFile;
-  std::vector<std::vector<std::string > > th1NameVect;
 
   std::cout << "Combining " << fileList.size() << " files..." << std::endl;
   
@@ -111,23 +189,17 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
     std::vector<std::string> tempHistTag = cutPropCurrent.GetHistTag();
     std::vector<int> tempHistBestBayes = cutPropCurrent.GetHistBestBayes();
 
-    combinedHistTag.insert(combinedHistTag.end(), tempHistTag.begin(), tempHistTag.end());
-    combinedBestBayes.insert(combinedBestBayes.end(), tempHistBestBayes.begin(), tempHistBestBayes.end());
+    if(tempHistTag.size() != 0){
+      combinedHistTag.insert(combinedHistTag.end(), tempHistTag.begin(), tempHistTag.end());
+      combinedBestBayes.insert(combinedBestBayes.end(), tempHistBestBayes.begin(), tempHistBestBayes.end());
+    }
 
     std::vector<std::string> classList;
     std::vector<std::string> contentsList = returnRootFileContentsList(inFile_p, "", "", -1, &(classList));
 
-    //    std::vector<std::string> fileDirList = returnRootFileContentsList(inFile_p, "TDirectoryFile", "", -1);
-    std::vector<std::string> th1List;
-
     tdirNamePerFile.push_back({});
 
     for(unsigned int i = 0; i < contentsList.size(); ++i){
-      if(classList.at(i).find("TH1") != std::string::npos){
-	th1List.push_back(contentsList.at(i));
-	continue;
-      }
-
       if(classList.at(i).find("TDirectory") == std::string::npos) continue;
       
       bool isSame = false;
@@ -142,8 +214,6 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
 
       tdirNamePerFile.at(tdirNamePerFile.size()-1).push_back(contentsList.at(i));
     }
-
-    th1NameVect.push_back(th1List);
 
     if(fI != 0){
       bool testProp = cutPropCurrent.CheckPropagatorsMatch(prevProp, true, true);
@@ -163,7 +233,6 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   unsigned int pos = 0;
   while(pos < tdirNameVect.size()){
     bool isSwap = false;
-
     for(unsigned int dI = pos+1; dI < tdirNameVect.size(); ++dI){
       if(tdirNameVect.at(pos).find("/") != std::string::npos && tdirNameVect.at(dI).find("/") == std::string::npos){
 	std::string tempStr = tdirNameVect.at(pos);
@@ -251,9 +320,14 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
     else if(tdirNameVect.at(dI).find("unfoldDir") != std::string::npos) unfoldDirPos = dI;
   }
 
-  std::cout << "UnfoldDirPos: " << unfoldDirPos << std::endl;
-  std::cout << " " << dirs_p[unfoldDirPos]->GetName() << std::endl;
-  
+  if(unfoldDirPos >= 0){
+    std::cout << "UnfoldDirPos: " << unfoldDirPos << std::endl;
+    std::cout << " " << dirs_p[unfoldDirPos]->GetName() << std::endl;
+  }
+  else{
+    std::cout << "No unfolding dir found warning" << std::endl;
+  }
+
   outFile_p->cd();
 
   cppWatch writingWatch;
@@ -273,115 +347,72 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
       const std::string name = key->GetName();
       const std::string className = key->GetClassName();
       
-      if(className.find("TDirectory") != std::string::npos){
-	retVal += recursiveCombineDir(inFile_p, name, outFile_p, nDir, dirs_p);
+      if(className.find("TDirectory") != std::string::npos){retVal += recursiveCombineDir(inFile_p, name, outFile_p, nDir, dirs_p);}
+      
+      if(className.find("TH1I") != std::string::npos){      
+	TH1I* hist_p = (TH1I*)key->ReadObj();
+      
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
       }
+      else if(className.find("TH1F") != std::string::npos){      
+	TH1F* hist_p = (TH1F*)key->ReadObj();
       
-      if(className.find("TH1") == std::string::npos) continue;
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
+      }
+      else if(className.find("TH1D") != std::string::npos){      
+	TH1D* hist_p = (TH1D*)key->ReadObj();
       
-      TH1* hist_p = (TH1*)key->ReadObj();
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
+      }
+      else if(className.find("TH2I") != std::string::npos){      
+	TH2I* hist_p = (TH2I*)key->ReadObj();
       
-      outFile_p->cd();
-      hist_p->Write("", TObject::kOverwrite);
-      //pretty clear memory leak w/o delete here
-      delete hist_p;
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
+      }
+      else if(className.find("TH2F") != std::string::npos){      
+	TH2F* hist_p = (TH2F*)key->ReadObj();
+      
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
+      }
+      else if(className.find("TH2D") != std::string::npos){      
+	TH2D* hist_p = (TH2D*)key->ReadObj();
+      
+	outFile_p->cd();
+	hist_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete hist_p;
+      }
+      else if(className.find("RooUnfoldResponse") != std::string::npos){      
+	RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)key->ReadObj();
+      
+	outFile_p->cd();
+	rooRes_p->Write("", TObject::kOverwrite);
+	//pretty clear memory leak w/o delete here
+	delete rooRes_p;
+      }
     }
 
     inFile_p->Close();
     delete inFile_p;
-  }    
+  }
 
   if(retVal != 0) std::cout << "Uhoh rec nonzero something bad" << std::endl;
 
-    /*
-  int numWrite = 0;
-
-  std::cout << "Writing " << fileList.size() << " contents..." << std::endl;
-  for(unsigned int fI = 0; fI < fileList.size(); ++fI){
-    cppWatch fileWatch1;
-    cppWatch fileWatch2;
-    cppWatch fileWatch3;
-    cppWatch fileWatch2PreGet;
-    cppWatch fileWatch2Get;
-    cppWatch fileWatch2PostGet;
-    fileWatch1.start();
-
-    std::cout << " Writing file " << fI << "/" << fileList.size() << ": " << fileList.at(fI) << std::endl;
-
-    TFile* inFile_p = new TFile(fileList.at(fI).c_str(), "READ");
-
-    std::vector<std::string> tdirTemp = tdirNamePerFile.at(fI);
-    std::vector<int> tdirTempPos;
-    for(unsigned int tI = 0; tI < tdirTemp.size(); ++tI){
-      for(unsigned int tI2 = 0; tI2 < tdirNameVect.size(); ++tI2){
-	if(isStrSame(tdirTemp.at(tI), tdirNameVect.at(tI2))){
-	  tdirTempPos.push_back(tI2);
-	  break;
-	}
-      }
-    }
-    
-    fileWatch1.stop();
-    std::cout << "  File Watch 1: " << fileWatch1.total() << std::endl;
-
-    fileWatch2.start();
-
-    TList* fileList = returnRootFileContentsList(inFile_p, -1);
-    TIter next(fileList);
-    TKey* key = NULL;
-
-    while( (key = (TKey*)next()) ){
-      const std::string name = key->GetName();
-      const std::string className = key->GetClassName();
-
-      if(className.find("TH1") == std::string::npos) continue;
-
-      std::string dirStr
-      for(unsigned int hI = 0; hI < th1NameVect.at(fI).size(); ++hI){
-	std::string tempStr = 
-      }
-
-
-      fileWatch2PreGet.start();
-
-      inFile_p->cd();
-
-      fileWatch2PreGet.stop();
-
-      fileWatch2Get.start();
-      TH1* tempHist_p = (TH1*)key->ReadObj();
-      fileWatch2Get.stop();
-
-      fileWatch2PostGet.start();
-
-      int dirPos = -1;
-      if(tdirTemp.size() == 1) dirPos = tdirTempPos.at(0);
-      else std::cout << "UH OH" << std::endl;
-
-      outFile_p->cd();
-      dirs_p[dirPos]->cd();
-
-      tempHist_p->Write("", TObject::kOverwrite);     
-      numWrite += 1;
-
-      fileWatch2PostGet.stop();
-    }
-
-    fileWatch2.stop();
-    std::cout << "  File Watch 2: " << fileWatch2.total() << std::endl;
-    std::cout << "   File Watch 2, Pre-Get: " << fileWatch2PreGet.total() << std::endl;
-    std::cout << "   File Watch 2, Get: " << fileWatch2Get.total() << std::endl;
-    std::cout << "   File Watch 2, Post-Get: " << fileWatch2PostGet.total() << std::endl;
-
-    fileWatch3.start();
-
-    inFile_p->Close();
-    delete inFile_p;
-
-    fileWatch3.stop();
-    std::cout << "  File Watch 3: " << fileWatch3.total() << std::endl;
-  }
-    */
   writingWatch.stop();
   
   std::cout << "Write time: " << writingWatch.total() << std::endl;
