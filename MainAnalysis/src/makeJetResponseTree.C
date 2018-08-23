@@ -887,7 +887,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      
 	      continue;
 	    }
-
+	  
 	    
 	    for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	      for(unsigned int iI = 0; iI < passesID.size(); ++iI){
@@ -895,11 +895,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		
 		if(!isPara){
 		  for(Int_t sI = 0; sI < nSyst; ++sI){
-		    if(goodRecoTrunc[sI]) rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-		    else rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Miss(refpt_[tI][jI], fullWeight2[sI]);
-
-
-		    if(isStrSame(systStr[sI], "PriorFlat")) genJtPt_CheckFlatPrior_h[tI][centPos][iI][mI][aI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+		    if(goodTruth){
+		      if(goodRecoTrunc[sI]) rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+		      else rooResponse_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Miss(refpt_[tI][jI], fullWeight2[sI]);
+		      
+		      if(isStrSame(systStr[sI], "PriorFlat")) genJtPt_CheckFlatPrior_h[tI][centPos][iI][mI][aI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+		    }
 		  }
 		  
 		  if(goodTruth && goodReco[0]){
