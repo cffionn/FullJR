@@ -70,8 +70,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<double> multiJtPtCutTemp = cutProp.GetMultiJtPtCut();
   std::vector<int> recoTruncPosTemp = cutProp.GetRecoTruncPos();
 
-  Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
-  std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
+  Int_t nRecoJtPtBinsTemp = cutProp.GetNRecoJtPtBins();
+  std::vector<Double_t> recoJtPtBinsTemp = cutProp.GetRecoJtPtBins();
 
   Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
@@ -100,11 +100,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;
-  if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nRecoJtPtBinsTemp < 0) std::cout << "nRecoJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(jtAbsEtaMaxTemp < -98) std::cout << "jtAbsEtaMaxTemp less than -98. please check input file. return 1" << std::endl;
 
-  if(nCentBinsTemp < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98 || nIDTemp < 0){
+  if(nCentBinsTemp < 0 || nRecoJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98 || nIDTemp < 0){
     responseFile_p->Close();
     delete responseFile_p;
     return 1;
@@ -113,12 +113,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
   const Int_t nCentBins = nCentBinsTemp;
 
-  const Int_t nJtPtBins = nJtPtBinsTemp;
-  Double_t jtPtBins[nJtPtBins+1];
-  std::cout << "nJtPtBins: ";
-  for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
-    jtPtBins[jI] = jtPtBinsTemp.at(jI);
-    std::cout << " " << jtPtBins[jI] << ",";
+  const Int_t nRecoJtPtBins = nRecoJtPtBinsTemp;
+  Double_t recoJtPtBins[nRecoJtPtBins+1];
+  std::cout << "nRecoJtPtBins: ";
+  for(Int_t jI = 0; jI < nRecoJtPtBins+1; ++jI){
+    recoJtPtBins[jI] = recoJtPtBinsTemp.at(jI);
+    std::cout << " " << recoJtPtBins[jI] << ",";
   }
   std::cout << std::endl;
 
@@ -234,9 +234,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TH1D* jtPtRaw_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
   TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
-  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
-  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
-  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nJtPtBins];
+  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
+  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
+  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
 
   Double_t minJtPtCut[nDataJet];
   Double_t multiJtPtCut[nDataJet];
@@ -281,11 +281,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       for(Int_t idI = 0; idI < nID; ++idI){
 	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	  const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
-	  jtPtRaw_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
-	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nJtPtBins, jtPtBins);
+	  jtPtRaw_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nRecoJtPtBins, recoJtPtBins);
+	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nRecoJtPtBins, recoJtPtBins);
 
-	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
-	    const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jIter], 1, true) + "to" + prettyString(jtPtBins[jIter+1], 1, true);
+	  for(Int_t jIter = 0; jIter < nRecoJtPtBins; ++jIter){
+	    const std::string jtPtStr = "JtPt" + prettyString(recoJtPtBins[jIter], 1, true) + "to" + prettyString(recoJtPtBins[jIter+1], 1, true);
 
 	    multijetAJ_All_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_All_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", nMultijetAJ, multijetAJ);
 	    multijetAJ_Pass_h[jI][cI][idI][aI][jIter] = new TH1D(("multijetAJ_Pass_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_" + jtPtStr + "_h").c_str(), ";Multijet A_{J};Counts", nMultijetAJ, multijetAJ);
@@ -480,13 +480,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	}
 
 	if(/*tempLeadingPt_ > jtPtBins[0] && */tempLeadingPt_ > minJtPtCut[tI]){
-	  for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	    if(jtPtBins[jI] <= tempLeadingPt_ && tempLeadingPt_ < jtPtBins[jI+1]){
+	  for(Int_t jI = 0; jI < nRecoJtPtBins; ++jI){
+	    if(recoJtPtBins[jI] <= tempLeadingPt_ && tempLeadingPt_ < recoJtPtBins[jI+1]){
 	      tempLeadingFillPos_ = jI;
 	      break;
 	    }
 	  }
-	  if(tempLeadingFillPos_ < 0) tempLeadingFillPos_ = nJtPtBins-1;
+	  if(tempLeadingFillPos_ < 0) tempLeadingFillPos_ = nRecoJtPtBins-1;
 
 	  for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	    if(jI == tempLeadingPos_) continue;
@@ -564,8 +564,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
-	      bool goodReco = (jtpt_[tI][jI] >= jtPtBins[0] && jtpt_[tI][jI] < jtPtBins[nJtPtBins]) && jtpt_[tI][jI] > minJtPtCut[tI];
-	      bool goodRecoTrunc = (jtpt_[tI][jI] >= jtPtBins[recoTruncPos[tI]] && jtpt_[tI][jI] < jtPtBins[nJtPtBins-1]);
+	      bool goodReco = (jtpt_[tI][jI] >= recoJtPtBins[0] && jtpt_[tI][jI] < recoJtPtBins[nRecoJtPtBins]) && jtpt_[tI][jI] > minJtPtCut[tI];
+	      bool goodRecoTrunc = (jtpt_[tI][jI] >= recoJtPtBins[recoTruncPos[tI]] && jtpt_[tI][jI] < recoJtPtBins[nRecoJtPtBins-1]);
 	      
 	      if(goodReco){
 		jtPtRaw_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
@@ -834,11 +834,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 	multijetNames.push_back({});
 
-	for(Int_t jetI = 0; jetI < nJtPtBins; ++jetI){
+	for(Int_t jetI = 0; jetI < nRecoJtPtBins; ++jetI){
 	  if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetEntries() == 0) continue;
 
-	  const std::string jtPtStr = "JtPt" + prettyString(jtPtBins[jetI], 1, true) + "to" + prettyString(jtPtBins[jetI+1], 1, true);
-	  const std::string jtPtStr2 =  prettyString(jtPtBins[jetI], 1, false) + "<p_{T}<" + prettyString(jtPtBins[jetI+1], 1, false);
+	  const std::string jtPtStr = "JtPt" + prettyString(recoJtPtBins[jetI], 1, true) + "to" + prettyString(recoJtPtBins[jetI+1], 1, true);
+	  const std::string jtPtStr2 =  prettyString(recoJtPtBins[jetI], 1, false) + "<p_{T}<" + prettyString(recoJtPtBins[jetI+1], 1, false);
 	
 	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
 	  canv_p->SetTopMargin(0.01);
@@ -1142,7 +1142,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
 	  delete jtPtRaw_RecoTrunc_h[jI][cI][idI][aI];
 
-	  for(Int_t jIter = 0; jIter < nJtPtBins; ++jIter){
+	  for(Int_t jIter = 0; jIter < nRecoJtPtBins; ++jIter){
 	    multijetAJ_All_h[jI][cI][idI][aI][jIter]->Write("", TObject::kOverwrite);
 	    delete multijetAJ_All_h[jI][cI][idI][aI][jIter];
 	    
@@ -1170,8 +1170,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetMinJtPtCut(nDataJet, minJtPtCut);
   cutPropOut.SetMultiJtPtCut(nDataJet, multiJtPtCut);
   cutPropOut.SetRecoTruncPos(nDataJet, recoTruncPos);
-  cutPropOut.SetNJtPtBins(nJtPtBins);
-  cutPropOut.SetJtPtBins(nJtPtBins+1, jtPtBins);
+  cutPropOut.SetNRecoJtPtBins(nRecoJtPtBins);
+  cutPropOut.SetRecoJtPtBins(nRecoJtPtBins+1, recoJtPtBins);
+  cutPropOut.SetNGenJtPtBins(cutProp.GetNGenJtPtBins());
+  cutPropOut.SetGenJtPtBins(cutProp.GetGenJtPtBins());
   cutPropOut.SetNJtAbsEtaBins(nJtAbsEtaBins);
   cutPropOut.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
   cutPropOut.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
