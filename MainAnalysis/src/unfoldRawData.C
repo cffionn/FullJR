@@ -107,8 +107,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<Int_t> centBinsLow = cutPropData.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropData.GetCentBinsHi();
 
-  const Int_t nJtPtBins = cutPropData.GetNJtPtBins();
-  std::vector<Double_t> jtPtBinsTemp = cutPropData.GetJtPtBins();
+  const Int_t nGenJtPtBins = cutPropData.GetNGenJtPtBins();
+  std::vector<Double_t> genJtPtBinsTemp = cutPropData.GetGenJtPtBins();
 
   const Int_t nJtAbsEtaBins = TMath::Min(valForForLoops, cutPropData.GetNJtAbsEtaBins());
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutPropData.GetJtAbsEtaBinsLow();
@@ -121,11 +121,11 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<double> jtPfMUMFCutLow = cutPropData.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutPropData.GetJtPfMUMFCutHi();
 
-  Double_t jtPtBins[nJtPtBins+1];
-  std::cout << "nJtPtBins: ";
-  for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
-    jtPtBins[jI] = jtPtBinsTemp.at(jI);
-    std::cout << " " << jtPtBins[jI] << ",";
+  Double_t genJtPtBins[nGenJtPtBins+1];
+  std::cout << "nGenJtPtBins: ";
+  for(Int_t jI = 0; jI < nGenJtPtBins+1; ++jI){
+    genJtPtBins[jI] = genJtPtBinsTemp.at(jI);
+    std::cout << " " << genJtPtBins[jI] << ",";
   }
   std::cout << std::endl;
 
@@ -301,8 +301,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		std::string bayesStr = "Bayes" + std::to_string(bayesVal[bI]);
 		
-		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nJtPtBins, jtPtBins);
+		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
+		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
 		centerTitles({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
 		setSumW2({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
 	      }
