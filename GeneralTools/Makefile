@@ -18,7 +18,7 @@ ifndef FULLJRDIR
 $(error FULLJRDIR is not set at all. Do 'source setFullJREnv.sh')
 endif
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir 
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/findFileEntry.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -31,6 +31,11 @@ mkdirPdf:
 
 checkFullJRDir:
 	@$(CHECK_FULLJRDIR)
+
+bin/findFileEntry.exe: src/findFileEntry.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/findFileEntry.exe src/findFileEntry.C
+
+
 
 clean:
 	rm -f ./*~

@@ -14,6 +14,12 @@ MKDIR_PDF=mkdir -p $(PWD)/pdfDir
 CHECK_FULLJRDIR=printf "\nFULLJRDIR is set to: \'$(FULLJRDIR)\'\n   !!!IF FULLJRDIR IS EMPTY THE BUILD WILL FAIL!!!\n   Run 'source \
 setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
+
+ifndef FULLJRDIR
+$(error FULLJRDIR is not set at all. Do 'source setFullJREnv.sh')
+endif
+
+
 all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir 
 
 mkdirBin:

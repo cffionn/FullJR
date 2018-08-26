@@ -4,6 +4,10 @@ ifeq "$(GCCVERSION)" "1"
   CXXFLAGS += -Wno-error=misleading-indentation
 endif
 
+ifndef FULLJRDIR
+$(error FULLJRDIR is not set at all. Do 'source setFullJREnv.sh')
+endif
+
 INCLUDE=-I $(FULLJRDIR)
 ROOT=`root-config --cflags --glibs`
 

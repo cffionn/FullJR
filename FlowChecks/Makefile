@@ -4,6 +4,10 @@ ifeq "$(GCCVERSION)" "1"
   CXXFLAGS += -Wno-error=misleading-indentation
 endif
 
+ifndef FULLJRDIR
+$(error FULLJRDIR is not set at all. Do 'source setFullJREnv.sh')
+endif
+
 INCLUDE=-I $(FULLJRDIR)
 ROOT=`root-config --cflags --glibs`
 
@@ -14,7 +18,7 @@ MKDIR_PDF=mkdir -p $(PWD)/pdfDir
 CHECK_FULLJRDIR=printf "\nFULLJRDIR is set to: \'$(FULLJRDIR)\'\n   !!!IF FULLJRDIR IS EMPTY THE BUILD WILL FAIL!!!\n   Run 'source \
 setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/recreateV2V3Tree.exe bin/recreateV2V3TreeHist.exe bin/plotRecreateV2V3Tree.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/recreateV2V3Tree.exe bin/recreateV2V3TreeHist.exe bin/plotRecreateV2V3Tree.exe bin/checkVectSize.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -37,6 +41,8 @@ bin/recreateV2V3TreeHist.exe: src/recreateV2V3TreeHist.C
 bin/plotRecreateV2V3Tree.exe: src/plotRecreateV2V3Tree.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotRecreateV2V3Tree.exe src/plotRecreateV2V3Tree.C
 
+bin/checkVectSize.exe: src/checkVectSize.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkVectSize.exe src/checkVectSize.C
 
 clean:
 	rm -f ./*~
