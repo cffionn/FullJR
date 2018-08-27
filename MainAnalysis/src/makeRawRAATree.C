@@ -158,7 +158,6 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
 
   UInt_t run_, lumi_;
 
-
   Int_t hiBinOut_[nJetAlgos];
   Int_t nrefOut_[nJetAlgos];
   Float_t jtptOut_[nJetAlgos][nMaxJets];
@@ -263,7 +262,6 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
       skimTree_p->SetBranchAddress("pBeamScrapingFilter", &pBeamScrapingFilter_);
     }
-
 
     if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 

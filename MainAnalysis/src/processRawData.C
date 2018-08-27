@@ -30,7 +30,7 @@
 #include "Utility/include/vanGoghPalette.h"
 
 
-int processRawData(const std::string inDataFileName, const std::string inResponseName, bool isDataPP = false)
+int processRawData(const std::string inDataFileName, const std::string inResponseName, bool isDataPP = false, const std::string tagStr = "")
 {
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
@@ -221,7 +221,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_" + dateStr + ".root";
+  outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_";
+  if(tagStr.size() != 0) outFileName = outFileName + tagStr + "_";
+  outFileName = outFileName + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
@@ -1215,14 +1217,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
 int main(int argc, char* argv[])
 {
-  if(argc != 3 && argc != 4){
-    std::cout << "Usage: ./bin/processRawData.exe <inDataFileName> <inResponseName> <isPP-opt>" << std::endl;
+  if(argc != 3 && argc != 4 && argc != 5){
+    std::cout << "Usage: ./bin/processRawData.exe <inDataFileName> <inResponseName> <isPP-opt> <tagStr-opt>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
   if(argc == 3) retVal += processRawData(argv[1], argv[2]);
-  else retVal += processRawData(argv[1], argv[2], std::stoi(argv[3]));
+  else if(argc == 4) retVal += processRawData(argv[1], argv[2], std::stoi(argv[3]));
+  else if(argc == 5) retVal += processRawData(argv[1], argv[2], std::stoi(argv[3]), argv[4]);
 
   std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;

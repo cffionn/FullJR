@@ -13,7 +13,7 @@ NOTE: Check carefully that your ROOT matches your RooUnfold
 
 To run mainline analysis (Until otherwise stated, assuming you are working under MainAnalysis):
 
-Preamble:
+Preamble (Necessary files):
 
 Need four sets of forest files:
  * PbPb Data forest
@@ -21,7 +21,7 @@ Need four sets of forest files:
  * PbPb MC files (some selection of pthats)
  * pp MC files (some selection of pthats)
 
-Step 1:
+Step 1 (making input txt files):
 
 Since the MC files will most likely be a set of pthats, dump them in a text file w/ the following format:
 
@@ -32,7 +32,7 @@ PTHATWEIGHTS=<Comma separated list of pthatWeights corresponding to each value -
 /LINE/WITH/FULL/FILE/PATH/AND/NAME.root
 etc..
 
-Step2:
+Step 2 (pthatweights):
 
 If we dont have pthat weights for our MC, we start with derivation of pthatWeights
 
@@ -42,7 +42,7 @@ where the first argument is the txt file you derived in Step 1. The second argum
 
 This job will spit out pthatWeights, renormalized such that the lowest pthat has a weight of 1 (i.e. identical to counts, convenient for debug), for smooth pthat distribution. Insert these weights in your txt file from step one. They will be used throughout.
 
-Step3:
+Step 3 (Flat weights):
 
 If we want to derive weights for a flat spectra for use during the response matrix construction phase, we have to create a table.
 
@@ -56,7 +56,7 @@ This will produce a file in the output directory called '<inTxtName>_FlatGenJetR
 
 mv this file into tables, and in the src/makeJetResponseTree.C find the flatTableReader initiliazation and insert this new file name w/ path starting from 'MainAnalysis', i.e. 'MainAnalysis/tables/<name>'
 
-Step4:
+Step 4 (Building response matrices):
 
 We can now derive response matrices from the MC if we choose. It will probably be more convenient to split the files into single jet algos and process those in parallel. This can be done w/ Repository here:
 
@@ -74,6 +74,33 @@ This job will produce a response matrix file in outputs with name 'output/<inTxt
 
 If you choose to split processing by algo, keep the matrices separate for now. We will do recombination after parallelized unfolding.
 
-Step5:
+Step 5 (Processing Data):
 
+Now we need to process the raw data w/ the following command
 
+./bin/processRawData.exe <inDataFileName> <inResponseName> <isPP-opt> <tagStr-opt>
+
+If you opted to split the response files to run in parallel, I recommend you stick to that splitting now, and give the algo of each job as <tagStr-opt>. Here is an example:
+
+./bin/processRawData.exe /data/cmcginn/Forests/pp2015Data/HIHardProbes/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20180627_11Lumi_180627_122059_355_OutOf355_MERGED.root output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_ak10PFJetAnalyzer_FracNEntries1p00_JetResponse_20180827.root 1 ak10PFJetAnalyzer >& logs/processPP_ak10PFJetAnalyzer.log &
+
+This produces output file 'output/output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_ak10PFJetAnalyzer_20180827.root'
+
+Step 6 (Unfolding):
+Now that the raw data is processed, we run unfolding of pp and pbpb jtalgos in parallel
+./bin/unfoldRawData.exe <inDataFileName> <inResponseName> <selectJtAlgo-Opt>
+where inDataFileName is the product of step5, inResponseName is the same file w/ response matrices, and selectJtAlgo useful if you are doing all jet algos in separate files
+
+here is an example command
+./bin/unfoldRawData.exe output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_ak10PFJetAnalyzer_20180827.root output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_ak10PFJetAnalyzer_FracNEntries1p00_JetResponse_20180827.root ak10PF >& logs/unfoldPP_ak10PF.log &
+
+which will produce the output file 'output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_UnfoldRawData_NSuperBayes1_ak10PF_20180827.root'
+
+NSuperBayes is currently experimental and hardcoded
+
+Step 7 (combining):
+
+At this point it is highly convenient to combine files into single for PbPb and pp before plotting. Since TNamed is not well handled by hadd, a custom script is in place for this. Do:
+./bin/combineFiles.exe <outFileName> <Long> <List> <Of> <Input> <Files> 
+
+Step 8 (start plotting):

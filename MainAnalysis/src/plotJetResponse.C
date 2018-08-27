@@ -115,8 +115,8 @@ int plotJetResponse(const std::string inResponseName)
   std::vector<Int_t> centBinsLow = cutProp.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
-  Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
-  std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
+  Int_t nGenJtPtBinsTemp = cutProp.GetNGenJtPtBins();
+  std::vector<Double_t> genJtPtBinsTemp = cutProp.GetGenJtPtBins();
 
   Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
@@ -129,20 +129,20 @@ int plotJetResponse(const std::string inResponseName)
   std::vector<double> responseMod = cutProp.GetResponseMod();
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
-  if(nJtPtBinsTemp < 0) std::cout << "nJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nGenJtPtBinsTemp < 0) std::cout << "nGenJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nIDTemp less than 0. please check input file. return 1" << std::endl;
   
-  if(nCentBins < 0 || nJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || nIDTemp < 0){
+  if(nCentBins < 0 || nGenJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || nIDTemp < 0){
     responseFile_p->Close();
     delete responseFile_p;
     return 1;
   }
 
-  const Int_t nJtPtBins = nJtPtBinsTemp;
-  Double_t jtPtBins[nJtPtBins+1];
-  for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){
-    jtPtBins[jI] = jtPtBinsTemp.at(jI);
+  const Int_t nGenJtPtBins = nGenJtPtBinsTemp;
+  Double_t genJtPtBins[nGenJtPtBins+1];
+  for(Int_t jI = 0; jI < nGenJtPtBins+1; ++jI){
+    genJtPtBins[jI] = genJtPtBinsTemp.at(jI);
   }
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
@@ -258,7 +258,7 @@ int plotJetResponse(const std::string inResponseName)
 	    
 	    Int_t nPadX = -1;
 	    Int_t nPadY = -1;
-	    getPadsXY(nJtPtBins, &nPadX, &nPadY);
+	    getPadsXY(nGenJtPtBins, &nPadX, &nPadY);
 	    
 	    TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
 	    recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
@@ -268,8 +268,8 @@ int plotJetResponse(const std::string inResponseName)
 	    
 	    recoJtPtPerGenPtBin_p->Divide(nPadX, nPadY);
 	    
-	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	      const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	    for(Int_t jI = 0; jI < nGenJtPtBins; ++jI){
+	      const std::string jtPtStr = "Pt" + prettyString(genJtPtBins[jI], 1, true) + "to" + prettyString(genJtPtBins[jI+1], 1, true);
 	      
 	      recoJtPtPerGenPtBin_p->cd();
 	      recoJtPtPerGenPtBin_p->cd(jI+1);
@@ -291,8 +291,8 @@ int plotJetResponse(const std::string inResponseName)
 	    
 	    recoJtPtPerGenPtBinWeighted_p->Divide(nPadX, nPadY);
 	    
-	    for(Int_t jI = 0; jI < nJtPtBins; ++jI){
-	      const std::string jtPtStr = "Pt" + prettyString(jtPtBins[jI], 1, true) + "to" + prettyString(jtPtBins[jI+1], 1, true);
+	    for(Int_t jI = 0; jI < nGenJtPtBins; ++jI){
+	      const std::string jtPtStr = "Pt" + prettyString(genJtPtBins[jI], 1, true) + "to" + prettyString(genJtPtBins[jI+1], 1, true);
 	    
 	      recoJtPtPerGenPtBinWeighted_p->cd();
 	      recoJtPtPerGenPtBinWeighted_p->cd(jI+1);

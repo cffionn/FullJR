@@ -194,7 +194,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   inFile_p = NULL;
 
   Int_t posR4Temp = -1;
-  const Int_t nTrees = responseTrees.size();
+  Int_t posGeneralTemp = -1;
+  const Int_t nTrees = responseTrees.size(); 
 
   std::cout << "Making response matrices for the following " << nTrees << " jet trees: " << std::endl;
   for(int jI = 0; jI < nTrees; ++jI){
@@ -202,10 +203,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
     if(responseTrees.at(jI).find("akCs4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
     else if(responseTrees.at(jI).find("ak4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
+    else posGeneralTemp = jI;
   }
+  if(posGeneralTemp < 0 && nTrees == 1) posGeneralTemp = 0;
+
   const Int_t posR4 = posR4Temp;
+  const Int_t posGeneral = posGeneralTemp;
 
   std::cout << "PosR4: " << posR4 << std::endl;
+  std::cout << "PosGeneral: " << posGeneral << std::endl;
 
   const Int_t nCentBinsPerma = 4;
   const Int_t centBinsLowPerma[nCentBinsPerma] = {0, 10, 30, 50};
@@ -297,20 +303,20 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
-  Double_t minJtPtCut[nTrees];
-  Double_t multiJtPtCut[nTrees];
-  Int_t recoTruncPos[nTrees];
+  std::vector<Double_t> minJtPtCut;
+  std::vector<Double_t> multiJtPtCut;
+  std::vector<Int_t> recoTruncPos;
 
   for(Int_t jI = 0; jI < nTrees; ++jI){
-    multiJtPtCut[jI] = 50.;
-    minJtPtCut[jI] = 100.;
-    recoTruncPos[jI] = 1;
+    multiJtPtCut.push_back(50.);
+    minJtPtCut.push_back(100.);
+    recoTruncPos.push_back(1);
 
     bool isBigJt = responseTrees.at(jI).find("ak8") != std::string::npos || responseTrees.at(jI).find("ak10") != std::string::npos || responseTrees.at(jI).find("akCs8") != std::string::npos || responseTrees.at(jI).find("akCs10") != std::string::npos;
     if(isBigJt){
-      multiJtPtCut[jI] = 100;
-      minJtPtCut[jI] = 200.;
-      recoTruncPos[jI] = bigJetRecoTrunc;
+      multiJtPtCut.at(jI) = 100;
+      minJtPtCut.at(jI) = 200.;
+      recoTruncPos.at(jI) = bigJetRecoTrunc;
     }
   }
 
@@ -356,15 +362,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetNResponseMod(nResponseMod);
   cutProp.SetResponseMod(nResponseMod, responseMod);
   cutProp.SetJERVarData(nResponseMod, jerVarData);
-  cutProp.SetNJtAlgos(nTrees);
-  cutProp.SetJtAlgos(responseTrees);
-  cutProp.SetMinJtPtCut(nTrees, minJtPtCut);
-  cutProp.SetMultiJtPtCut(nTrees, multiJtPtCut);
-  cutProp.SetRecoTruncPos(nTrees, recoTruncPos);
   cutProp.SetNRecoJtPtBins(nRecoJtPtBins);
   cutProp.SetRecoJtPtBins(nRecoJtPtBins+1, recoJtPtBins);
   cutProp.SetNGenJtPtBins(nGenJtPtBins);
   cutProp.SetGenJtPtBins(nGenJtPtBins+1, genJtPtBins);
+  cutProp.SetNJtAlgos(nTrees);
+  cutProp.SetJtAlgos(responseTrees);
+  cutProp.SetMinJtPtCut(minJtPtCut);
+  cutProp.SetMultiJtPtCut(multiJtPtCut);
+  cutProp.SetRecoTruncPos(recoTruncPos);
   cutProp.SetNJtAbsEtaBins(nJtAbsEtaBins);
   cutProp.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
   cutProp.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
@@ -395,9 +401,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetNSyst(nSyst);
   cutProp.SetSystStr(nSyst, systStr);
 
-  const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180809_10.root";
+  const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180826_18.root";
 
-  const std::string flatWeightNamePP = "MainAnalysis/tables/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180809_10.root";
+  const std::string flatWeightNamePP = "MainAnalysis/tables/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180826_18.root";
 
   std::string flatWeightName = fullPath + "/";
   if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
@@ -463,6 +469,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   TH1D* genJtPt_CheckFlatPrior_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
+    if(nTrees == 2 && dI == posR4 && !isPP) continue;
+
     outFile_p->cd();
     std::string dirName = responseTrees.at(dI);
     dirName = dirName.substr(0, dirName.find("/"));
@@ -582,55 +590,62 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
     for(Int_t tI = 0; tI < nTrees; ++tI){
       jetTrees_p[tI] = (TTree*)inFile_p->Get(responseTrees.at(tI).c_str());
-      jetTrees_p[tI]->SetBranchStatus("*", 0);
-      jetTrees_p[tI]->SetBranchStatus("nref", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtpt", 1);
-      jetTrees_p[tI]->SetBranchStatus("rawpt", 1);
-      jetTrees_p[tI]->SetBranchStatus("jteta", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtphi", 1);
-      jetTrees_p[tI]->SetBranchStatus("refpt", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCHF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCEF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNHF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNEF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfMUF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCHMF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCEMF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNHMF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNEMF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfMUMF", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCHM", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfCEM", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNHM", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfNEM", 1);
-      jetTrees_p[tI]->SetBranchStatus("jtPfMUM", 1);
+
+      if(nTrees != 2 || tI != posR4){
+	jetTrees_p[tI]->SetBranchStatus("*", 0);
+	jetTrees_p[tI]->SetBranchStatus("nref", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtpt", 1);
+	jetTrees_p[tI]->SetBranchStatus("rawpt", 1);
+	jetTrees_p[tI]->SetBranchStatus("jteta", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtphi", 1);
+	jetTrees_p[tI]->SetBranchStatus("refpt", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCHF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCEF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNHF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNEF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfMUF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCHMF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCEMF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNHMF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNEMF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfMUMF", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCHM", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfCEM", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNHM", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfNEM", 1);
+	jetTrees_p[tI]->SetBranchStatus("jtPfMUM", 1);
+      }
+
       jetTrees_p[tI]->SetBranchStatus("ngen", 1);
       jetTrees_p[tI]->SetBranchStatus("genpt", 1);
       jetTrees_p[tI]->SetBranchStatus("geneta", 1);
       jetTrees_p[tI]->SetBranchStatus("genphi", 1);
       jetTrees_p[tI]->SetBranchStatus("gensubid", 1);
+      
+      if(nTrees != 2 || tI != posR4){
+	jetTrees_p[tI]->SetBranchAddress("nref", &(nref_[tI]));
+	jetTrees_p[tI]->SetBranchAddress("jtpt", jtpt_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("rawpt", rawpt_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jteta", jteta_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtphi", jtphi_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("refpt", refpt_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCHF", jtPfCHF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCEF", jtPfCEF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNHF", jtPfNHF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNEF", jtPfNEF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfMUF", jtPfMUF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCHMF", jtPfCHMF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCEMF", jtPfCEMF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNHMF", jtPfNHMF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNEMF", jtPfNEMF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfMUMF", jtPfMUMF_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCHM", jtPfCHM_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfCEM", jtPfCEM_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNHM", jtPfNHM_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfNEM", jtPfNEM_[tI]);
+	jetTrees_p[tI]->SetBranchAddress("jtPfMUM", jtPfMUM_[tI]);
+      }
 
-      jetTrees_p[tI]->SetBranchAddress("nref", &(nref_[tI]));
-      jetTrees_p[tI]->SetBranchAddress("jtpt", jtpt_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("rawpt", rawpt_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jteta", jteta_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtphi", jtphi_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("refpt", refpt_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCHF", jtPfCHF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCEF", jtPfCEF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNHF", jtPfNHF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNEF", jtPfNEF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfMUF", jtPfMUF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCHMF", jtPfCHMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCEMF", jtPfCEMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNHMF", jtPfNHMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNEMF", jtPfNEMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfMUMF", jtPfMUMF_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCHM", jtPfCHM_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfCEM", jtPfCEM_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNHM", jtPfNHM_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfNEM", jtPfNEM_[tI]);
-      jetTrees_p[tI]->SetBranchAddress("jtPfMUM", jtPfMUM_[tI]);
       jetTrees_p[tI]->SetBranchAddress("ngen", &(ngen_[tI]));
       jetTrees_p[tI]->SetBranchAddress("genpt", genpt_[tI]);
       jetTrees_p[tI]->SetBranchAddress("geneta", geneta_[tI]);
@@ -639,9 +654,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     }
     
     Float_t pthat_;
-
-    jetTrees_p[0]->SetBranchStatus("pthat", 1);
-    jetTrees_p[0]->SetBranchAddress("pthat", &pthat_);
+  
+    jetTrees_p[posGeneral]->SetBranchStatus("pthat", 1);
+    jetTrees_p[posGeneral]->SetBranchAddress("pthat", &pthat_);
 
     Float_t vz_;
     Float_t hiHF_;
@@ -695,7 +710,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       skimTree_p->SetBranchAddress("pPAprimaryVertexFilter", &pprimaryVertexFilter_);
     }
 
-    const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[0]->GetEntries());
+    const Int_t nEntries = TMath::Min((Int_t)1000000000, (Int_t)jetTrees_p[posGeneral]->GetEntries());
     const Double_t entryFrac = inEntryFrac;
     const Int_t nEntriesToProcess = entryFrac*nEntries;
     const Int_t printInterval = TMath::Max(1, nEntriesToProcess/20);
@@ -744,8 +759,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	if(centPos < 0) continue;
       }
     
-      bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4], entry);
-      if(badJetSpecialSel) continue;
+      if(!isPP){
+	bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4], entry);
+	if(badJetSpecialSel) continue;
+      }
 
       Double_t pthatWeight_ = -1;
       for(unsigned int pI = 0; pI < pthats.size()-1; ++pI){
@@ -781,6 +798,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       Bool_t isPara = randGen_p->Uniform(0., 1.) < fracParaFills;
 
       for(Int_t tI = 0; tI < nTrees; ++tI){
+	if(nTrees == 2 && posR4 == tI) continue;
+
 	std::string algoName = responseTrees.at(tI);
 	//	algoName = algoName.substr(0, algoName.find("/"));
 
@@ -809,7 +828,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    }
 	  }
 
-	  bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[0] && refpt_[tI][jI] < genJtPtBins[nGenJtPtBins] && refpt_[tI][jI] > minJtPtCut[tI]);
+	  bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[0] && refpt_[tI][jI] < genJtPtBins[nGenJtPtBins] && refpt_[tI][jI] > minJtPtCut.at(tI));
 
 	  for(Int_t mI = 0; mI < nResponseMod; ++mI){
 	    Float_t jtPtFillVal[nSyst];
@@ -839,8 +858,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      else if(isStrSame(systStr[sI], "PriorUp1PowerPthat")) fullWeight2[sI] *= pthat_/pthatLow;
 	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
 
-	      goodReco[sI] = (jtPtFillVal[sI] >= recoJtPtBins[0] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins] && jtPtFillVal[sI] > minJtPtCut[tI]);
-	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[recoTruncPos[tI]] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins-1]);
+	      goodReco[sI] = (jtPtFillVal[sI] >= recoJtPtBins[0] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins] && jtPtFillVal[sI] > minJtPtCut.at(tI));
+	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[recoTruncPos.at(tI)] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins-1]);
 	    }
 
 	    std::vector<bool> passesID;
@@ -886,7 +905,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    }
 
 	    if(!goodTruth && refpt_[tI][jI] < 0){
-	      bool goodTruth2 = (refptTemp >= genJtPtBins[0] && refptTemp < genJtPtBins[nGenJtPtBins] && refptTemp > minJtPtCut[tI]);
+	      bool goodTruth2 = (refptTemp >= genJtPtBins[0] && refptTemp < genJtPtBins[nGenJtPtBins] && refptTemp > minJtPtCut.at(tI));
 	      if(!goodTruth2){
 		for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 		  for(unsigned int iI = 0; iI < passesID.size(); ++iI){
@@ -992,6 +1011,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
+    if(nTrees == 2 && dI == posR4 && !isPP) continue;
+
     outFile_p->cd();
     dir_p[dI]->cd();
 
@@ -1060,6 +1081,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
+    if(nTrees == 2 && dI == posR4 && !isPP) continue;
+
     outFile_p->cd();
     dir_p[dI]->cd();
 
@@ -1113,6 +1136,26 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  if(nTrees == 2 && !isPP){
+    responseTrees.erase(responseTrees.begin() + posR4);
+    minJtPtCut.erase(minJtPtCut.begin() + posR4);
+    multiJtPtCut.erase(multiJtPtCut.begin() + posR4);
+    recoTruncPos.erase(recoTruncPos.begin() + posR4);
+
+    cutProp.SetNJtAlgos(nTrees-1);
+    cutProp.SetJtAlgos(responseTrees);
+    cutProp.SetMinJtPtCut(minJtPtCut);
+    cutProp.SetMultiJtPtCut(multiJtPtCut);
+    cutProp.SetRecoTruncPos(recoTruncPos);
+  }
+  else{
+    cutProp.SetNJtAlgos(nTrees);
+    cutProp.SetJtAlgos(responseTrees);
+    cutProp.SetMinJtPtCut(minJtPtCut);
+    cutProp.SetMultiJtPtCut(multiJtPtCut);
+    cutProp.SetRecoTruncPos(recoTruncPos);
+  }
+
   if(!cutProp.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -1129,7 +1172,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const double totalRunWatchTotal = totalRunWatch.total();
   const double writeLoopWatchTotal = writeLoopWatch.total();
   const double deleteLoopWatchTotal = deleteLoopWatch.total();
-  const double nonFileLoopTotal = totalRunWatch.total() - fileLoopWatch.total();
+  const double nonFileLoopTotal = totalRunWatch.total() - fileLoopWatch.total(); 
   const double nJetTrees = responseTrees.size();
 
   std::cout << "File loop watch: " << fileLoopWatch.total() << std::endl;

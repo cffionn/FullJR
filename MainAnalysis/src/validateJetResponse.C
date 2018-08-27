@@ -1,4 +1,4 @@
-//cpp dependencies
+//cpp dependenciGGGSjtptes
 #include <iostream>
 #include <string>
 
@@ -57,9 +57,6 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   std::vector<Int_t> centBinsLow = cutProp.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
-  Int_t nJtPtBinsTemp = cutProp.GetNJtPtBins();
-  std::vector<Double_t> jtPtBinsTemp = cutProp.GetJtPtBins();
-
   Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
   std::vector<Double_t> jtAbsEtaBinsHiTemp = cutProp.GetJtAbsEtaBinsHi();
@@ -73,29 +70,21 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   std::vector<double> jtPfMUMFCutLow = cutProp.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutProp.GetJtPfMUMFCutHi();
 
+  const Int_t nCentBins = nCentBinsTemp;
 
-  const Int_t nCentBins = nCentBinsTemp;                                                                                                         
-                                                                                                                                                 
-  const Int_t nJtPtBins = nJtPtBinsTemp;                                                                                                         
-  Double_t jtPtBins[nJtPtBins+1];                                                                                                                
-  std::cout << "nJtPtBins: ";                                                                                                                    
-  for(Int_t jI = 0; jI < nJtPtBins+1; ++jI){                                                                                                     
-    jtPtBins[jI] = jtPtBinsTemp.at(jI);                                                                                                          
-    std::cout << " " << jtPtBins[jI] << ",";                                                                                                     
-  }                                                                                                                                              
-  std::cout << std::endl;                                                                                                                        
-                                                                                                                                                 
-  const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;                                                                                                 
-  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];                                                                                                       
-  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];                                                                                                        
-  std::cout << "nJtAbsEtaBins: ";                                                                                                                
-  for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){                                                                                                   
-    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);                                                                                            
-    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);                                                                                              
-    std::cout << " " << jtAbsEtaBinsLow[jI] << "-" << jtAbsEtaBinsHi[jI] << ",";                                                                 
-  }                                                                                                                                              
-  std::cout << std::endl;                                                                                                                        
-                                                                                                                                                 
+  std::cout << std::endl;
+  const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
+  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
+  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
+  std::cout << "nJtAbsEtaBins: ";
+
+  for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
+    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
+    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
+    std::cout << " " << jtAbsEtaBinsLow[jI] << "-" << jtAbsEtaBinsHi[jI] << ",";
+  }
+  std::cout << std::endl;
+                               
   const Int_t nID = nIDTemp;     
 
   std::cout << "nCentBins: " << nCentBins << std::endl;

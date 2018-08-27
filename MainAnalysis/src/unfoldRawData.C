@@ -33,6 +33,49 @@
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vanGoghPalette.h"
 
+
+void correctForFakes(TH1D* rawHist_p, std::vector<double> binEdges, std::vector<double> fakeFactor)
+{
+  double deltaBinEdge = 0.1;
+
+  std::vector<int> corrPos;
+  for(unsigned int bI = 0; bI < binEdges.size()-1; ++bI){
+    int tempPos = -1;
+
+    for(Int_t bIX = 0; bIX < rawHist_p->GetNbinsX(); ++bIX){
+      if(TMath::Abs(binEdges.at(bI) - rawHist_p->GetBinLowEdge(bIX+1)) > deltaBinEdge) continue;
+      if(TMath::Abs(binEdges.at(bI+1) - rawHist_p->GetBinLowEdge(bIX+2)) > deltaBinEdge) continue;
+
+      tempPos = bIX+1;
+      break;
+    }
+
+    if(tempPos == -1){
+      std::cout << "Warning! - corrPos = -1, mismatch in binnings." << std::endl;
+      std::cout << " Input fake bin: " << binEdges.at(bI) << "-" << binEdges.at(bI+1) << std::endl;
+      std::cout << " Histogram options: ";
+      for(Int_t bIX = 0; bIX < rawHist_p->GetNbinsX(); ++bIX){
+	std::cout << rawHist_p->GetBinLowEdge(bIX+1) << ", ";
+      }
+      std::cout << std::endl;
+    }
+    corrPos.push_back(tempPos);
+  }
+
+  for(unsigned int cI = 0; cI < corrPos.size(); ++cI){
+    if(corrPos.at(cI) == -1) continue;
+
+    double binVal = rawHist_p->GetBinContent(corrPos.at(cI));
+    binVal -= binVal*fakeFactor.at(cI);
+    double binErr = TMath::Sqrt(binVal);
+
+    rawHist_p->SetBinContent(corrPos.at(cI), binVal);
+    rawHist_p->SetBinError(corrPos.at(cI), binErr);
+  }
+
+  return;
+}
+
 int unfoldRawData(const std::string inDataFileName, const std::string inResponseName, const std::string selectJtAlgo = "")
 {
   vanGoghPalette vg;
@@ -392,6 +435,26 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      TH2D* initRes_p = (TH2D*)rooResSuperClone_p->Hresponse()->Clone("initRes_p");
 	      TH1D* initMeas_p = (TH1D*)rooResSuperClone_p->Hmeasured()->Clone("initMeas_p");
 	      TH1D* initTrue_p = (TH1D*)rooResSuperClone_p->Htruth()->Clone("initTrue_p");
+	      TH1D* rawClone_p = (TH1D*)jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Clone("rawClone_p"); // Using a clone so we can modify for Fake err;
+	      
+	      //NOTE: ERRORS HERE ARE HARD CODED RELATIVE VALUES BASED ON PLOTS IN AN
+	      if(isStrSame(systStr.at(sI), "Fake") && !isDataPP){
+		if(tempStr.find("akCs10PU3PFFlow") != std::string::npos){
+		  if(centBinsLow.at(cI) == 0 && centBinsHi.at(cI) == 10) correctForFakes(rawClone_p, {100, 150, 200, 250}, {0.425, 0.3, 0.21});
+		  else if(centBinsLow.at(cI) == 10 && centBinsHi.at(cI) == 30) correctForFakes(rawClone_p, {100, 150, 200}, {0.08, 0.075});
+		}
+		else if(tempStr.find("akCs8PU3PFFlow") != std::string::npos){
+		  if(centBinsLow.at(cI) == 0 && centBinsHi.at(cI) == 10) correctForFakes(rawClone_p, {100, 150, 200, 250}, {0.31, 0.16, 0.04});
+		  else if(centBinsLow.at(cI) == 10 && centBinsHi.at(cI) == 30) correctForFakes(rawClone_p, {100, 150}, {0.04}); 
+		}
+		else if(tempStr.find("akCs6PU3PFFlow") != std::string::npos){
+		  if(centBinsLow.at(cI) == 0 && centBinsHi.at(cI) == 10) correctForFakes(rawClone_p, {100, 150, 200}, {0.07, 0.07}); //taking max since the two bins are not descending and statistically compatible
+		}
+		else if(tempStr.find("akCs4PU3PFFlow") != std::string::npos){
+		  if(centBinsLow.at(cI) == 0 && centBinsHi.at(cI) == 10) correctForFakes(rawClone_p, {100, 150}, {0.07});
+		}
+	      }
+
 
 	      if(highLight){
 		std::cout << "DOING PRE-HIGHLIGHT" << std::endl;
@@ -423,7 +486,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      }
 	      
 	      for(Int_t bsI = 0; bsI < nSuperBayes; ++bsI){
-		RooUnfoldBayes superBayes(rooResSuperClone_p, jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], 3, false, "name");
+		RooUnfoldBayes superBayes(rooResSuperClone_p, rawClone_p, 3, false, "name");
 		superBayes.SetVerbose(-1);
 		TH1D* unfold_h = (TH1D*)superBayes.Hreco(RooUnfold::kCovToy);
 		Double_t tot = unfold_h->Integral();
@@ -473,7 +536,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		  std::cout << std::endl;
 		}
 	      }
-	    
+
 	      delete initRes_p;
 	      delete initMeas_p;
 	      delete initTrue_p;
@@ -481,7 +544,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      for(Int_t bI = 0; bI < nBayes; ++bI){	    		
 		RooUnfoldResponse* rooResClone_p = (RooUnfoldResponse*)rooResSuperClone_p->Clone("rooResClone_p");
 
-		RooUnfoldBayes bayes(rooResClone_p, jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], bayesVal[bI], false, ("name_" + std::to_string(bI)).c_str());
+		RooUnfoldBayes bayes(rooResClone_p, rawClone_p, bayesVal[bI], false, ("name_" + std::to_string(bI)).c_str());
 		bayes.SetVerbose(-1);	    
 		TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
 		
@@ -491,6 +554,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		}
 		delete rooResClone_p;
 	      }
+
+	      delete rawClone_p;
 	      delete rooResSuperClone_p;
 	    }
 	  }
