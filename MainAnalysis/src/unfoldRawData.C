@@ -34,7 +34,6 @@
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vanGoghPalette.h"
 
-
 void correctForFakes(TH1D* rawHist_p, std::vector<double> binEdges, std::vector<double> fakeFactor)
 {
   double deltaBinEdge = 0.1;
@@ -238,14 +237,10 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 
   smallOrLargeR rReader;
-  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallR)){
-    std::cout << "nGenJtPtBinsSmallR propagated \'" << nGenJtPtBinsSmallR << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsSmallR() << "\'. return 1" << std::endl;
-    return 1;
-  }
-  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeR)){
-    std::cout << "nGenJtPtBinsLargeR propagated \'" << nGenJtPtBinsLargeR << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsLargeR() << "\'. return 1" << std::endl;
-    return 1;
-  }
+  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallR)) return 1;
+  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeR)) return 1;
+  if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
+  if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
   const Int_t nDataJet = responseJetDirList.size();
 
