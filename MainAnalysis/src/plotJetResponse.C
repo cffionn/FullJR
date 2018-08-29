@@ -145,23 +145,10 @@ int plotJetResponse(const std::string inResponseName)
   }
 
   smallOrLargeR rReader;
-
-  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallRTemp)){
-    std::cout << "nGenJtPtBinsSmallR propagated \'" << nGenJtPtBinsSmallRTemp << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsSmallR() << "\'. return 1" << std::endl;
-    return 1;
-  }
-  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeRTemp)){
-    std::cout << "nGenJtPtBinsLargeR propagated \'" << nGenJtPtBinsLargeRTemp << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsLargeR() << "\'. return 1" << std::endl;
-    return 1;
-  }
-  if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)){
-    std::cout << "genJtPtBinsSmallR propagated doesn't match rReader. return 1" << std::endl;
-    return 1;
-  }
-  if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)){
-    std::cout << "genJtPtBinsLargeR propagated doesn't match rReader. return 1" << std::endl;
-    return 1;
-  }
+  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallRTemp)) return 1;
+  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeRTemp)) return 1;
+  if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
+  if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
   Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
