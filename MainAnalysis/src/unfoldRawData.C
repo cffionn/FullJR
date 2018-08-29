@@ -324,8 +324,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   const Int_t nBayesDraw = TMath::Min(valForForLoops, 6);
   TDirectory* dir_p[nDataJet];
-  TH1D* jtPtUnfolded_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  TH1D* jtPtUnfolded_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  TH1D* jtPtUnfolded_RecoGenAsymm_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = responseJetDirList.at(jI);
@@ -356,10 +355,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		std::string bayesStr = "Bayes" + std::to_string(bayesVal[bI]);
 		
-		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
-		centerTitles({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
-		setSumW2({jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI], jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]});
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoGenAsymm_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
+		centerTitles(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]);
+		setSumW2(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]);
 	      }
 	    }
 	  }
@@ -369,7 +367,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
   responseFile_p = new TFile(inResponseName.c_str(), "READ");
-  RooUnfoldResponse* rooResponse_RecoTrunc_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nDataJet][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = responseJetDirList.at(jI);
@@ -389,7 +387,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      const std::string tempSystStr = systStr.at(sI) + "_";
 	     
-	      rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoTrunc_h").c_str());
+	      rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoTrunc_h").c_str());
 	    }
 	  }
 	}
@@ -399,7 +397,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 
   dataFile_p = new TFile(inDataFileName.c_str(), "READ");
-  TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
+  TH1D* jtPtRaw_RecoGenAsymm_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = responseJetDirList.at(jI);
@@ -413,9 +411,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
         for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
           const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
-	  const std::string name = tempStr + "/jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h";
+	  const std::string name = tempStr + "/jtPtRaw_RecoGenAsymm_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h";
 
-	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = (TH1D*)dataFile_p->Get(name.c_str());
+	  jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI] = (TH1D*)dataFile_p->Get(name.c_str());
 	  
 	  std::cout << "GETTING: " << name << std::endl;
 
@@ -441,7 +439,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
-	      std::string histName = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetName();
+	      std::string histName = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetName();
 	      bool highLight = true;
 	      if(histName.find("ak3PFJetAnalyzer") == std::string::npos) highLight = false;
 	      else if(histName.find("NoID") == std::string::npos) highLight = false;
@@ -451,7 +449,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 
-	      RooUnfoldResponse* rooResSuperClone_p = (RooUnfoldResponse*)rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI]->Clone("rooResSuperClone_p");
+	      RooUnfoldResponse* rooResSuperClone_p = (RooUnfoldResponse*)rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI]->Clone("rooResSuperClone_p");
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      TH2D* initRes_p = (TH2D*)rooResSuperClone_p->Hresponse()->Clone("initRes_p");
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
@@ -459,8 +457,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      TH1D* initTrue_p = (TH1D*)rooResSuperClone_p->Htruth()->Clone("initTrue_p");
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
-	      if(doLocalDebug || doGlobalDebug) std::cout << jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->GetName() << std::endl;
-	      TH1D* rawClone_p = (TH1D*)jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Clone("rawClone_p"); // Using a clone so we can modify for Fake err;
+	      if(doLocalDebug || doGlobalDebug) std::cout << jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->GetName() << std::endl;
+	      TH1D* rawClone_p = (TH1D*)jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->Clone("rawClone_p"); // Using a clone so we can modify for Fake err;
 	      
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 
@@ -585,8 +583,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);	  
 		
 		for(Int_t bIX = 0; bIX < unfold_h->GetNbinsX(); ++bIX){
-		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
-		  jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
+		  jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
+		  jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
 		}
 		delete rooResClone_p;
 	      }
@@ -703,51 +701,51 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      Double_t max = -1;
 
 	      for(Int_t bI = 0; bI < nBayesDraw; ++bI){
-		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetNbinsX(); ++bIX){
-		  if(max < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1)) max = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
-		  if(min > jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) && jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > 0) min = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
+		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetNbinsX(); ++bIX){
+		  if(max < jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1)) max = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
+		  if(min > jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) && jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > 0) min = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1);
 		}
 	      }
 
 	      
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMaximum(20.*max);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMinimum(min/20.);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetMaximum(20.*max);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetMinimum(min/20.);
 
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerStyle(styles[bI%nStyles]);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerColor(colors[bI%nColors]);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetLineColor(colors[bI%nColors]);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerSize(0.8);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerStyle(styles[bI%nStyles]);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerColor(colors[bI%nColors]);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetLineColor(colors[bI%nColors]);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->SetMarkerSize(0.8);
 
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleFont(43);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleFont(43);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelFont(43);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelFont(43);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleFont(43);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleFont(43);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelFont(43);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelFont(43);
 
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleSize(14);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleSize(14);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelSize(14);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelSize(14);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleSize(14);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleSize(14);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetLabelSize(14);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetLabelSize(14);
 
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleOffset(5.);
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleOffset(1.5);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetXaxis()->SetTitleOffset(5.);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetYaxis()->SetTitleOffset(1.5);
 
 		if(bI < nBayesDraw){
 		  if(bI == 0){
-		    jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P");
+		    jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P");
 
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerStyle(1);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerSize(0.001);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetMarkerColor(0);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineColor(1);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->SetLineWidth(2);
-		    jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->DrawCopy("HIST E1 SAME");
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->SetMarkerStyle(1);
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->SetMarkerSize(0.001);
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->SetMarkerColor(0);
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->SetLineColor(1);
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->SetLineWidth(2);
+		    jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->DrawCopy("HIST E1 SAME");
 		    
-		    leg_p->AddEntry(jtPtRaw_RecoTrunc_h[jI][cI][idI][aI], "Folded", "L");
+		    leg_p->AddEntry(jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI], "Folded", "L");
 		  }
-		  else jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P SAME"); 		
-		  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bayesVal[bI])).c_str(), "P L");
+		  else jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->DrawCopy("HIST E1 P SAME"); 		
+		  leg_p->AddEntry(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI], ("Bayes=" + std::to_string(bayesVal[bI])).c_str(), "P L");
 
 		}
 	      }
@@ -758,7 +756,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      gPad->SetLogy();
 	      gPad->SetTicks(1,2);
 	      bool doLogX = false;
-	      if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(1)*3 < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetNbinsX()-1)) doLogX = true;
+	      if(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(1)*3 < jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetBinWidth(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetNbinsX()-1)) doLogX = true;
 
 	      if(doLogX) gPad->SetLogx();
 
@@ -783,8 +781,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      min = 100;
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
-		clones_p[bI]->Divide(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]);
+		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
+		clones_p[bI]->Divide(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]);
 		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
 		  double binContent = clones_p[bI]->GetBinContent(bIX+1);
 		  if(binContent > max) max = binContent;
@@ -829,16 +827,16 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 	    
-	      TH1D* bandValLow_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValLow");
-	      TH1D* bandValHi_p = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValHi");
+	      TH1D* bandValLow_p = (TH1D*)jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValLow");
+	      TH1D* bandValHi_p = (TH1D*)jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bayes100Pos]->Clone("bandValHi");
 
 	      for(Int_t bI = bayes100Pos-nBigBayesSymm; bI <= bayes100Pos+nBigBayesSymm; ++bI){
 		for(Int_t bIX = 0; bIX < bandValLow_p->GetNbinsX(); ++bIX){
-		  if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) < bandValLow_p->GetBinContent(bIX+1)){
-		    bandValLow_p->SetBinContent(bIX+1, jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
+		  if(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) < bandValLow_p->GetBinContent(bIX+1)){
+		    bandValLow_p->SetBinContent(bIX+1, jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
 		  }
-		  if(jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > bandValHi_p->GetBinContent(bIX+1)){
-		    bandValHi_p->SetBinContent(bIX+1, jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
+		  if(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1) > bandValHi_p->GetBinContent(bIX+1)){
+		    bandValHi_p->SetBinContent(bIX+1, jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->GetBinContent(bIX+1));
 		  }
 		}
 	      }
@@ -848,7 +846,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      max = -1;
 	      min = 100;
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
+		clones_p[bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->Clone(("clone_" + std::to_string(bI)).c_str());
 		
 		bool sub1Perc = true;
 		for(Int_t bIX = 0; bIX < clones_p[bI]->GetNbinsX(); ++bIX){
@@ -948,15 +946,15 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		Double_t maxDelta = 0;
 		Double_t lastDeltaCenter = -1;
 		Double_t lastDelta = 0;
-		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetNbinsX(); ++bIX){
-		  double center = (jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1) + jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+2))/2.;
+		for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetNbinsX(); ++bIX){
+		  double center = (jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+1) + jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinLowEdge(bIX+2))/2.;
 		  
 		  if(center < lowPtTruncVal) continue;
 		  if(center > 1000.) continue;
 		  
-		  double content1 = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinContent(bIX+1);
-		  double content1Max = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-1]->GetBinContent(bIX+1);
-		  double content1MaxMin1 = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][nBayes-2]->GetBinContent(bIX+1);
+		  double content1 = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][terminalPos]->GetBinContent(bIX+1);
+		  double content1Max = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][nBayes-1]->GetBinContent(bIX+1);
+		  double content1MaxMin1 = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][nBayes-2]->GetBinContent(bIX+1);
 
 		  if(content1 == 0 && content1Max != 0){
 		    maxDelta = 100;
@@ -1001,7 +999,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      label_p->DrawLatex(600, min - interval*2, "600");
 	      label_p->DrawLatex(1000, min - interval*2, "1000");
 
-	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoTrunc_" + debugStr + dateStr + ".pdf";
+	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoGenAsymm_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
 	      const std::string finalSaveName = preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI) + "/" + saveName;
 	      quietSaveAs(canv_p, finalSaveName);
@@ -1019,11 +1017,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	    	   
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
-		delete jtPtUnfolded_h[jI][cI][idI][mI][aI][sI][bI];
-		
-		jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
-		delete jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][bI];		
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]->Write("", TObject::kOverwrite);
+		delete jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI];		
 	      }
 	    }
 	  }
@@ -1031,8 +1026,6 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
       }
     }
   }
-
-	      if(doLocalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   //TEX FILE
   const std::string textWidth = "0.24";

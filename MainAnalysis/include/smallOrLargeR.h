@@ -50,6 +50,7 @@ class smallOrLargeR
   bool CheckNSmallR(int inNSmallR);
   bool CheckNLargeR(int inNLargeR);
 
+  bool CheckIntVect(std::vector<int> vect1, std::vector<int> vect2);
   bool CheckSmallRVals(std::vector<int> inSmallRVals);
   bool CheckLargeRVals(std::vector<int> inLargeRVals);
 
@@ -58,6 +59,7 @@ class smallOrLargeR
   bool CheckNGenJtPtBinsSmallR(int inNGenJtPtBinsSmallR);
   bool CheckNGenJtPtBinsLargeR(int inNGenJtPtBinsLargeR);
 
+  bool CheckDoubleVect(std::vector<double> vect1, std::vector<double> vect2);
   bool CheckRecoJtPtBinsSmallR(std::vector<double> inRecoJtPtBinsSmallR);
   bool CheckRecoJtPtBinsLargeR(std::vector<double> inRecoJtPtBinsLargeR);
   bool CheckGenJtPtBinsSmallR(std::vector<double> inGenJtPtBinsSmallR);
@@ -92,62 +94,107 @@ smallOrLargeR::smallOrLargeR()
 }
 
 
-bool smallOrLargeR::CheckNSmallR(int inNSmallR){return inNSmallR == nSmallR;}
-bool smallOrLargeR::CheckNLargeR(int inNLargeR){return inNLargeR == nLargeR;}
+bool smallOrLargeR::CheckNSmallR(int inNSmallR)
+{
+  bool isGood = inNSmallR == nSmallR;
+  if(!isGood) std::cout << "WARNING: nSmallR propagated \'" << inNSmallR << "\' doesn't match rReader \'" << nSmallR << "\'. return false" << std::endl;
+  return isGood;
+}
 
+bool smallOrLargeR::CheckNLargeR(int inNLargeR)
+{
+  bool isGood = inNLargeR == nLargeR;
+  if(!isGood) std::cout << "WARNING: nLargeR propagated \'" << inNLargeR << "\' doesn't match rReader \'" << nLargeR << "\'. return false" << std::endl;
+  return isGood;
+}
+
+bool smallOrLargeR::CheckIntVect(std::vector<int> vect1, std::vector<int> vect2)
+{
+  bool isGood = vect1.size() == vect2.size();
+  if(isGood){
+    for(unsigned int i = 0; i < vect2.size(); ++i){
+      if(vect2.at(i) != vect1.at(i)){
+	isGood = false;
+	break;
+      }
+    }
+  }
+  return isGood;
+}
 bool smallOrLargeR::CheckSmallRVals(std::vector<int> inSmallRVals)
 {
-  if(inSmallRVals.size() != smallRVals.size()) return false;
-  for(unsigned int i = 0; i < smallRVals.size(); ++i){
-    if(smallRVals.at(i) != inSmallRVals.at(i)) return false;
-  }
-  return true;
+  bool isGood = CheckIntVect(inSmallRVals, smallRVals);
+  if(!isGood) std::cout << "WARNING: smallRVals propagated doesn't match rReader . return false" << std::endl;
+  return isGood;
 }
 bool smallOrLargeR::CheckLargeRVals(std::vector<int> inLargeRVals)
 {
-  if(inLargeRVals.size() != largeRVals.size()) return false;
-  for(unsigned int i = 0; i < largeRVals.size(); ++i){
-    if(largeRVals.at(i) != inLargeRVals.at(i)) return false;
-  }
-  return true;
+  bool isGood = CheckIntVect(inLargeRVals, largeRVals);
+  if(!isGood) std::cout << "WARNING: largeRVals propagated doesn't match rReader . return false" << std::endl;
+  return isGood;
 }
 
-bool smallOrLargeR::CheckNRecoJtPtBinsSmallR(int inNRecoJtPtBinsSmallR){return inNRecoJtPtBinsSmallR == nRecoJtPtBinsSmallR;}
-bool smallOrLargeR::CheckNRecoJtPtBinsLargeR(int inNRecoJtPtBinsLargeR){return inNRecoJtPtBinsLargeR == nRecoJtPtBinsLargeR;}
-bool smallOrLargeR::CheckNGenJtPtBinsSmallR(int inNGenJtPtBinsSmallR){return inNGenJtPtBinsSmallR == nGenJtPtBinsSmallR;}
-bool smallOrLargeR::CheckNGenJtPtBinsLargeR(int inNGenJtPtBinsLargeR){return inNGenJtPtBinsLargeR == nGenJtPtBinsLargeR;}
+bool smallOrLargeR::CheckNRecoJtPtBinsSmallR(int inNRecoJtPtBinsSmallR)
+{
+  bool isGood = inNRecoJtPtBinsSmallR == nRecoJtPtBinsSmallR;
+  if(!isGood) std::cout << "WARNING: nRecoJtPtBinsSmallR propagated \'" << inNRecoJtPtBinsSmallR << "\' doesn't match rReader \'" << nRecoJtPtBinsSmallR << "\'. return false" << std::endl;
+  return isGood;
+}
+bool smallOrLargeR::CheckNRecoJtPtBinsLargeR(int inNRecoJtPtBinsLargeR)
+{
+  bool isGood = inNRecoJtPtBinsLargeR == nRecoJtPtBinsLargeR;
+  if(!isGood) std::cout << "WARNING: nRecoJtPtBinsLargeR propagated \'" << inNRecoJtPtBinsLargeR << "\' doesn't match rReader \'" << nRecoJtPtBinsLargeR << "\'. return false" << std::endl;
+  return isGood;
+}
+bool smallOrLargeR::CheckNGenJtPtBinsSmallR(int inNGenJtPtBinsSmallR)
+{
+  bool isGood = inNGenJtPtBinsSmallR == nGenJtPtBinsSmallR;
+  if(!isGood) std::cout << "WARNING: nGenJtPtBinsSmallR propagated \'" << inNGenJtPtBinsSmallR << "\' doesn't match rReader \'" << nGenJtPtBinsSmallR << "\'. return false" << std::endl;
+  return isGood;
+}
+bool smallOrLargeR::CheckNGenJtPtBinsLargeR(int inNGenJtPtBinsLargeR)
+{
+  bool isGood = inNGenJtPtBinsLargeR == nGenJtPtBinsLargeR;
+  if(!isGood) std::cout << "WARNING: nGenJtPtBinsLargeR propagated \'" << inNGenJtPtBinsLargeR << "\' doesn't match rReader \'" << nGenJtPtBinsLargeR << "\'. return false" << std::endl;
+  return isGood;
+}
 
+bool smallOrLargeR::CheckDoubleVect(std::vector<double> vect1, std::vector<double> vect2)
+{
+  bool isGood = vect1.size() == vect2.size();
+  if(isGood){
+    for(unsigned int i = 0; i < vect2.size(); ++i){
+      if(TMath::Abs(vect2.at(i) - vect1.at(i)) >= deltaBin){
+	isGood = false;
+	break;
+      }
+    }
+  }
+  return isGood;
+}
 bool smallOrLargeR::CheckRecoJtPtBinsSmallR(std::vector<double> inRecoJtPtBinsSmallR)
 {
-  if(inRecoJtPtBinsSmallR.size() != recoJtPtBinsSmallR.size()) return false;
-  for(unsigned int i = 0; i < recoJtPtBinsSmallR.size(); ++i){
-    if(TMath::Abs(inRecoJtPtBinsSmallR.at(i) - recoJtPtBinsSmallR.at(i)) >= deltaBin) return false;
-  }
-  return true;
+  bool isGood = CheckDoubleVect(recoJtPtBinsSmallR, inRecoJtPtBinsSmallR);
+  if(!isGood) std::cout << "WARNING: recoJtPtBinsSmallR propagated doesn't match rReader. return false" << std::endl;
+  return isGood;
 }
 bool smallOrLargeR::CheckRecoJtPtBinsLargeR(std::vector<double> inRecoJtPtBinsLargeR)
 {
-  if(inRecoJtPtBinsLargeR.size() != recoJtPtBinsLargeR.size()) return false;
-  for(unsigned int i = 0; i < recoJtPtBinsLargeR.size(); ++i){
-    if(TMath::Abs(inRecoJtPtBinsLargeR.at(i) - recoJtPtBinsLargeR.at(i)) >= deltaBin) return false;
-  }
-  return true;
+  bool isGood = CheckDoubleVect(recoJtPtBinsLargeR, inRecoJtPtBinsLargeR);
+  if(!isGood) std::cout << "WARNING: recoJtPtBinsLargeR propagated doesn't match rReader. return false" << std::endl;
+  return isGood;
 }
 bool smallOrLargeR::CheckGenJtPtBinsSmallR(std::vector<double> inGenJtPtBinsSmallR)
 {
-  if(inGenJtPtBinsSmallR.size() != genJtPtBinsSmallR.size()) return false;
-  for(unsigned int i = 0; i < genJtPtBinsSmallR.size(); ++i){
-    if(TMath::Abs(inGenJtPtBinsSmallR.at(i) - genJtPtBinsSmallR.at(i)) >= deltaBin) return false;
-  }
-  return true;
+  bool isGood = CheckDoubleVect(genJtPtBinsSmallR, inGenJtPtBinsSmallR);
+  if(!isGood) std::cout << "WARNING: genJtPtBinsSmallR propagated doesn't match rReader. return false" << std::endl;
+  return isGood;
 }
 bool smallOrLargeR::CheckGenJtPtBinsLargeR(std::vector<double> inGenJtPtBinsLargeR)
 {
-  if(inGenJtPtBinsLargeR.size() != genJtPtBinsLargeR.size()) return false;
-  for(unsigned int i = 0; i < genJtPtBinsLargeR.size(); ++i){
-    if(TMath::Abs(inGenJtPtBinsLargeR.at(i) - genJtPtBinsLargeR.at(i)) >= deltaBin) return false;
-  }
-  return true;
+  bool isGood = CheckDoubleVect(genJtPtBinsLargeR, inGenJtPtBinsLargeR);
+  if(!isGood) std::cout << "WARNING: genJtPtBinsLargeR propagated doesn't match rReader. return false" << std::endl;
+  return isGood;
 }
 
 

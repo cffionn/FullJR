@@ -800,7 +800,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     dirPbPb_p[tI]->cd();
   }
 
-  TH1D* jtPtUnfolded_RecoTrunc_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  TH1D* jtPtUnfolded_RecoGenAsymm_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
   Int_t bayesPosPbPb[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   
 
@@ -811,7 +811,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     dirPP_p[tI]->cd();
   }
 
-  TH1D* jtPtUnfolded_RecoTrunc_PP_h[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
+  TH1D* jtPtUnfolded_RecoGenAsymm_PP_h[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
   Int_t bayesPosPP[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
 
@@ -908,7 +908,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
       if(centPos < 0) std::cout << "Warning: Cannot find centPos for \'" << name << "\'. Code will likely break" << std::endl;
 
-      jtPtUnfolded_RecoTrunc_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
+      jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][centPos][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
     }
 
     //Building best bayes
@@ -966,9 +966,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 		
-		const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+		const std::string newName = "jtPtUnfolded_RecoGenAsymm_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 		
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+		jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(newName.c_str());
 
 	      }
 	    }
@@ -1055,7 +1055,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       }
       if(bayesPos < 0) std::cout << "Warning: Cannot find bayesPos for \'" << name << "\'. Code will likely break" << std::endl;
 
-      jtPtUnfolded_RecoTrunc_PP_h[tI][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
+      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idPos][modPos][absEtaPos][systPos][bayesPos] = (TH1D*)key->ReadObj();   
     }
 
     //Building best bayes
@@ -1106,9 +1106,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	    for(Int_t bI = 0; bI < nBayes; ++bI){
 	      const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 	      
-	      const std::string newName = "jtPtUnfolded_RecoTrunc_" + jetPPList.at(tI) + "_PP_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+	      const std::string newName = "jtPtUnfolded_RecoGenAsymm_" + jetPPList.at(tI) + "_PP_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
 	      
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
 	    }
 	  }
 	}
@@ -1157,8 +1157,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 		Double_t totalPbPbFactor = tempTAAFactor*nMBEvents*2.*etaBinWidth*centBinWidth;
 
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Scale(1./totalPbPbFactor);
-		divBinWidth(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]);
+		jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Scale(1./totalPbPbFactor);
+		divBinWidth(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI]);
 	      }
 	    }
 
@@ -1168,8 +1168,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	      else if(isStrSame(systStr[sI], "LumiDown")) tempLumiFactor -= tempLumiFactor*getLumiPercentError();	      
 
 	      Double_t totalPPFactor = tempLumiFactor*2.*etaBinWidth;
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->Scale(1./totalPPFactor);
-	      divBinWidth(jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]);
+	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI]->Scale(1./totalPPFactor);
+	      divBinWidth(jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI]);
 	    }
 	  }
 	}
@@ -1189,9 +1189,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
-		std::string newName = jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
+		std::string newName = jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->GetName();
 		newName.replace(newName.find("_h"), 2, "_Rescaled_h");
-		jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
+		jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
 	      }
 	    }
 	  }
@@ -1208,9 +1208,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
 	    for(Int_t bI = 0; bI < nBayes; ++bI){
-	      std::string newName = jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
+	      std::string newName = jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI]->GetName();
 	      newName.replace(newName.find("_h"), 2, "_Rescaled_h");
-	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
+	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI]->Write(newName.c_str(), TObject::kOverwrite);
 	    }
 	  }
 	}
@@ -1289,7 +1289,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
     const std::string jetStrPbPb = jetPbPbList.at(tI).substr(0, jetPbPbList.at(tI).find("JetAna"));;
 
-    //	      jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoTrunc_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
+    //	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
 
     for(Int_t mI = 0; mI < nResponseMod; ++mI){
       for(Int_t cI = 0; cI < nCentBins; ++ cI){
@@ -1306,7 +1306,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  bigBayesClones_p.reserve(totBigBayes);
 	  for(Int_t bI = 0; bI < totBigBayes; ++bI){
 	    Int_t binPos = nBayes - 1 -2*nBigBayesSymm + bI;
-	    bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
+	    bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
 	  }      
 
 	  std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
@@ -1326,13 +1326,13 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  std::vector<TH1D*> clones_p;
 
 	  Int_t binPos = nBayes - 1 -nBigBayesSymm;	  
-	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("clone_" + std::to_string(binPos)).c_str()));
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][binPos]->Clone(("clone_" + std::to_string(binPos)).c_str()));
 	  
 	  if(bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] < 0) bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] = 25;
 
 	  Int_t tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
 
-	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 
 	  std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
 	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
@@ -1468,36 +1468,36 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
 	tempHist_p->GetYaxis()->SetTitleOffset(1.6);
     
-	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
-	  bool binIsBad = jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
-	  binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
+	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
+	  bool binIsBad = jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
+	  binIsBad = binIsBad || jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
 	  if(binIsBad){
-	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
-	    jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
+	    jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
+	    jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
 	  }
 	}
 
-	Double_t minVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
-	Double_t maxVal = getMax(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
+	Double_t minVal = getMinGTZero(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
+	Double_t maxVal = getMax(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
-	    scaleCentralAndErrorValues(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], centBinsScalingFact.at(cI));
+	    scaleCentralAndErrorValues(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], centBinsScalingFact.at(cI));
 	  }
 	  
-	  for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
-	    bool binIsBad = jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
-	    binIsBad = binIsBad || jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
+	  for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
+	    bool binIsBad = jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
+	    binIsBad = binIsBad || jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
 	    if(binIsBad){
-	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
-	      jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
+	      jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
+	      jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
 	    }
 	  }
 
 	  
 
-	  Double_t tempMinVal = getMinGTZero(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
-	  Double_t tempMaxVal = getMax(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
+	  Double_t tempMinVal = getMinGTZero(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
+	  Double_t tempMaxVal = getMax(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]);
 	  if(minVal > tempMinVal) minVal = tempMinVal;
 	  if(maxVal < tempMaxVal) maxVal = tempMaxVal;
 	}
@@ -1524,15 +1524,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	leg_p->SetTextFont(43);
 	leg_p->SetTextSize(16);
 
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent("", true));
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent("", true));
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
 
 	std::vector<TH1D*> systHistVectPP;
 	systHistVectPP.reserve(nSyst-1);
 	for(Int_t sI = 1; sI < nSyst; ++sI){
-	  systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
+	  systHistVectPP.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPP_" + systStr.at(sI)).c_str()));
 	}      
 
 	Int_t slideSubVal = 0;
@@ -1541,7 +1541,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	std::cout << __LINE__ << std::endl;
 	std::vector<std::string> tempSystStr(systStr.begin()+1, systStr.end());
-	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
+	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
 	std::cout << __LINE__ << std::endl;
     
 	resModCompCanv_p[usI]->cd();
@@ -1581,21 +1581,21 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	}
 
 
-	drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
+	drawSyst(spectCanv_p, jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 	  const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent(centStr, false));
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerStyle(getStyleFromCent(centStr, false));
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerSize(1);
 
 	  std::vector<TH1D*> systHistVectPbPb;
 	  systHistVectPbPb.reserve(nSyst-1);
 	  for(Int_t sI = 1; sI < nSyst; ++sI){
-	    systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
+	    systHistVectPbPb.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos]->Clone(("systPbPb_" + systStr.at(sI)).c_str()));
 	  }      
 	
 	  Int_t centSlideSubVal = 0;
@@ -1604,7 +1604,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	  std::cout << __LINE__ << std::endl;
 
-	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
+	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
 	  std::cout << __LINE__ << std::endl;
 	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
 
@@ -1644,15 +1644,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	    delete systHistVectPbPb.at(sI);
 	  }
-	  drawSyst(spectCanv_p, jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
+	  drawSyst(spectCanv_p, jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
 
 	  std::cout << __LINE__ << std::endl;
 	}
 
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->DrawCopy("HIST E1 P SAME");
 	}
       
 	
@@ -1662,14 +1662,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  const std::string centLegStr = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "% x 10^{" + std::to_string(cI+1) + "}";
 	  const std::string centLegStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
 
-	  jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
-	  leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr.c_str(), "P L F");	
-	  if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr2.c_str(), "P L");	
+	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+	  leg_p->AddEntry(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr.c_str(), "P L F");	
+	  if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], centLegStr2.c_str(), "P L");	
 	}
 	
-	jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
-	leg_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L F");
-	if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoTrunc_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L");
+	jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->SetFillColorAlpha(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetMarkerColor(), .25);      
+	leg_p->AddEntry(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L F");
+	if(usI == 0 && mI == 0) legRes_p->AddEntry(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], "pp", "P L");
       
 	gPad->SetLogy();
 	gPad->SetLogx();
@@ -1740,7 +1740,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
-	    scaleCentralAndErrorValues(jtPtUnfolded_RecoTrunc_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], 1./centBinsScalingFact.at(cI));
+	    scaleCentralAndErrorValues(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], 1./centBinsScalingFact.at(cI));
 	  }
 	}
       }
