@@ -382,7 +382,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      const std::string tempSystStr = systStr.at(sI) + "_";
 	     
-	      rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoTrunc_h").c_str());
+	      rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoGenAsymm_h").c_str());
 	    }
 	  }
 	}
@@ -435,6 +435,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      std::string histName = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetName();
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      bool highLight = true;
 	      if(histName.find("ak3PFJetAnalyzer") == std::string::npos) highLight = false;
 	      else if(histName.find("NoID") == std::string::npos) highLight = false;
