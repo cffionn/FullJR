@@ -23,6 +23,7 @@
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/smallOrLargeR.h"
 
 //Non-local FullJR dependencies (Utility, etc.)
 #include "Utility/include/checkMakeDir.h"
@@ -133,7 +134,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   Int_t valForForLoops = 100000000;
   if(doLocalDebug || doGlobalDebug){
     std::cout << "DOLOCALDEBUG or DOGLOBALDEBUG in unfoldRawData: Setting all histogram array sizes to 1 for faster processing" << std::endl;
-    valForForLoops = 1;
+    valForForLoops = 1000000;
   }
 
   const Int_t isDataPP = cutPropData.GetIsPP();
@@ -150,8 +151,10 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<Int_t> centBinsLow = cutPropData.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropData.GetCentBinsHi();
 
-  const Int_t nGenJtPtBins = cutPropData.GetNGenJtPtBins();
-  std::vector<Double_t> genJtPtBinsTemp = cutPropData.GetGenJtPtBins();
+  const Int_t nGenJtPtBinsSmallR = cutPropData.GetNGenJtPtBinsSmallR();
+  std::vector<Double_t> genJtPtBinsSmallRTemp = cutPropData.GetGenJtPtBinsSmallR();
+  const Int_t nGenJtPtBinsLargeR = cutPropData.GetNGenJtPtBinsLargeR();
+  std::vector<Double_t> genJtPtBinsLargeRTemp = cutPropData.GetGenJtPtBinsLargeR();
 
   const Int_t nJtAbsEtaBins = TMath::Min(valForForLoops, cutPropData.GetNJtAbsEtaBins());
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutPropData.GetJtAbsEtaBinsLow();
@@ -164,13 +167,6 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<double> jtPfMUMFCutLow = cutPropData.GetJtPfMUMFCutLow();
   std::vector<double> jtPfMUMFCutHi = cutPropData.GetJtPfMUMFCutHi();
 
-  Double_t genJtPtBins[nGenJtPtBins+1];
-  std::cout << "nGenJtPtBins: ";
-  for(Int_t jI = 0; jI < nGenJtPtBins+1; ++jI){
-    genJtPtBins[jI] = genJtPtBinsTemp.at(jI);
-    std::cout << " " << genJtPtBins[jI] << ",";
-  }
-  std::cout << std::endl;
 
   Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
   Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
@@ -241,6 +237,16 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
 
+  smallOrLargeR rReader;
+  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallR)){
+    std::cout << "nGenJtPtBinsSmallR propagated \'" << nGenJtPtBinsSmallR << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsSmallR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeR)){
+    std::cout << "nGenJtPtBinsLargeR propagated \'" << nGenJtPtBinsLargeR << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsLargeR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   const Int_t nDataJet = responseJetDirList.size();
 
   std::string outFileName = inDataFileName;
@@ -263,7 +269,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
 
-  const Int_t nSuperBayes = 1;
+  const Int_t nSuperBayes = 0;
   outFileName = "output/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_NSuperBayes" + std::to_string(nSuperBayes) + "_" + selectJtAlgoStr + debugStr + dateStr + ".root";
 
   while(outFileName.find("__") != std::string::npos){outFileName.replace(outFileName.find("__"), 2, "_");}
@@ -325,6 +331,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
     std::string tempStr = responseJetDirList.at(jI);
     if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
     dir_p[jI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
+
+    const Int_t rVal = getRVal(tempStr);
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
+    Double_t genJtPtBins[nGenJtPtBins+1];
+    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
@@ -401,7 +413,12 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
         for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
           const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
-	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = (TH1D*)dataFile_p->Get((tempStr + "/jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h").c_str());
+	  const std::string name = tempStr + "/jtPtRaw_RecoTrunc_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + jtAbsEtaStr + "_h";
+
+	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI] = (TH1D*)dataFile_p->Get(name.c_str());
+	  
+	  std::cout << "GETTING: " << name << std::endl;
+
         }
       }
     }
@@ -416,13 +433,14 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       if(!isDataPP) std::cout << "  " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << "%..." << std::endl;
-
+      
       for(Int_t idI = 0; idI < nID; ++idI){
 
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){	 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      std::string histName = jtPtUnfolded_RecoTrunc_h[jI][cI][idI][mI][aI][sI][0]->GetName();
 	      bool highLight = true;
 	      if(histName.find("ak3PFJetAnalyzer") == std::string::npos) highLight = false;
@@ -431,12 +449,21 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      else if(histName.find("AbsEta0p5to1p0") == std::string::npos) highLight = false;
 	      else if(histName.find("JECUpMC") == std::string::npos) highLight = false;
 
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+
 	      RooUnfoldResponse* rooResSuperClone_p = (RooUnfoldResponse*)rooResponse_RecoTrunc_h[jI][cI][idI][mI][aI][sI]->Clone("rooResSuperClone_p");
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      TH2D* initRes_p = (TH2D*)rooResSuperClone_p->Hresponse()->Clone("initRes_p");
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      TH1D* initMeas_p = (TH1D*)rooResSuperClone_p->Hmeasured()->Clone("initMeas_p");
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      TH1D* initTrue_p = (TH1D*)rooResSuperClone_p->Htruth()->Clone("initTrue_p");
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+	      if(doLocalDebug || doGlobalDebug) std::cout << jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->GetName() << std::endl;
 	      TH1D* rawClone_p = (TH1D*)jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Clone("rawClone_p"); // Using a clone so we can modify for Fake err;
 	      
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+
 	      //NOTE: ERRORS HERE ARE HARD CODED RELATIVE VALUES BASED ON PLOTS IN AN
 	      if(isStrSame(systStr.at(sI), "Fake") && !isDataPP){
 		if(tempStr.find("akCs10PU3PFFlow") != std::string::npos){
@@ -455,6 +482,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		}
 	      }
 
+
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 
 	      if(highLight){
 		std::cout << "DOING PRE-HIGHLIGHT" << std::endl;
@@ -485,6 +514,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		}
 	      }
 	      
+
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+
 	      for(Int_t bsI = 0; bsI < nSuperBayes; ++bsI){
 		RooUnfoldBayes superBayes(rooResSuperClone_p, rawClone_p, 3, false, "name");
 		superBayes.SetVerbose(-1);
@@ -514,6 +546,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		rooResSuperClone_p = new RooUnfoldResponse(initMeas_p, unfold_h, initRes_p, "rooResSuperClone_p");
 	      }
 
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+
 	      if(highLight){
 		std::cout << "DOING POST-HIGHLIGHT" << std::endl;
 		std::cout << " Print from roo" << std::endl;
@@ -537,6 +571,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		}
 	      }
 
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
+
 	      delete initRes_p;
 	      delete initMeas_p;
 	      delete initTrue_p;
@@ -554,6 +590,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		}
 		delete rooResClone_p;
 	      }
+
+	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 
 	      delete rawClone_p;
 	      delete rooResSuperClone_p;

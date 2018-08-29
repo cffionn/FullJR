@@ -24,6 +24,7 @@
 #include "MainAnalysis/include/cutPropagator.h"
 #include "MainAnalysis/include/doLocalDebug.h"
 #include "MainAnalysis/include/flatWeightReader.h"
+#include "MainAnalysis/include/smallOrLargeR.h"
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
@@ -120,7 +121,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     std::cout << "Given inName \'" << inName << "\' contains no pthatWeights list. return 1" << std::endl;
     return 1;
   }
-
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -280,21 +280,33 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Double_t responseMod[nResponseMod] = {0.00, 0.10};
   const Double_t jerVarData[nResponseMod] = {0.15, 0.10};
 
+
+  smallOrLargeR rReader;
   /*
   const Int_t nRecoJtPtBins = 10;
   const Double_t jtPtBins[nRecoJtPtBins+1] = {100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 1100.};
   */
 
-  const Int_t nRecoJtPtBins = 7;
-  const Double_t recoJtPtBins[nRecoJtPtBins+1] = {150., 200., 250., 300., 400., 600., 1000., 1500.};
+  const int nSmallR = rReader.GetNSmallR();
+  std::vector<int> smallRVals = rReader.GetSmallRVals();
+  const int nLargeR = rReader.GetNLargeR();
+  std::vector<int> largeRVals = rReader.GetLargeRVals();
 
-  const Int_t nGenJtPtBins = 9;
-  const Double_t genJtPtBins[nGenJtPtBins+1] = {100., 150., 200., 250., 300., 400., 600., 1000., 1500., 2000.};
+  const int nRecoJtPtBinsSmallR = rReader.GetNRecoJtPtBinsSmallR();
+  std::vector<double> recoJtPtBinsSmallR = rReader.GetRecoJtPtBinsSmallR();
 
+  const int nGenJtPtBinsSmallR = rReader.GetNGenJtPtBinsSmallR();
+  std::vector<double> genJtPtBinsSmallR = rReader.GetGenJtPtBinsSmallR();
+
+  const int nRecoJtPtBinsLargeR = rReader.GetNRecoJtPtBinsLargeR();
+  std::vector<double> recoJtPtBinsLargeR = rReader.GetRecoJtPtBinsLargeR();
+
+  const int nGenJtPtBinsLargeR = rReader.GetNGenJtPtBinsLargeR();
+  std::vector<double> genJtPtBinsLargeR = rReader.GetGenJtPtBinsLargeR();
 
   Int_t bigJetRecoTrunc = -1;
-  for(Int_t jI = 0; jI < nRecoJtPtBins; ++jI){
-    Double_t val = (recoJtPtBins[jI] + recoJtPtBins[jI+1])/2.;
+  for(Int_t jI = 0; jI < nRecoJtPtBinsSmallR; ++jI){
+    Double_t val = (recoJtPtBinsSmallR[jI] + recoJtPtBinsSmallR[jI+1])/2.;
     if(val > 200.){
       bigJetRecoTrunc = jI+1;
       break;
@@ -362,10 +374,18 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetNResponseMod(nResponseMod);
   cutProp.SetResponseMod(nResponseMod, responseMod);
   cutProp.SetJERVarData(nResponseMod, jerVarData);
-  cutProp.SetNRecoJtPtBins(nRecoJtPtBins);
-  cutProp.SetRecoJtPtBins(nRecoJtPtBins+1, recoJtPtBins);
-  cutProp.SetNGenJtPtBins(nGenJtPtBins);
-  cutProp.SetGenJtPtBins(nGenJtPtBins+1, genJtPtBins);
+  cutProp.SetNSmallR(nSmallR);
+  cutProp.SetSmallRVals(smallRVals);
+  cutProp.SetNLargeR(nLargeR);
+  cutProp.SetLargeRVals(largeRVals);
+  cutProp.SetNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallR);
+  cutProp.SetRecoJtPtBinsSmallR(recoJtPtBinsSmallR);
+  cutProp.SetNGenJtPtBinsSmallR(nGenJtPtBinsSmallR);
+  cutProp.SetGenJtPtBinsSmallR(genJtPtBinsSmallR);
+  cutProp.SetNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeR);
+  cutProp.SetRecoJtPtBinsLargeR(recoJtPtBinsLargeR);
+  cutProp.SetNGenJtPtBinsLargeR(nGenJtPtBinsLargeR);
+  cutProp.SetGenJtPtBinsLargeR(genJtPtBinsLargeR);
   cutProp.SetNJtAlgos(nTrees);
   cutProp.SetJtAlgos(responseTrees);
   cutProp.SetMinJtPtCut(minJtPtCut);
@@ -401,9 +421,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetNSyst(nSyst);
   cutProp.SetSystStr(nSyst, systStr);
 
-  const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180826_18.root";
+  const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180828_9.root";
 
-  const std::string flatWeightNamePP = "MainAnalysis/tables/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180826_18.root";
+  const std::string flatWeightNamePP = "MainAnalysis/tables/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_FlatGenJetResponse_20180828_9.root";
 
   std::string flatWeightName = fullPath + "/";
   if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
@@ -453,10 +473,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   TH1D* recoJtPt_RecoTrunc_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_NoTruth_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* genJtPt_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPtPerGenPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBins];
-  TH1D* genJtPtPerRecoPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBins];
-  TH1D* recoJtPtPerGenPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBins];
-  TH1D* genJtPtPerRecoPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBins];
+  TH1D* recoJtPtPerGenPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBinsSmallR];
+  TH1D* genJtPtPerRecoPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBinsSmallR];
+  TH1D* recoJtPtPerGenPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBinsSmallR];
+  TH1D* genJtPtPerRecoPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBinsSmallR];
 
   TH1D* recoJtPt_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_RecoTrunc_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
@@ -474,6 +494,31 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     outFile_p->cd();
     std::string dirName = responseTrees.at(dI);
     dirName = dirName.substr(0, dirName.find("/"));
+
+    const Int_t rVal = getRVal(dirName);
+    bool isSmallR = rReader.GetIsSmallR(rVal);
+    bool isLargeR = rReader.GetIsLargeR(rVal);
+    if(!isSmallR && !isLargeR){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dirName << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+      return 1;
+    }  
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
+    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    Double_t genJtPtBins[nGenJtPtBins+1];
+    rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
+    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
+
+    if(doLocalDebug || doGlobalDebug){
+      std::cout << "Check reco bins: " << nRecoJtPtBins << std::endl;
+      for(Int_t rI = 0; rI < nRecoJtPtBins; ++rI){
+	std::cout << " " << rI << "/" << nRecoJtPtBins << ": " << recoJtPtBins[rI] << "-" << recoJtPtBins[rI+1] << std::endl;
+      }
+      std::cout << "Check gen bins: " << nGenJtPtBins << std::endl;
+      for(Int_t rI = 0; rI < nGenJtPtBins; ++rI){
+	std::cout << " " << rI << "/" << nGenJtPtBins << ": " << genJtPtBins[rI] << "-" << genJtPtBins[rI+1] << std::endl;
+      }
+    }
 
     dir_p[dI] = (TDirectory*)outFile_p->mkdir(dirName.c_str());
 
@@ -803,9 +848,23 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	std::string algoName = responseTrees.at(tI);
 	//	algoName = algoName.substr(0, algoName.find("/"));
 
-	const Int_t rVal = getRVal(jetTrees_p[tI]->GetName());
-	Double_t rValD = getRVal(jetTrees_p[tI]->GetName());
+	Double_t rValD = getRVal(algoName);
 	rValD /= 10.;
+	const Int_t rVal = getRVal(algoName);
+	bool isSmallR = rReader.GetIsSmallR(rVal);
+	bool isLargeR = rReader.GetIsLargeR(rVal);	
+	if(!isSmallR && !isLargeR){
+	  std::cout << "WARNING (LINE " << __LINE__ << ": " << algoName << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+	  return 1;
+	}  
+
+	const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+	const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
+	Double_t recoJtPtBins[nRecoJtPtBins+1];
+	Double_t genJtPtBins[nGenJtPtBins+1];
+	rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
+	rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
+	
 
 	const Int_t nUsed = ngen_[tI];
 	bool isUsed[nUsed];
@@ -827,7 +886,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      }
 	    }
 	  }
-
+	
 	  bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[0] && refpt_[tI][jI] < genJtPtBins[nGenJtPtBins] && refpt_[tI][jI] > minJtPtCut.at(tI));
 
 	  for(Int_t mI = 0; mI < nResponseMod; ++mI){
@@ -859,7 +918,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
 
 	      goodReco[sI] = (jtPtFillVal[sI] >= recoJtPtBins[0] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins] && jtPtFillVal[sI] > minJtPtCut.at(tI));
-	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[recoTruncPos.at(tI)] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins-1]);
+	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[0] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins]); // Since bins are re-asymmetric, just make these the same
 	    }
 
 	    std::vector<bool> passesID;
@@ -879,7 +938,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    
 	    Int_t recoJtPos = -1;
 	    Int_t genJtPos = -1;
-	    
+	  
 	    for(Int_t posI = 0; posI < nRecoJtPtBins; ++posI){
 	      if(recoJtPtBins[posI] <= jtpt_[tI][jI] && recoJtPtBins[posI+1] > jtpt_[tI][jI]){
 		recoJtPos = posI;
@@ -1016,6 +1075,16 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     outFile_p->cd();
     dir_p[dI]->cd();
 
+    const Int_t rVal = getRVal(dir_p[dI]->GetName());
+    bool isSmallR = rReader.GetIsSmallR(rVal);
+    bool isLargeR = rReader.GetIsLargeR(rVal);	
+    if(!isSmallR && !isLargeR){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+      return 1;
+    }      
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
+    
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t iI = 0; iI < nID; ++iI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){
@@ -1085,6 +1154,16 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
     outFile_p->cd();
     dir_p[dI]->cd();
+
+    const Int_t rVal = getRVal(dir_p[dI]->GetName());
+    bool isSmallR = rReader.GetIsSmallR(rVal);
+    bool isLargeR = rReader.GetIsLargeR(rVal);	
+    if(!isSmallR && !isLargeR){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+      return 1;
+    }      
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t iI = 0; iI < nID; ++iI){
@@ -1156,6 +1235,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     cutProp.SetRecoTruncPos(recoTruncPos);
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
   if(!cutProp.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;

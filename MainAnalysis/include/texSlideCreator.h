@@ -17,6 +17,7 @@ class texSlideCreator
 {
  public:
   std::string texFileName;
+  std::string tagStr;
   std::string authorName = "PLACEHOLDER";
   std::vector<std::string> slideTitles;
   std::vector<std::vector<std::string> > pdfPerSlide;
@@ -24,6 +25,7 @@ class texSlideCreator
   texSlideCreator(){return;}
   texSlideCreator(const std::string inName){Init(inName); return;}
   void Init(const std::string inName){texFileName = inName; return;}
+  void InitTag(const std::string inTag){tagStr = inTag; return;}
   void SetAuthor(const std::string inName){authorName = inName; return;}
   void SetSlideTitles(std::vector<std::string> inVect){slideTitles = inVect; return;}
   void SetSlidePdfs(std::vector<std::vector<std::string > > inVect){pdfPerSlide = inVect; return;}
@@ -110,9 +112,11 @@ bool texSlideCreator::CreateTexSlides()
   delete date;
 
   //Fix back of texfilename
-  if(texFileName.rfind(".") != std::string::npos) texFileName.replace(texFileName.rfind(".")+1, texFileName.size(), "");
-  else texFileName = texFileName + ".";
+  if(texFileName.rfind(".") != std::string::npos) texFileName.replace(texFileName.rfind("."), texFileName.size(), "");
+  if(tagStr.size() != 0) texFileName = texFileName + "_" + tagStr;
+  texFileName = texFileName + ".";
   if(texFileName.find((dateStr + ".")) == std::string::npos) texFileName.replace(texFileName.rfind("."), 1, dateStr + ".");
+
   texFileName = texFileName + "tex";
 
   const std::string dirStr = "pdfDir/" + dateStr + "/";

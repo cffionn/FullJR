@@ -541,6 +541,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 {
   std::vector<std::string> slideTitles;
   std::vector<std::vector<std::string > > pdfPerSlide;
+  std::vector<std::string> slideTitlesMain;
+  std::vector<std::vector<std::string > > pdfPerSlideMain;
 
   double total = 0;
   cppWatch toPPFile;
@@ -1693,19 +1695,38 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	leg_p->Draw("SAME");
 
+	std::cout << __LINE__ << std::endl;
+
 	gPad->RedrawAxis();
 	gPad->SetTicks(1,2);
+
+	std::cout << __LINE__ << std::endl;
       
 	std::string saveName = "spectra_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + idNameStr + "_" + plotAbsEtaStr + "_" + plotBayesStr + "_" + responseStr + "_" + systSmooth[usI] + "_" + dateStr + ".pdf";
+
+	std::cout << __LINE__ << std::endl;
 
 	if(usI == 0){
 	  slideTitles.push_back("Spectra (" + responseStr + ")");
 	  pdfPerSlide.push_back({});
+
+	  slideTitlesMain.push_back("Spectra (" + responseStr + ")");
+	  pdfPerSlideMain.push_back({});
 	}
 
+	std::cout << __LINE__ << std::endl;
+
 	pdfPerSlide.at(pdfPerSlide.size() - 1).push_back(saveName);
+	std::cout << __LINE__ << std::endl;
+
+	pdfPerSlideMain.at(pdfPerSlideMain.size() - 1).push_back(saveName);
+
+	std::cout << __LINE__ << std::endl;
+
 
 	saveName = "pdfDir/" + dateStr + "/" + saveName;
+
+	std::cout << __LINE__ << std::endl;
 
 	quietSaveAs(spectCanv_p, saveName);
 
@@ -1714,6 +1735,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	delete spectCanv_p;
 	delete label_p;
 	delete leg_p;
+
+	std::cout << __LINE__ << std::endl;
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
@@ -1800,10 +1823,23 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   texSlideCreator tex;
   tex.Clean();
   tex.Init(outFileName);
+  tex.InitTag("AllPlots");
   tex.SetAuthor("Christopher McGinn");
   tex.SetSlideTitles(slideTitles);
   tex.SetSlidePdfs(pdfPerSlide);
   if(!(tex.CreateTexSlides())){
+    std::cout << "Warning: .tex slide creation failed" << std::endl;
+  }
+
+
+  texSlideCreator texMain;
+  texMain.Clean();
+  texMain.Init(outFileName);
+  texMain.InitTag("MainPlots");
+  texMain.SetAuthor("Christopher McGinn");
+  texMain.SetSlideTitles(slideTitlesMain);
+  texMain.SetSlidePdfs(pdfPerSlideMain);
+  if(!(texMain.CreateTexSlides())){
     std::cout << "Warning: .tex slide creation failed" << std::endl;
   }
 

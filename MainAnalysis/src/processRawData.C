@@ -18,6 +18,8 @@
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/doLocalDebug.h"
+#include "MainAnalysis/include/smallOrLargeR.h"
 
 //Non-local FullJR dependencies (Utility, etc.)
 #include "Utility/include/checkMakeDir.h"
@@ -70,8 +72,11 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<double> multiJtPtCutTemp = cutProp.GetMultiJtPtCut();
   std::vector<int> recoTruncPosTemp = cutProp.GetRecoTruncPos();
 
-  Int_t nRecoJtPtBinsTemp = cutProp.GetNRecoJtPtBins();
-  std::vector<Double_t> recoJtPtBinsTemp = cutProp.GetRecoJtPtBins();
+  Int_t nRecoJtPtBinsSmallRTemp = cutProp.GetNRecoJtPtBinsSmallR();
+  std::vector<Double_t> recoJtPtBinsSmallRTemp = cutProp.GetRecoJtPtBinsSmallR();
+
+  Int_t nRecoJtPtBinsLargeRTemp = cutProp.GetNRecoJtPtBinsLargeR();
+  std::vector<Double_t> recoJtPtBinsLargeRTemp = cutProp.GetRecoJtPtBinsLargeR();
 
   Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
@@ -98,29 +103,44 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   std::vector<int> jtPfMinMult = cutProp.GetJtPfMinMult();
   std::vector<int> jtPfMinChgMult = cutProp.GetJtPfMinChgMult();
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   if(nCentBinsTemp < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nID less than 0. please check input file. return 1" << std::endl;
-  if(nRecoJtPtBinsTemp < 0) std::cout << "nRecoJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nRecoJtPtBinsSmallRTemp < 0) std::cout << "nRecoJtPtBinsSmallRTemp less than 0. please check input file. return 1" << std::endl;
+  if(nRecoJtPtBinsLargeRTemp < 0) std::cout << "nRecoJtPtBinsLargeRTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(jtAbsEtaMaxTemp < -98) std::cout << "jtAbsEtaMaxTemp less than -98. please check input file. return 1" << std::endl;
 
-  if(nCentBinsTemp < 0 || nRecoJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98 || nIDTemp < 0){
+  if(nCentBinsTemp < 0 || nRecoJtPtBinsSmallRTemp < 0 || nRecoJtPtBinsLargeRTemp < 0 || nJtAbsEtaBinsTemp < 0 || jtAbsEtaMaxTemp < -98 || nIDTemp < 0){
     responseFile_p->Close();
     delete responseFile_p;
+    return 1;
+  }
+
+  smallOrLargeR rReader;
+  if(!rReader.CheckNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallRTemp)){
+    std::cout << "nRecoJtPtBinsSmallR propagated \'" << nRecoJtPtBinsSmallRTemp << "\' doesn't match rReader \'" << rReader.GetNRecoJtPtBinsSmallR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeRTemp)){
+    std::cout << "nRecoJtPtBinsLargeR propagated \'" << nRecoJtPtBinsLargeRTemp << "\' doesn't match rReader \'" << rReader.GetNRecoJtPtBinsLargeR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckRecoJtPtBinsSmallR(recoJtPtBinsSmallRTemp)){
+    std::cout << "recoJtPtBinsSmallR propagated doesn't match rReader. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp)){
+    std::cout << "recoJtPtBinsLargeR propagated doesn't match rReader. return 1" << std::endl;
     return 1;
   }
 
   const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
   const Int_t nCentBins = nCentBinsTemp;
 
-  const Int_t nRecoJtPtBins = nRecoJtPtBinsTemp;
-  Double_t recoJtPtBins[nRecoJtPtBins+1];
-  std::cout << "nRecoJtPtBins: ";
-  for(Int_t jI = 0; jI < nRecoJtPtBins+1; ++jI){
-    recoJtPtBins[jI] = recoJtPtBinsTemp.at(jI);
-    std::cout << " " << recoJtPtBins[jI] << ",";
-  }
-  std::cout << std::endl;
+  const Int_t nRecoJtPtBinsArr = TMath::Max(nRecoJtPtBinsSmallRTemp, nRecoJtPtBinsLargeRTemp);
+  std::cout << "nRecoJtPtBinsArr: " << nRecoJtPtBinsArr << std::endl;
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
   Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
@@ -135,6 +155,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   const Int_t nID = nIDTemp; 
 
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
   std::cout << "nCentBins: " << nCentBins << std::endl;
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     std::cout << " " << cI << "/" << nCentBins << ": " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << std::endl;
@@ -205,6 +227,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   delete inDataFile_p;
   inDataFile_p = NULL;
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   const Int_t nDataJet = dataTreeList.size();
 
   std::string outFileName = inDataFileName;
@@ -236,9 +260,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TH1D* jtPtRaw_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
   TH1D* jtPtRaw_RecoTrunc_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
 
-  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
-  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
-  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBins];
+  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
+  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
+  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
 
   Double_t minJtPtCut[nDataJet];
   Double_t multiJtPtCut[nDataJet];
@@ -263,6 +287,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     recoTruncPos[jI] = recoTruncPosTemp.at(pos);
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   const Int_t nMultijetAJ = 9;
   const Double_t multijetAJ[nMultijetAJ+1] = {-0.5, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.1};
   //  Double_t multijetAJFactors[nMultijetAJ];
@@ -275,6 +301,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
     dir_p[jI] = (TDirectory*)outFile_p->mkdir(tempStr.c_str());
     std::cout << " " << jI << "/" << nDataJet << ": " << tempStr << std::endl;
+
+    const Int_t rVal = getRVal(tempStr);
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
@@ -303,6 +335,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
       }
     }
   }
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::cout << "Processing " << fileList.size() << " files..., isDataPP == " << isDataPP << std::endl;
   std::cout << "Jets: ";
@@ -471,6 +505,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	Int_t tempLeadingPos_ = -1;
 	Int_t tempLeadingFillPos_ = -1;
 
+	const Int_t rVal = getRVal(dataTreeList.at(tI));
+	const bool isSmallR = rReader.GetIsSmallR(rVal);
+	const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+	Double_t recoJtPtBins[nRecoJtPtBins+1];
+	rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
+
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 
@@ -567,7 +607,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
 	    for(unsigned int idI = 0; idI < idPoses.size(); ++idI){
 	      bool goodReco = (jtpt_[tI][jI] >= recoJtPtBins[0] && jtpt_[tI][jI] < recoJtPtBins[nRecoJtPtBins]) && jtpt_[tI][jI] > minJtPtCut[tI];
-	      bool goodRecoTrunc = (jtpt_[tI][jI] >= recoJtPtBins[recoTruncPos[tI]] && jtpt_[tI][jI] < recoJtPtBins[nRecoJtPtBins-1]);
+	      bool goodRecoTrunc = (jtpt_[tI][jI] >= recoJtPtBins[0] && jtpt_[tI][jI] < recoJtPtBins[nRecoJtPtBins]);//since we do rDep binning keep same as goodreco for now
 	      
 	      if(goodReco){
 		jtPtRaw_h[tI][centPos][idPoses.at(idI)][jtAbsEtaPoses.at(aI)]->Fill(jtpt_[tI][jI]);
@@ -621,7 +661,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     delete inDataFile_p;
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   outFile_p->cd();
+
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::vector<std::string> spectraNames;
   std::vector<std::vector<std::string> > multijetNames;
@@ -629,6 +674,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = dataTreeList.at(jI);
     tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+
+    const Int_t rVal = getRVal(tempStr);
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);   
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
@@ -835,7 +886,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|#eta|<" + prettyString(jtAbsEtaBinsHi[aI], 1, false);
 
 	multijetNames.push_back({});
-
+      
 	for(Int_t jetI = 0; jetI < nRecoJtPtBins; ++jetI){
 	  if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetEntries() == 0) continue;
 
@@ -1010,16 +1061,23 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  multijetNames.at(multijetNames.size()-1).push_back(multijetName);
 	  const std::string saveName = "pdfDir/" + dateStr + "/" + multijetName;
 	  quietSaveAs(canv_p, saveName);
+
+	  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 	  
 	  delete pads[0];
 	  delete pads[1];
 	  delete canv_p;
 	  delete leg_p;	  		  
 	  delete label_p;
+
+	  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 	}
       }
     }
   }  
+
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   //  spectraNames
   //  multijetNames
@@ -1095,6 +1153,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   texFile << " \\end{itemize}" << std::endl;
   texFile << "\\end{frame}" << std::endl;
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   for(unsigned int spI = 0; spI < spectraNames.size(); ++spI){
     if(spectraNames.at(spI).find("AbsEta0p0to2p0") == std::string::npos) continue;
     
@@ -1130,9 +1190,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   texFile.close();
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     outFile_p->cd();
     dir_p[jI]->cd();
+
+    const Int_t rVal = getRVal(dir_p[jI]->GetName());
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
+
+    if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << ", " << rVal << ", " << dir_p[jI]->GetName() << ", " << nRecoJtPtBins << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t idI = 0; idI < nID; ++idI){
@@ -1141,6 +1209,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  jtPtRaw_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
 	  delete jtPtRaw_h[jI][cI][idI][aI];
 	  
+	  std::cout << "Writing: " << std::endl;
+	  std::cout << " " << jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->GetName() << std::endl;
+
 	  jtPtRaw_RecoTrunc_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
 	  delete jtPtRaw_RecoTrunc_h[jI][cI][idI][aI];
 
@@ -1159,9 +1230,15 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     }
   }
 
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
   outFile_p->cd();
   TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
   TDirectory* subFileDir_p = (TDirectory*)outFile_p->mkdir("cutDir/fullFiles");
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   cutPropagator cutPropOut;
   cutPropOut.Clean();
@@ -1172,10 +1249,18 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetMinJtPtCut(nDataJet, minJtPtCut);
   cutPropOut.SetMultiJtPtCut(nDataJet, multiJtPtCut);
   cutPropOut.SetRecoTruncPos(nDataJet, recoTruncPos);
-  cutPropOut.SetNRecoJtPtBins(nRecoJtPtBins);
-  cutPropOut.SetRecoJtPtBins(nRecoJtPtBins+1, recoJtPtBins);
-  cutPropOut.SetNGenJtPtBins(cutProp.GetNGenJtPtBins());
-  cutPropOut.SetGenJtPtBins(cutProp.GetGenJtPtBins());
+  cutPropOut.SetNSmallR(cutProp.GetNSmallR());
+  cutPropOut.SetSmallRVals(cutProp.GetSmallRVals());
+  cutPropOut.SetNLargeR(cutProp.GetNLargeR());
+  cutPropOut.SetLargeRVals(cutProp.GetLargeRVals());
+  cutPropOut.SetNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallRTemp);
+  cutPropOut.SetRecoJtPtBinsSmallR(recoJtPtBinsSmallRTemp);
+  cutPropOut.SetNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeRTemp);
+  cutPropOut.SetRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp);
+  cutPropOut.SetNGenJtPtBinsSmallR(cutProp.GetNGenJtPtBinsSmallR());
+  cutPropOut.SetGenJtPtBinsSmallR(cutProp.GetGenJtPtBinsSmallR());
+  cutPropOut.SetNGenJtPtBinsLargeR(cutProp.GetNGenJtPtBinsLargeR());
+  cutPropOut.SetGenJtPtBinsLargeR(cutProp.GetGenJtPtBinsLargeR());
   cutPropOut.SetNJtAbsEtaBins(nJtAbsEtaBins);
   cutPropOut.SetJtAbsEtaBinsLow(nJtAbsEtaBins, jtAbsEtaBinsLow);
   cutPropOut.SetJtAbsEtaBinsHi(nJtAbsEtaBins, jtAbsEtaBinsHi);
@@ -1203,6 +1288,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   cutPropOut.SetJtPfCEFCutHi(jtPfCEFCutHi);
   cutPropOut.SetJtPfMinMult(jtPfMinMult);
   cutPropOut.SetJtPfMinChgMult(jtPfMinChgMult);
+
+  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   if(!cutPropOut.WriteAllVarToFile(outFile_p, cutDir_p, subFileDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
 

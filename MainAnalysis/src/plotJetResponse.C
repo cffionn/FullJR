@@ -10,10 +10,11 @@
 #include "TDatime.h"
 #include "TStyle.h"
 
-//Local dependencies                                                                                                                             
+//Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/smallOrLargeR.h"
 
-//Non-local FullJR (Utility, etc.) dependencies                                                                                                      
+//Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/histDefUtility.h"
@@ -115,8 +116,11 @@ int plotJetResponse(const std::string inResponseName)
   std::vector<Int_t> centBinsLow = cutProp.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutProp.GetCentBinsHi();
 
-  Int_t nGenJtPtBinsTemp = cutProp.GetNGenJtPtBins();
-  std::vector<Double_t> genJtPtBinsTemp = cutProp.GetGenJtPtBins();
+  Int_t nGenJtPtBinsSmallRTemp = cutProp.GetNGenJtPtBinsSmallR();
+  std::vector<Double_t> genJtPtBinsSmallRTemp = cutProp.GetGenJtPtBinsSmallR();
+
+  Int_t nGenJtPtBinsLargeRTemp = cutProp.GetNGenJtPtBinsLargeR();
+  std::vector<Double_t> genJtPtBinsLargeRTemp = cutProp.GetGenJtPtBinsLargeR();
 
   Int_t nJtAbsEtaBinsTemp = cutProp.GetNJtAbsEtaBins();
   std::vector<Double_t> jtAbsEtaBinsLowTemp = cutProp.GetJtAbsEtaBinsLow();
@@ -129,20 +133,34 @@ int plotJetResponse(const std::string inResponseName)
   std::vector<double> responseMod = cutProp.GetResponseMod();
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
-  if(nGenJtPtBinsTemp < 0) std::cout << "nGenJtPtBinsTemp less than 0. please check input file. return 1" << std::endl;
+  if(nGenJtPtBinsSmallRTemp < 0) std::cout << "nGenJtPtBinsSmallRTemp less than 0. please check input file. return 1" << std::endl;
+  if(nGenJtPtBinsLargeRTemp < 0) std::cout << "nGenJtPtBinsLargeRTemp less than 0. please check input file. return 1" << std::endl;
   if(nJtAbsEtaBinsTemp < 0) std::cout << "nJtAbsEtaBinsTemp less than 0. please check input file. return 1" << std::endl;
   if(nIDTemp < 0) std::cout << "nIDTemp less than 0. please check input file. return 1" << std::endl;
   
-  if(nCentBins < 0 || nGenJtPtBinsTemp < 0 || nJtAbsEtaBinsTemp < 0 || nIDTemp < 0){
+  if(nCentBins < 0 || nGenJtPtBinsSmallRTemp < 0 || nGenJtPtBinsLargeRTemp < 0 || nJtAbsEtaBinsTemp < 0 || nIDTemp < 0){
     responseFile_p->Close();
     delete responseFile_p;
     return 1;
   }
 
-  const Int_t nGenJtPtBins = nGenJtPtBinsTemp;
-  Double_t genJtPtBins[nGenJtPtBins+1];
-  for(Int_t jI = 0; jI < nGenJtPtBins+1; ++jI){
-    genJtPtBins[jI] = genJtPtBinsTemp.at(jI);
+  smallOrLargeR rReader;
+
+  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallRTemp)){
+    std::cout << "nGenJtPtBinsSmallR propagated \'" << nGenJtPtBinsSmallRTemp << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsSmallR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeRTemp)){
+    std::cout << "nGenJtPtBinsLargeR propagated \'" << nGenJtPtBinsLargeRTemp << "\' doesn't match rReader \'" << rReader.GetNGenJtPtBinsLargeR() << "\'. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)){
+    std::cout << "genJtPtBinsSmallR propagated doesn't match rReader. return 1" << std::endl;
+    return 1;
+  }
+  if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)){
+    std::cout << "genJtPtBinsLargeR propagated doesn't match rReader. return 1" << std::endl;
+    return 1;
   }
 
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
@@ -164,7 +182,6 @@ int plotJetResponse(const std::string inResponseName)
     idStr[i] = idStrTemp.at(i);
   }
   
-
   const Int_t nManip = 4;
   const std::string recoTruncStr[nManip] = {"", "", "_RecoTrunc", "_RecoTrunc"};
   Bool_t renormX[nManip] = {true, false, true, false};
@@ -178,9 +195,23 @@ int plotJetResponse(const std::string inResponseName)
   checkMakeDir("pdfDir");
   checkMakeDir("pdfDir/" + dateStr);
 
+
   for(Int_t jI = 0; jI < nJets; ++jI){
     std::string dirName = jetDirList.at(jI);
     dirName = dirName.substr(0, dirName.find("/"));
+
+    const Int_t rVal = getRVal(dirName);
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
+    Double_t genJtPtBins[nGenJtPtBins+1];
+    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins, genJtPtBins);
+
+    std::cout << "Bins for rVal = " << rVal << std::endl;
+    std::cout << " ";
+    for(Int_t gI = 0; gI < nGenJtPtBins+1; ++gI){
+      std::cout << genJtPtBins[gI] << ", ";
+    }
+    std::cout << std::endl;
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
@@ -259,7 +290,7 @@ int plotJetResponse(const std::string inResponseName)
 	    Int_t nPadX = -1;
 	    Int_t nPadY = -1;
 	    getPadsXY(nGenJtPtBins, &nPadX, &nPadY);
-	    
+	  	    
 	    TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
 	    recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
 	    recoJtPtPerGenPtBin_p->SetBottomMargin(0.01);
