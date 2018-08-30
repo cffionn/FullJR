@@ -9,95 +9,28 @@
 #include "TPad.h"
 #include "TDatime.h"
 #include "TStyle.h"
+#include "TLatex.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/plotToSuperPlotDim.h"
 #include "MainAnalysis/include/smallOrLargeR.h"
+#include "MainAnalysis/include/texSlideCreator.h"
 
 //Non-local FullJR (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
-#include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/getLinBins.h"
+#include "Utility/include/getLogBins.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/plotUtilities.h"
+#include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vanGoghPalette.h"
-
-
-void getPadsXY(const Int_t nPlots, Int_t *nPadX, Int_t *nPadY)
-{
-  if(nPlots == 1){
-    (*nPadX) = 1;
-    (*nPadY) = 1;
-  }
-  else if(nPlots == 2){
-    (*nPadX) = 2;
-    (*nPadY) = 1;
-  }
-  else if(nPlots == 3){
-    (*nPadX) = 2;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 4){
-    (*nPadX) = 2;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 5){
-    (*nPadX) = 3;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 6){
-    (*nPadX) = 3;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 7){
-    (*nPadX) = 4;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 8){
-    (*nPadX) = 4;
-    (*nPadY) = 2;
-  }
-  else if(nPlots == 9){
-    (*nPadX) = 3;
-    (*nPadY) = 3;
-  }
-  else if(nPlots == 10){
-    (*nPadX) = 4;
-    (*nPadY) = 3;
-  }
-  else if(nPlots == 11){
-    (*nPadX) = 4;
-    (*nPadY) = 3;
-  }
-  else if(nPlots == 12){
-    (*nPadX) = 4;
-    (*nPadY) = 3;
-  }
-  else if(nPlots == 13){
-    (*nPadX) = 4;
-    (*nPadY) = 4;
-  }
-  else if(nPlots == 14){
-    (*nPadX) = 4;
-    (*nPadY) = 4;
-  }
-  else if(nPlots == 15){
-    (*nPadX) = 4;
-    (*nPadY) = 4;
-  }
-  else if(nPlots == 16){
-    (*nPadX) = 4;
-    (*nPadY) = 4;
-  }
-  else{
-    std::cout << "WARNING: nPlots \'" << nPlots << "\' has no specified value. return" << std::endl;
-  }
-
-  return;
-}
-
 
 int plotJetResponse(const std::string inResponseName)
 {
+  std::vector<std::string> slideTitles;
+  std::vector<std::vector<std::string > > pdfPerSlide;
+
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> jetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
 
@@ -169,9 +102,10 @@ int plotJetResponse(const std::string inResponseName)
     idStr[i] = idStrTemp.at(i);
   }
   
-  const Int_t nManip = 4;
-  const std::string recoTruncStr[nManip] = {"", "", "_RecoTrunc", "_RecoTrunc"};
-  Bool_t renormX[nManip] = {true, false, true, false};
+  const Int_t nManip = 6;
+  const std::string recoTruncStr[nManip] = {"_RecoGenSymm", "_RecoGenAsymm", "_RecoGenSymm", "_RecoGenAsymm", "_RecoGenSymm", "_RecoGenAsymm"};
+  Bool_t renormX[nManip] = {false, false, true, true, false, false};
+  Bool_t renormY[nManip] = {false, false, false, false, true, true};
 
   const Int_t nJets = jetDirList.size(); 
 
@@ -187,11 +121,13 @@ int plotJetResponse(const std::string inResponseName)
     std::string dirName = jetDirList.at(jI);
     dirName = dirName.substr(0, dirName.find("/"));
 
+    const std::string jetName = dirName.substr(0, dirName.find("JetAna"));
+
     const Int_t rVal = getRVal(dirName);
     const bool isSmallR = rReader.GetIsSmallR(rVal);
     const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
     Double_t genJtPtBins[nGenJtPtBins+1];
-    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins, genJtPtBins);
+    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
     std::cout << "Bins for rVal = " << rVal << std::endl;
     std::cout << " ";
@@ -199,19 +135,34 @@ int plotJetResponse(const std::string inResponseName)
       std::cout << genJtPtBins[gI] << ", ";
     }
     std::cout << std::endl;
-
+  
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
-      if(!isPP) centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      std::string centStr2 = "PP";
+      if(!isPP){
+	centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+	centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+      }
 
       for(Int_t iI = 0; iI < nID; ++iI){	
 
 	for(Int_t modI = 0; modI < nResponseMod; ++modI){
 	  std::string resStr = "ResponseMod" + prettyString(responseMod[modI], 2, true);
+	  std::string resStr2 = "Res.x" + prettyString(responseMod[modI], 2, false);
 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);	
-	  
+	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
+	    const std::string jtAbsEtaStr2 = prettyString(jtAbsEtaBinsLow[aI], 1, false) + "<|\\eta|<" + prettyString(jtAbsEtaBinsHi[aI], 1, false);
+
+	    bool doSlides = isStrSame(jtAbsEtaStr, "AbsEta0p0to2p0");
+	    doSlides = doSlides && isStrSame(idStr[iI], "LightMUAndCHID");
+
+	    if(doSlides){
+	      const std::string slideTitle = jetName + ", " + centStr2 + ", " + idStr[iI] + ", " + resStr2 + ", $" + jtAbsEtaStr2 + "$";
+	      slideTitles.push_back(slideTitle);
+	      pdfPerSlide.push_back({});
+	    }
+
 	    for(Int_t mI = 0; mI < nManip; ++mI){
 	      TH2D* response_h = (TH2D*)responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
 	      
@@ -242,7 +193,7 @@ int plotJetResponse(const std::string inResponseName)
 		  }
 		}	
 	      }
-	      else{
+	      else if(renormY[mI]){
 		for(Int_t bIY = 0; bIY < response_h->GetNbinsY(); ++bIY){
 		  Double_t ySum = 0.;
 		  
@@ -267,16 +218,62 @@ int plotJetResponse(const std::string inResponseName)
 		gPad->SetLogy();
 	      }
 	      
-	      std::string renormStr = "renormX";
-	      if(!renormX[mI]) renormStr = "renormY";
-	      const std::string finalSaveName = "pdfDir/" + dateStr + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf";
+	      std::string renormStr = "nonorm";
+	      if(renormX[mI]) renormStr = "renormX";
+	      else if(renormY[mI]) renormStr = "renormY";
+
+	      Double_t histMinX = response_h->GetXaxis()->GetBinLowEdge(1);
+	      Double_t histMaxX = response_h->GetXaxis()->GetBinLowEdge(response_h->GetNbinsX());
+	      Double_t histMinY = response_h->GetYaxis()->GetBinLowEdge(1);
+	      Double_t histMaxY = response_h->GetYaxis()->GetBinLowEdge(response_h->GetNbinsY());
+
+	      const Int_t nBins = 40;
+	      Double_t binsLinX[nBins+1];
+	      Double_t binsLogX[nBins+1];
+	      Double_t binsLinY[nBins+1];
+	      Double_t binsLogY[nBins+1];
+
+	      getLinBins(histMinX, histMaxX, nBins, binsLinX);
+	      getLogBins(histMinX, histMaxX, nBins, binsLogX);
+	      getLinBins(histMinY, histMaxY, nBins, binsLinY);
+	      getLogBins(histMinY, histMaxY, nBins, binsLogY);	     
+
+	      TLatex* label_p = new TLatex();
+	      label_p->SetTextFont(43);
+	      label_p->SetTextSize(12);
+
+	      if(doLogX){
+		label_p->DrawLatex(binsLogX[1], binsLogY[nBins-1], renormStr.c_str());
+		label_p->DrawLatex(binsLogX[1], binsLogY[nBins-2], recoTruncStr[mI].substr(1, recoTruncStr[mI].size()).c_str());
+
+		label_p->DrawLatex(binsLogX[0]*9./10., 300, "300");
+		label_p->DrawLatex(binsLogX[0]*9./10., 400, "400");
+		label_p->DrawLatex(binsLogX[0]*9./10., 800, "800");
+
+		label_p->DrawLatex(300, binsLogY[0]*9./10., "300");
+		label_p->DrawLatex(400, binsLogY[0]*9./10., "400");
+		label_p->DrawLatex(800, binsLogY[0]*9./10., "800");
+	      }
+	      else{
+		label_p->DrawLatex(binsLinX[1], binsLinY[19], renormStr.c_str());
+		label_p->DrawLatex(binsLinX[1], binsLinY[18], recoTruncStr[mI].c_str());
+	      }
+
+	     
+	      delete label_p;
+
+
+	      const std::string saveName = "response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_" + renormStr + "_" + dateStr  + ".pdf";
+	      if(doSlides) pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+	      const std::string finalSaveName = "pdfDir/" + dateStr + "/" + saveName;
 	      quietSaveAs(canv_p, finalSaveName);
 	      delete canv_p;
 	    }
+
 	    
-	    Int_t nPadX = -1;
-	    Int_t nPadY = -1;
-	    getPadsXY(nGenJtPtBins, &nPadX, &nPadY);
+	    plotToSuperPlotDim superDim;
+	    Int_t nPadX = superDim.GetNPlotsX(nGenJtPtBins);
+	    Int_t nPadY = superDim.GetNPlotsY(nGenJtPtBins);
 	  	    
 	    TCanvas* recoJtPtPerGenPtBin_p = new TCanvas("recoJtPtPerGenPtBin_p", "", 450*nPadX, 450*nPadY);
 	    recoJtPtPerGenPtBin_p->SetTopMargin(0.01);
@@ -332,6 +329,26 @@ int plotJetResponse(const std::string inResponseName)
   
   responseFile_p->Close();
   delete responseFile_p;
+
+  //produce some latex slides
+  texSlideCreator tex;
+  tex.Clean();
+  tex.Init(inResponseName);
+
+  if(nJets == 1){
+    std::string jetTag = jetDirList.at(0);
+    jetTag = jetTag.substr(0, jetTag.find("/"));
+
+    tex.InitTag("AllPlots_" + jetTag);
+  }
+  else tex.InitTag("AllPlots");
+
+  tex.SetAuthor("Christopher McGinn");
+  tex.SetSlideTitles(slideTitles);
+  tex.SetSlidePdfs(pdfPerSlide);
+  if(!(tex.CreateTexSlides())){
+    std::cout << "Warning: .tex slide creation failed" << std::endl;
+  }
 
   return 0;
 }

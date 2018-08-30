@@ -437,7 +437,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	      std::string histName = jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][0]->GetName();
 	      if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 	      bool highLight = true;
-	      if(histName.find("ak3PFJetAnalyzer") == std::string::npos) highLight = false;
+	      if(histName.find("akCs3PU3PFFlowJetAnalyzer") == std::string::npos) highLight = false;
 	      else if(histName.find("NoID") == std::string::npos) highLight = false;
 	      else if(histName.find("ResponseMod0p00") == std::string::npos) highLight = false;
 	      else if(histName.find("AbsEta0p5to1p0") == std::string::npos) highLight = false;

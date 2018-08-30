@@ -10,6 +10,9 @@
 //ROOT dependencies
 #include "TDatime.h"
 
+//Local (MainAnalysis) dependencies
+#include "MainAnalysis/include/plotToSuperPlotDim.h"
+
 //Non-local (Utility) dependencies
 #include "Utility/include/checkMakeDir.h"
 
@@ -21,6 +24,8 @@ class texSlideCreator
   std::string authorName = "PLACEHOLDER";
   std::vector<std::string> slideTitles;
   std::vector<std::vector<std::string> > pdfPerSlide;
+
+  plotToSuperPlotDim plotter;
 
   texSlideCreator(){return;}
   texSlideCreator(const std::string inName){Init(inName); return;}
@@ -38,60 +43,13 @@ class texSlideCreator
 
 double texSlideCreator::GetTextWidthFromNPDF(int npdf)
 {
-  double defVal = .175;
-
-  if(npdf == 1) return .6;
-  else if(npdf == 2) return .45;
-  else if(npdf == 3) return .32;
-  else if(npdf == 4) return .24;
-  else if(npdf == 5) return .32;
-  else if(npdf == 6) return .32;
-  else if(npdf == 7) return .24;
-  else if(npdf == 8) return .24;
-  else if(npdf == 9) return .32;
-  else if(npdf == 10) return .24;
-  else if(npdf == 11) return .24;
-  else if(npdf == 12) return .24;
-  else if(npdf == 12) return .24;
-  else if(npdf == 13) return .185;
-  else if(npdf == 14) return .185;
-  else if(npdf == 15) return .185;
-  else if(npdf == 16) return .185;
-  else if(npdf == 17) return .175;
-  else if(npdf == 18) return .175;
-  else if(npdf == 19) return .175;
-  else if(npdf == 20) return .175;
-  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning min value " << defVal << " for n=" << npdf << " plots." << std::endl;
-  
+  double defVal = plotter.GetWidthX(npdf);
   return defVal;
 }
 
 int texSlideCreator::GetPlotsPerRowFromNPDF(int npdf)
 {
-  int defVal = 5;
-
-  if(npdf == 1) return 1;
-  else if(npdf == 2) return 2;
-  else if(npdf == 3) return 3;
-  else if(npdf == 4) return 4;
-  else if(npdf == 5) return 3;
-  else if(npdf == 6) return 3;
-  else if(npdf == 7) return 4;
-  else if(npdf == 8) return 4;
-  else if(npdf == 9) return 3;
-  else if(npdf == 10) return 4;
-  else if(npdf == 11) return 4;
-  else if(npdf == 12) return 4;
-  else if(npdf == 13) return 4;
-  else if(npdf == 14) return 4;
-  else if(npdf == 15) return 4;
-  else if(npdf == 16) return 4;
-  else if(npdf == 17) return 5;
-  else if(npdf == 18) return 5;
-  else if(npdf == 19) return 5;
-  else if(npdf == 20) return 5;
-  else std::cout << "Warning, texSlideCreator only rated up to 9 plots per slide, returning max plots per row value " << defVal << " for n=" << npdf << " plots." << std::endl;
-
+  int defVal = plotter.GetNPlotsX(npdf);
   return defVal;
 }
 
@@ -115,7 +73,7 @@ bool texSlideCreator::CreateTexSlides()
   if(texFileName.rfind(".") != std::string::npos) texFileName.replace(texFileName.rfind("."), texFileName.size(), "");
   if(tagStr.size() != 0) texFileName = texFileName + "_" + tagStr;
   texFileName = texFileName + ".";
-  if(texFileName.find((dateStr + ".")) == std::string::npos) texFileName.replace(texFileName.rfind("."), 1, dateStr + ".");
+  if(texFileName.find((dateStr + ".")) == std::string::npos) texFileName.replace(texFileName.rfind("."), 1, "_" + dateStr + ".");
 
   texFileName = texFileName + "tex";
 
@@ -204,7 +162,7 @@ bool texSlideCreator::CreateTexSlides()
     const int plotsPerRow = GetPlotsPerRowFromNPDF(npdf);
 
     texFile << "\\begin{frame}" << std::endl;
-    texFile << "\\frametitle{\\centerline{" << FixString(slideTitles.at(spI)) << "}}" << std::endl;
+    texFile << "\\frametitle{\\centerline{\\fontsize{10}{10}\\selectfont " << FixString(slideTitles.at(spI)) << "}}" << std::endl;
 
     for(unsigned int pI = 0; pI < pdfPerSlide.at(spI).size(); ++pI){
       texFile << "\\includegraphics[width=" << textWidth << "\\textwidth]{" << pdfPerSlide.at(spI).at(pI) << "}";
@@ -213,7 +171,7 @@ bool texSlideCreator::CreateTexSlides()
     }
 
     texFile << "\\begin{itemize}" << std::endl;
-    texFile << "\\fontsize{8}{8}\\selectfont" << std::endl;
+    texFile << "\\fontsize{5}{5}\\selectfont" << std::endl;
     texFile << "\\item{test}" << std::endl;
     texFile << "\\end{itemize}" << std::endl;
     texFile << "\\end{frame}" << std::endl;
