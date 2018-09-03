@@ -50,7 +50,7 @@ void doRatioPlotting(std::vector<TH1D*> inHist_p, int divPos, const std::string 
   canv_p->SetLeftMargin(0.14);
   canv_p->SetBottomMargin(0.14);
   canv_p->cd();
-	  
+ 
   TLatex* label_p = new TLatex();
   label_p->SetTextFont(43);
   label_p->SetTextSize(16);
@@ -1066,6 +1066,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     if(rVal >= 8) xPointMinVal = 300;
     Double_t xMaxVal = 1200;
     Double_t xPointMaxVal = 1000;
+    Double_t xPointMaxVal5090 = 600;
 
     TLegend* legRes_p = new TLegend(0.7, 0.65, 0.95, 0.88);
     legRes_p->SetBorderSize(0);
@@ -1167,7 +1168,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
 	tempHist_p->GetYaxis()->SetTitleOffset(1.6);
-    
+      
 	for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
 	  bool binIsBad = jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
 	  binIsBad = binIsBad || jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
@@ -1181,13 +1182,17 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	Double_t maxVal = getMax(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos]);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
+
+	  Double_t xPointMaxValUsed = xPointMaxVal;
+	  if(centBinsLow[cI] >= 50) xPointMaxValUsed = xPointMaxVal5090;
+
 	  for(Int_t sI = 0; sI < nSyst; ++sI){
 	    scaleCentralAndErrorValues(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI][bayesPos], centBinsScalingFact.at(cI));
 	  }
-	  
+      	  
 	  for(Int_t bIX = 0; bIX < jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetNbinsX(); ++bIX){
 	    bool binIsBad = jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) < xPointMinVal;
-	    binIsBad = binIsBad || jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxVal;
+	    binIsBad = binIsBad || jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->GetBinCenter(bIX+1) > xPointMaxValUsed;
 	    if(binIsBad){
 	      jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinContent(bIX+1, 0.0);
 	      jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetBinError(bIX+1, 0.0);
@@ -1238,7 +1243,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	Int_t slideSubVal = 0;
 	if(usI == 0) pdfPerSlide.push_back({});
 	else slideSubVal = nCentBins+1;
-
+      
 	std::cout << __LINE__ << std::endl;
 	std::vector<std::string> tempSystStr(systStr.begin()+1, systStr.end());
 	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
@@ -1280,12 +1285,15 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  delete systHistVectPP.at(sI);
 	}
 
-
+     
 	drawSyst(spectCanv_p, jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systValVectPP, xPointMinVal, xPointMaxVal);
 
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
 	  const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 	  const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+
+	  Double_t xPointMaxValUsed = xPointMaxVal;
+	  if(centBinsLow[cI] >= 50) xPointMaxValUsed = xPointMaxVal5090;
 
 	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
 	  jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos]->SetLineColor(kPalette.getColor(getColorPosFromCent(centStr, false)));
@@ -1304,7 +1312,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	  std::cout << __LINE__ << std::endl;
 
-	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
+	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxValUsed, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
 	  std::cout << __LINE__ << std::endl;
 	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
 
@@ -1344,7 +1352,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  for(unsigned int sI = 0; sI < systHistVectPbPb.size(); ++sI){
 	    delete systHistVectPbPb.at(sI);
 	  }
-	  drawSyst(spectCanv_p, jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxVal);	
+	  drawSyst(spectCanv_p, jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systValVectPbPb, xPointMinVal, xPointMaxValUsed);	
 
 	  std::cout << __LINE__ << std::endl;
 	}
