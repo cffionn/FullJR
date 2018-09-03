@@ -336,7 +336,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Int_t nID = 5;
   const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID", "FullLight", "FullTight"};
   const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
-  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90, 0.90, 0.90};
+  const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.80, 0.80, 0.80}; // THIS CUT IS DROPPED FROM 0.9 to 0.8 to account for a few jets still screwing up response. This is a temporary solution. Please instead check the event for a compatible nonsense muon that this cut is meant to address
   const Double_t jtPfMUMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
   const Double_t jtPfMUMFCutHi[nID] = {1.0, 0.60, 0.60, 0.60, 0.60};
   const Double_t jtPfNHFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -845,7 +845,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       }
 
       Double_t ncollWeight_ = 1.;
-      if(!isPP) findNcoll_Renorm(hiBin_);
+      if(!isPP) ncollWeight_ = findNcoll_Renorm(hiBin_);
       Double_t fullWeight_ = ncollWeight_*pthatWeight_;      
 
       pthat_h->Fill(pthat_);
