@@ -164,7 +164,19 @@ int plotJetResponse(const std::string inResponseName)
 	    }
 
 	    for(Int_t mI = 0; mI < nManip; ++mI){
-	      TH2D* response_h = (TH2D*)responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str());
+	      TH2D* response_h = (TH2D*)(responseFile_p->Get((dirName + "/response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + recoTruncStr[mI] + "_h").c_str())->Clone("response_h"));
+	      
+	      bool doPrint = true;
+	      if(jtAbsEtaStr.find("AbsEta0p0to2p0") == std::string::npos) doPrint = false;
+	      else if(resStr.find("ResponseMod0p00") == std::string::npos) doPrint = false;
+	      else if(idStr[iI].find("LightMUAndCHID") == std::string::npos) doPrint = false;
+	      else if(centStr.find("Cent0to10") == std::string::npos) doPrint = false;
+	     
+	      if(doPrint){
+		std::cout << "PRINTING response \'" << response_h->GetName() << "\'." << std::endl;
+		response_h->Print("ALL");
+		std::cout << "END PRINT" << std::endl;
+	      }
 	      
 	      bool doLogX = false;
 	      if(response_h->GetXaxis()->GetBinWidth(1)*3 < response_h->GetXaxis()->GetBinWidth(response_h->GetNbinsX()-1)) doLogX = true;
@@ -226,6 +238,8 @@ int plotJetResponse(const std::string inResponseName)
 	      Double_t histMaxX = response_h->GetXaxis()->GetBinLowEdge(response_h->GetNbinsX());
 	      Double_t histMinY = response_h->GetYaxis()->GetBinLowEdge(1);
 	      Double_t histMaxY = response_h->GetYaxis()->GetBinLowEdge(response_h->GetNbinsY());
+
+	      delete response_h;
 
 	      const Int_t nBins = 40;
 	      Double_t binsLinX[nBins+1];
