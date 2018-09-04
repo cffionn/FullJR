@@ -84,22 +84,15 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const std::string dateStr = std::to_string(date->GetDate());
   const std::string dateStr2 = std::to_string(date->GetYear()) + "." + std::to_string(date->GetMonth()) + "." + std::to_string(date->GetDay());
   delete date;
-
-  const std::string preDirPerma= "/data/cmcginn/FullJR/";
-  std::string preDirTemp = "";
-  if(checkDir(preDirPerma)) preDirTemp = preDirPerma;
-  const std::string preDir = preDirTemp;
-
-  checkMakeDir(preDir + "pdfDir");
-  checkMakeDir(preDir + "pdfDir/" + dateStr);
+  
+  checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
 
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> responseJetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
   std::cout << "Printing " << responseJetDirList.size() << " response jets..." << std::endl;
   for(unsigned int jI = 0; jI < responseJetDirList.size(); ++jI){
     std::cout << " " << jI << "/" << responseJetDirList.size() << ": " << responseJetDirList.at(jI) << std::endl;
-
-    checkMakeDir(preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI));
   }
 
   cutPropagator cutPropResponse;
@@ -615,7 +608,6 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const Int_t nColors = 5;
   const Int_t colors[nColors] = {1, vg.getColor(0), vg.getColor(1), vg.getColor(2), vg.getColor(4)};
 
-
   std::vector<std::vector<std::string> > pdfNames;
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
@@ -997,7 +989,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoGenAsymm_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
-	      const std::string finalSaveName = preDir + "pdfDir/" + dateStr + "/" + responseJetDirList.at(jI) + "/" + saveName;
+	      const std::string finalSaveName = "pdfDir/" + dateStr + "/" + saveName;
 	      quietSaveAs(canv_p, finalSaveName);
 	    
 	      delete pads[0];
@@ -1027,7 +1019,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
-  texFileName.replace(0, std::string("output").size(), preDir + "pdfDir/" + dateStr);
+  texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr);
 
   std::ofstream texFile(texFileName.c_str());
 
