@@ -93,3 +93,4 @@ clean:
 	rm -f configs/#*#
 	rm -f bin/*.exe
 	rm -rf bin
+	
