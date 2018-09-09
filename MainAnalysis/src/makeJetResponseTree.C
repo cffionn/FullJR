@@ -486,6 +486,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   TH1D* genJtPt_All_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* genJtPt_GoodReco_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH1D* recoJtPt_GoodGen_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* genJtPt_GoodReco_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* recoJtPt_GoodGen_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH2D* response_RecoGenSymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH2D* response_RecoGenAsymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
@@ -551,19 +553,24 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    genJtPt_All_h[dI][cI][iI][mI][aI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_All_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
 	    
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      std::string tempSysStr = systStr[sI] + "_";	 
+	      std::string tempSysStr =  "_" + systStr[sI] + "_";	 
+	      while(tempSysStr.find("__") != std::string::npos){tempSysStr.replace(tempSysStr.find("__"), 2, "_");}
 
 	      genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
 
 	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
+
+	      genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_ParaFills_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
+
+	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
 	    
 	      response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI] = new TH2D(("response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenSymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nGenJtPtBins, genJtPtBins, nGenJtPtBins, genJtPtBins);
 	      response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI] = new TH2D(("response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nRecoJtPtBins, recoJtPtBins, nGenJtPtBins, genJtPtBins);
   
-	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI] = new RooUnfoldResponse(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSysStr + "RecoGenAsymm_h").c_str(), "");
-	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Setup(recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI]);
+	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI] = new RooUnfoldResponse(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), "");
+	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Setup(recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI]);
 
-	      std::vector<TH1*> tempVect = {genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI], response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]};
+	      std::vector<TH1*> tempVect = {genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI], response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI], response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]};
 	      centerTitles(tempVect);
 	      setSumW2(tempVect);
 	    }
@@ -1018,12 +1025,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		      }
 
 
-		      if(goodReco[sI]) response_RecoGenSymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight_);
+		      if(goodReco[sI]) response_RecoGenSymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
 
 		      if(goodRecoTrunc[sI]){
-			genJtPt_GoodReco_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(refpt_[tI][jI], fullWeight_);
-			recoJtPt_GoodGen_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], fullWeight_);
-			response_RecoGenAsymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight_);
+			genJtPt_GoodReco_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+			recoJtPt_GoodGen_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
+			response_RecoGenAsymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
 			rooResponse_RecoGenAsymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
 		      }
 		      
@@ -1062,6 +1069,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		  else if(goodTruth) genJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
 		}
 		else{
+		
+		  for(Int_t sI = 0; sI < nSyst; ++sI){
+		    if(goodRecoTrunc[sI] && goodTruth){
+		      genJtPt_GoodReco_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+		      recoJtPt_GoodGen_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
+		    }
+		  }
+		    
 		  if(goodTruth && goodReco[0]){
 		    recoJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
 		    genJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
@@ -1141,6 +1156,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
+
+	      genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
+	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
@@ -1225,6 +1243,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      delete genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI];
 	      delete recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI];
+	      delete genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI];
+	      delete recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI];
 	      delete response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI];
 	      delete response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI];
 	      delete rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI];
