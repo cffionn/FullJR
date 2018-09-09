@@ -85,14 +85,21 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const std::string dateStr2 = std::to_string(date->GetYear()) + "." + std::to_string(date->GetMonth()) + "." + std::to_string(date->GetDay());
   delete date;
   
-  checkMakeDir("pdfDir");
-  checkMakeDir("pdfDir/" + dateStr);
-
   TFile* responseFile_p = new TFile(inResponseName.c_str(), "READ");
   std::vector<std::string> responseJetDirList = returnRootFileContentsList(responseFile_p, "TDirectoryFile", "JetAnalyzer");
   std::cout << "Printing " << responseJetDirList.size() << " response jets..." << std::endl;
+
+  checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
+  checkMakeDir("pdfDir/" + dateStr + "/Unfold");
+
   for(unsigned int jI = 0; jI < responseJetDirList.size(); ++jI){
     std::cout << " " << jI << "/" << responseJetDirList.size() << ": " << responseJetDirList.at(jI) << std::endl;
+
+    std::string tempStr = responseJetDirList.at(jI);
+    if(tempStr.find("/") != std::string::npos) tempStr.replace(tempStr.find("/"), tempStr.size() - tempStr.find("/"), "");
+
+    checkMakeDir("pdfDir/" + dateStr + "/Unfold_" + tempStr);
   }
 
   cutPropagator cutPropResponse;
@@ -338,12 +345,13 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr.at(sI) + "_";
+	      std::string tempSystStr = "_" + systStr.at(sI) + "_";
+	      while(tempSystStr.find("__") != std::string::npos){tempSystStr.replace(tempSystStr.find("__"), 2, "_");}
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		std::string bayesStr = "Bayes" + std::to_string(bayesVal[bI]);
 		
-		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoGenAsymm_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
+		jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI] = new TH1D(("jtPtUnfolded_RecoGenAsymm_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + bayesStr + "_h").c_str(), ";Unfolded Jet p_{T};Counts", nGenJtPtBins, genJtPtBins);
 		centerTitles(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]);
 		setSumW2(jtPtUnfolded_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI][bI]);
 	      }
@@ -373,9 +381,10 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	    
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr.at(sI) + "_";
+	      std::string tempSystStr = "_" + systStr.at(sI) + "_";
+	      while(tempSystStr.find("__") != std::string::npos){tempSystStr.replace(tempSystStr.find("__"), 2, "_");}
 	     
-	      rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + "RecoGenAsymm_h").c_str());
+	      rooResponse_RecoGenAsymm_h[jI][cI][idI][mI][aI][sI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
 	    }
 	  }
 	}
@@ -989,7 +998,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
 	      const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoGenAsymm_" + debugStr + dateStr + ".pdf";
 	      pdfNames.at(pdfNames.size()-1).push_back(saveName);
-	      const std::string finalSaveName = "pdfDir/" + dateStr + "/" + saveName;
+	      const std::string finalSaveName = "pdfDir/" + dateStr + "/Unfold_" + tempStr + "/" + saveName;
 	      quietSaveAs(canv_p, finalSaveName);
 	    
 	      delete pads[0];
@@ -1019,7 +1028,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
-  texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr);
+  texFileName.replace(0, std::string("output").size(), "pdfDir/" + dateStr + "/Unfold");
 
   std::ofstream texFile(texFileName.c_str());
 

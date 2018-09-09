@@ -20,6 +20,7 @@ class texSlideCreator
 {
  public:
   std::string texFileName;
+  std::string dirName;
   std::string tagStr;
   std::string authorName = "PLACEHOLDER";
   std::vector<std::string> slideTitles;
@@ -30,6 +31,7 @@ class texSlideCreator
   texSlideCreator(){return;}
   texSlideCreator(const std::string inName){Init(inName); return;}
   void Init(const std::string inName){texFileName = inName; return;}
+  void InitDir(const std::string inDirName){dirName = inDirName; return;}
   void InitTag(const std::string inTag){tagStr = inTag; return;}
   void SetAuthor(const std::string inName){authorName = inName; return;}
   void SetSlideTitles(std::vector<std::string> inVect){slideTitles = inVect; return;}
@@ -77,7 +79,8 @@ bool texSlideCreator::CreateTexSlides()
 
   texFileName = texFileName + "tex";
 
-  const std::string dirStr = "pdfDir/" + dateStr + "/";
+  std::string dirStr = "pdfDir/" + dateStr + "/";
+  if(checkDir(dirName)) dirStr = dirName;
   //fix front of texfilename
   if(texFileName.substr(0, (dirStr).size()).find(dirStr) == std::string::npos){
     while(texFileName.find("/") != std::string::npos){texFileName.replace(0, texFileName.find("/")+1, "");}
@@ -189,8 +192,8 @@ bool texSlideCreator::CreateTexSlides()
 
 std::string texSlideCreator::FixString(std::string inStr)
 {
-  const Int_t nCharToEscape = 1;
-  const std::string charToEscape[nCharToEscape] = {"%"};
+  const Int_t nCharToEscape = 2;
+  const std::string charToEscape[nCharToEscape] = {"%", "_"};
 
   for(Int_t cI = 0; cI < nCharToEscape; ++cI){
     if(inStr.find(charToEscape[cI]) == std::string::npos) continue;
@@ -205,9 +208,7 @@ std::string texSlideCreator::FixString(std::string inStr)
 	else if(inStr.substr(pos-1, 1).find("\\") == std::string::npos) inStr.replace(pos, 1, "\\" + charToEscape[cI]);
 	else increment = true;
       }
-      
-      std::cout << inStr << ", " << pos << ", " << increment << std::endl;
-      
+            
       if(increment) ++pos;
     }
   }

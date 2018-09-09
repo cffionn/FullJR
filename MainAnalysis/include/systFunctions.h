@@ -22,7 +22,7 @@
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/vanGoghPalette.h"
 
-std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vector<std::string> systStr, Double_t minXVal, Double_t maxXVal, std::vector<std::string>* plotNames, bool doSmoothing, std::vector<std::vector<std::string > > systToCombo)
+std::vector<double> getSyst(const std::string dirStr, TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vector<std::string> systStr, Double_t minXVal, Double_t maxXVal, std::vector<std::string>* plotNames, bool doSmoothing, std::vector<std::vector<std::string > > systToCombo)
 {
   std::cout << "Starting getSyst: " << std::endl;
   std::cout << "SystHist input: " << std::endl;
@@ -365,7 +365,8 @@ std::vector<double> getSyst(TH1D* nominal_p, std::vector<TH1D*> syst_p, std::vec
     }
     label_p->DrawLatex(500, labelBins[15], ppCentTag.c_str());
 
-    const std::string dirName = "pdfDir/" + dateStr;
+    std::string dirName = "pdfDir/" + dateStr;
+    if(checkDir(dirStr)) dirName = dirStr;
     checkMakeDir(dirName);
     const std::string saveName = "systErr_" + nominalName + "_" + maxValStr + "_" + smoothStr + "_" + dateStr +  ".pdf";
 

@@ -147,7 +147,7 @@ void doRatioPlotting(std::vector<TH1D*> inHist_p, int divPos, const std::string 
   gStyle->SetOptStat(0);
   gPad->SetLogx();
 	  
-  saveName = "pdfDir/" + dateStr + "/" + saveName;
+  saveName = "pdfDir/" + dateStr + "/PlotUnfold/" + saveName;
   quietSaveAs(canv_p, saveName);
   
   delete tempHist_p;
@@ -187,8 +187,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
 
-  const std::string dirStr = "pdfDir/" + dateStr;
+  const std::string dirStr = "pdfDir/" + dateStr + "/PlotUnfold";
   checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
   checkMakeDir(dirStr);
 
   toPPFile.stop();
@@ -1246,7 +1247,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       
 	std::cout << __LINE__ << std::endl;
 	std::vector<std::string> tempSystStr(systStr.begin()+1, systStr.end());
-	std::vector<double> systValVectPP = getSyst(jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
+	std::vector<double> systValVectPP = getSyst(dirStr, jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][0][bayesPos], systHistVectPP, tempSystStr, xPointMinVal, xPointMaxVal, &(pdfPerSlide.at(pdfPerSlide.size()- 1 - slideSubVal)), systSmoothBool[usI], systToCombo);
 	std::cout << __LINE__ << std::endl;
     
 	resModCompCanv_p[usI]->cd();
@@ -1312,7 +1313,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	  std::cout << __LINE__ << std::endl;
 
-	  std::vector<double> systValVectPbPb = getSyst(jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxValUsed, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
+	  std::vector<double> systValVectPbPb = getSyst(dirStr, jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][0][bayesPos], systHistVectPbPb, tempSystStr, xPointMinVal, xPointMaxValUsed, &(pdfPerSlide.at(pdfPerSlide.size() - 1 - centSlideSubVal)), systSmoothBool[usI], systToCombo);
 	  std::cout << __LINE__ << std::endl;
 	  if(usI == 0) slideTitles.push_back(centStr2 + " Systematic (" + jetPbPbList.at(tI) + ", " + responseStr +  ")");
 
@@ -1432,7 +1433,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	std::cout << __LINE__ << std::endl;
 
 
-	saveName = "pdfDir/" + dateStr + "/" + saveName;
+	saveName = "pdfDir/" + dateStr + "/PlotUnfold/" + saveName;
 
 	std::cout << __LINE__ << std::endl;
 
@@ -1496,7 +1497,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       
       pdfPerSlide.at(pdfPerSlide.size() - 1).push_back(saveName);
       
-      saveName = "pdfDir/" + dateStr + "/" + saveName;
+      saveName = "pdfDir/" + dateStr + "/PlotUnfold/" + saveName;
 
       quietSaveAs(resModCompCanv_p[usI], saveName);
 
@@ -1531,6 +1532,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   texSlideCreator tex;
   tex.Clean();
   tex.Init(outFileName);
+  tex.InitDir("pdfDir/" + dateStr + "/PlotUnfold/");
 
   if(nJtPbPb == 1) tex.InitTag("AllPlots_" + jetPbPbList.at(0));
   else tex.InitTag("AllPlots");

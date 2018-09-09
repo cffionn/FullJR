@@ -41,6 +41,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   checkMakeDir("pdfDir");
   checkMakeDir("pdfDir/" + dateStr);
+  checkMakeDir("pdfDir/" + dateStr + "/Process");
 
   vanGoghPalette vg;
   const Int_t nStyles = 5;
@@ -876,7 +877,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	std::string spectraName = "jtPtRaw_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + dateStr + ".pdf";
 	spectraNames.push_back(spectraName);
 
-	const std::string saveName = "pdfDir/" + dateStr + "/" + spectraName;
+	const std::string saveName = "pdfDir/" + dateStr + "/Process/" + spectraName;
 	quietSaveAs(canv_p, saveName);
 
 	delete pads[0];
@@ -1065,7 +1066,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	
 	  std::string multijetName = "multijetAJ_" + tempStr + "_" + centStr + "_" + jtAbsEtaStr + "_" + jtPtStr + "_" + dateStr + ".pdf";
 	  multijetNames.at(multijetNames.size()-1).push_back(multijetName);
-	  const std::string saveName = "pdfDir/" + dateStr + "/" + multijetName;
+	  const std::string saveName = "pdfDir/" + dateStr + "/Process/" + multijetName;
 	  quietSaveAs(canv_p, saveName);
 
 	  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -1091,7 +1092,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   const std::string textWidth = "0.24";
   std::string texFileName = outFileName;
   texFileName.replace(texFileName.find(".root"), std::string(".root").size(), ".tex");
-  texFileName.replace(0, std::string("output").size(), ("pdfDir/" + dateStr).c_str());
+  texFileName.replace(0, std::string("output").size(), ("pdfDir/" + dateStr + "/Process").c_str());
   
   std::ofstream texFile(texFileName.c_str());
 

@@ -28,9 +28,9 @@ plotToSuperPlotDim::plotToSuperPlotDim()
   nPlotsY[3-1] = 1;
   widthX[3-1] = 0.325;
 
-  nPlotsX[4-1] = 3;
+  nPlotsX[4-1] = 2;
   nPlotsY[4-1] = 2;
-  widthX[4-1] = 0.325;
+  widthX[4-1] = 0.45;
 
 
   nPlotsX[5-1] = 3;
@@ -161,7 +161,7 @@ int plotToSuperPlotDim::GetNPlotsX(const unsigned int nPlots)
 {
   int tempNPlotsX = -1;
   if(nPlots <= 0) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is less than 1, return -1" << std::endl;
-  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 40, return -1" << std::endl;
+  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 49, return -1" << std::endl;
   else tempNPlotsX = nPlotsX[nPlots-1];
   return tempNPlotsX;
 }
@@ -170,7 +170,7 @@ int plotToSuperPlotDim::GetNPlotsY(const unsigned int nPlots)
 {
   int tempNPlotsY = -1;
   if(nPlots <= 0) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is less than 1, return -1" << std::endl;
-  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 40, return -1" << std::endl;
+  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 49, return -1" << std::endl;
   else tempNPlotsY = nPlotsY[nPlots-1];
   return tempNPlotsY;
 }
@@ -179,7 +179,7 @@ double plotToSuperPlotDim::GetWidthX(const unsigned int nPlots)
 {
   double tempWidthX = -1;
   if(nPlots <= 0) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is less than 1, return -1" << std::endl;
-  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 40, return -1" << std::endl;
+  else if(nPlots > 49) std::cout << "Warning plotToSuperPlotDum: Given nPlots \'" << nPlots << "\' is greater than 49, return -1" << std::endl;
   else tempWidthX = widthX[nPlots-1];
   return tempWidthX;
 }
