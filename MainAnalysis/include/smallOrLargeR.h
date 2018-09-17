@@ -16,17 +16,23 @@ class smallOrLargeR
   static const int nLargeR = 4;
   std::vector<int> largeRVals = {7, 8, 9, 10};
 
-  static const int nRecoJtPtBinsSmallR = 7;
-  std::vector<double> recoJtPtBinsSmallR = {150., 200., 250., 300., 400., 600., 1000., 1500.};
+  static const int nRecoJtPtBinsSmallR = 14;
+  std::vector<double> recoJtPtBinsSmallR = {150., 175., 200., 225, 250., 275, 300., 350., 400., 450., 500., 600., 800., 1000., 1500.};
 
-  static const int nGenJtPtBinsSmallR = 9;
-  std::vector<double> genJtPtBinsSmallR = {100., 150., 200., 250., 300., 400., 600., 1000., 1500., 2000.};
+  //  static const int nGenJtPtBinsSmallR = 9;
+  //  std::vector<double> genJtPtBinsSmallR = {100., 150., 200., 250., 300., 400., 600., 1000., 1500., 2000.};
 
-  static const int nRecoJtPtBinsLargeR = 5;
-  std::vector<double> recoJtPtBinsLargeR = {250., 300., 400., 600., 1000., 1500.};
+  static const int nGenJtPtBinsSmallR = 6;
+  std::vector<double> genJtPtBinsSmallR = {100., 200., 300., 400, 600., 1000., 1500.};
 
-  static const int nGenJtPtBinsLargeR = 7;
-  std::vector<double> genJtPtBinsLargeR = {200., 250., 300., 400., 600., 1000., 1500., 2000.};
+  static const int nRecoJtPtBinsLargeR = 8;
+  std::vector<double> recoJtPtBinsLargeR = {250., 300., 350., 400., 500., 600., 800, 1000., 1500.};
+
+  //  static const int nGenJtPtBinsLargeR = 7;
+  //  std::vector<double> genJtPtBinsLargeR = {200., 250., 300., 400., 600., 1000., 1500., 2000.};
+
+  static const int nGenJtPtBinsLargeR = 4;
+  std::vector<double> genJtPtBinsLargeR = {200., 300., 600., 1000., 1500.};
 
   smallOrLargeR();
 
