@@ -1,10 +1,14 @@
+//cpp dependencies
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
+#include <vector>
 
+//ROOT dependencies
 #include "TFile.h"
 #include "TTree.h"
 
+//Non-local dependencies
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/specialHYDJETEventExclude.h"

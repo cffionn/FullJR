@@ -1,20 +1,20 @@
 //cpp dependencies
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
 
 //ROOT dependencies
-#include "TFile.h"
-#include "TTree.h"
-#include "TH1D.h"
+#include "TCanvas.h"
 #include "TDatime.h"
 #include "TDirectory.h"
-#include "TCanvas.h"
-#include "TPad.h"
-#include "TStyle.h"
+#include "TFile.h"
+#include "TH1D.h"
 #include "TLatex.h"
 #include "TLegend.h"
+#include "TPad.h"
+#include "TStyle.h"
+#include "TTree.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -30,7 +30,6 @@
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/vanGoghPalette.h"
-
 
 int processRawData(const std::string inDataFileName, const std::string inResponseName, bool isDataPP = false, const std::string tagStr = "")
 {
@@ -138,14 +137,32 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
   const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
+  const Int_t nMaxCentBins = 8;
   const Int_t nCentBins = nCentBinsTemp;
 
-  const Int_t nRecoJtPtBinsArr = TMath::Max(nRecoJtPtBinsSmallRTemp, nRecoJtPtBinsLargeRTemp);
-  std::cout << "nRecoJtPtBinsArr: " << nRecoJtPtBinsArr << std::endl;
+  if(nCentBins > nMaxCentBins){
+    std::cout << "nCentBins \'" << nCentBins << "\' is greater than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
+    return 1;
+  }
 
+  const Int_t nMaxJtPtBins = 50;
+  const Int_t nRecoJtPtBinsArr = TMath::Max(nRecoJtPtBinsSmallRTemp, nRecoJtPtBinsLargeRTemp);
+  
+  if(nMaxJtPtBins < nRecoJtPtBinsArr){
+    std::cout << "nRecoJtPtBinsArr \'" << nRecoJtPtBinsArr << "\' is less than nMaxJtPtBins \'" << nMaxJtPtBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  const Int_t nMaxJtAbsEtaBins = 8;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
-  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
-  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
+
+  if(nMaxJtAbsEtaBins < nJtAbsEtaBins){
+    std::cout << "nJtAbsEtaBins \'" << nJtAbsEtaBins << "\' is less than nMaxJtAbsEtaBins \'" << nMaxJtAbsEtaBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  Double_t jtAbsEtaBinsLow[nMaxJtAbsEtaBins];
+  Double_t jtAbsEtaBinsHi[nMaxJtAbsEtaBins];
   std::cout << "nJtAbsEtaBins: ";
   for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
     jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
@@ -154,7 +171,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   }
   std::cout << std::endl;
 
+  const Int_t nMaxID = 8;
   const Int_t nID = nIDTemp; 
+
+  if(nMaxID < nID){
+    std::cout << "nID \'" << nID << "\' is less than nMaxID\'" << nMaxID << "\'. return 1" << std::endl;
+    return 1;
+  }
 
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -230,7 +253,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  const Int_t nMaxDataJet = 10;
   const Int_t nDataJet = dataTreeList.size();
+
+  if(nMaxDataJet < nDataJet){
+    std::cout << "nDataJet \'" << nDataJet << "\' is less than nMaxDataJet\'" << nMaxDataJet << "\'. return 1" << std::endl;
+    return 1;
+  }
 
   std::string outFileName = inDataFileName;
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
@@ -242,11 +271,13 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
 
+  checkMakeDir("output");
+  checkMakeDir("output/" + dateStr);
   
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_ProcessRawData_";
+  outFileName = "output/" + dateStr + "/" + outFileName + "_" + outFileName2 + "_ProcessRawData_";
   if(tagStr.size() != 0) outFileName = outFileName + tagStr + "_";
   outFileName = outFileName + dateStr + ".root";
 
@@ -257,17 +288,17 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   //Bizarre
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
-  TDirectory* dir_p[nDataJet];
-  TH1D* jtPtRaw_RecoGenSymm_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
-  TH1D* jtPtRaw_RecoGenAsymm_h[nDataJet][nCentBins][nID][nJtAbsEtaBins];
+  TDirectory* dir_p[nMaxDataJet];
+  TH1D* jtPtRaw_RecoGenSymm_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins];
+  TH1D* jtPtRaw_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins];
 
-  TH1D* multijetAJ_All_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
-  TH1D* multijetAJ_Pass_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
-  TH1D* multijetAJ_Fail_h[nDataJet][nCentBins][nID][nJtAbsEtaBins][nRecoJtPtBinsArr];
+  TH1D* multijetAJ_All_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nMaxJtPtBins];
+  TH1D* multijetAJ_Pass_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nMaxJtPtBins];
+  TH1D* multijetAJ_Fail_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nMaxJtPtBins];
 
-  Double_t minJtPtCut[nDataJet];
-  Double_t multiJtPtCut[nDataJet];
-  Int_t recoTruncPos[nDataJet];
+  Double_t minJtPtCut[nMaxDataJet];
+  Double_t multiJtPtCut[nMaxDataJet];
+  Int_t recoTruncPos[nMaxDataJet];
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     int pos = -1;
     std::string treeStr1 = dataTreeList.at(jI);
@@ -306,10 +337,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     const Int_t rVal = getRVal(tempStr);
     const bool isSmallR = rReader.GetIsSmallR(rVal);
     const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    Double_t recoJtPtBins[nMaxJtPtBins+1];
     rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
     const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-    Double_t genJtPtBins[nGenJtPtBins+1];
+    Double_t genJtPtBins[nMaxJtPtBins+1];
     rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -354,22 +385,22 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
   //Jet Var  
   const Int_t nMaxJet = 500;
-  Int_t nref_[nDataJet];
-  Float_t jtpt_[nDataJet][nMaxJet];
-  Float_t jteta_[nDataJet][nMaxJet];
-  Float_t jtphi_[nDataJet][nMaxJet];
-  Float_t jtPfCHMF_[nDataJet][nMaxJet];
-  Float_t jtPfMUMF_[nDataJet][nMaxJet];
-  Float_t jtPfNHF_[nDataJet][nMaxJet];
-  Float_t jtPfNEF_[nDataJet][nMaxJet];
-  Float_t jtPfMUF_[nDataJet][nMaxJet];
-  Float_t jtPfCHF_[nDataJet][nMaxJet];
-  Float_t jtPfCEF_[nDataJet][nMaxJet];
-  Int_t jtPfNHM_[nDataJet][nMaxJet];
-  Int_t jtPfNEM_[nDataJet][nMaxJet];
-  Int_t jtPfMUM_[nDataJet][nMaxJet];
-  Int_t jtPfCHM_[nDataJet][nMaxJet];
-  Int_t jtPfCEM_[nDataJet][nMaxJet];
+  Int_t nref_[nMaxDataJet];
+  Float_t jtpt_[nMaxDataJet][nMaxJet];
+  Float_t jteta_[nMaxDataJet][nMaxJet];
+  Float_t jtphi_[nMaxDataJet][nMaxJet];
+  Float_t jtPfCHMF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfMUMF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfNHF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfNEF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfMUF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfCHF_[nMaxDataJet][nMaxJet];
+  Float_t jtPfCEF_[nMaxDataJet][nMaxJet];
+  Int_t jtPfNHM_[nMaxDataJet][nMaxJet];
+  Int_t jtPfNEM_[nMaxDataJet][nMaxJet];
+  Int_t jtPfMUM_[nMaxDataJet][nMaxJet];
+  Int_t jtPfCHM_[nMaxDataJet][nMaxJet];
+  Int_t jtPfCEM_[nMaxDataJet][nMaxJet];
 
   Float_t vz_;
   Float_t hiHF_;
@@ -390,7 +421,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     std::cout << "File " << fI << "/" << fileList.size() << ": " << fileList.at(fI) << std::endl;
 
     TFile* inDataFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
-    TTree* jetTrees_p[nDataJet];
+    TTree* jetTrees_p[nMaxDataJet];
     TTree* hiTree_p = (TTree*)inDataFile_p->Get("hiEvtAnalyzer/HiTree");
     TTree* skimTree_p = (TTree*)inDataFile_p->Get("skimanalysis/HltTree");
 
@@ -514,10 +545,10 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	const Int_t rVal = getRVal(dataTreeList.at(tI));
 	const bool isSmallR = rReader.GetIsSmallR(rVal);
 	const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-	Double_t recoJtPtBins[nRecoJtPtBins+1];
+	Double_t recoJtPtBins[nMaxJtPtBins+1];
 	rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
 	const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-	Double_t genJtPtBins[nGenJtPtBins+1];
+	Double_t genJtPtBins[nMaxJtPtBins+1];
 	rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
@@ -563,7 +594,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	}
 	else tempLeadingPos_ = -1;
 
-	Int_t leadID[nID];
+	Int_t leadID[nMaxID];
 	for(Int_t idI = 0; idI < nID; ++idI){
 	  leadID[idI] = false;
 	}
@@ -685,7 +716,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     const Int_t rVal = getRVal(tempStr);
     const bool isSmallR = rReader.GetIsSmallR(rVal);
     const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    Double_t recoJtPtBins[nMaxJtPtBins+1];
     rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);   
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -1034,9 +1065,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	      totalFail += multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1);
 	    }
 	    double highFail = multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetBinContent(multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX());
-	    std::cout << "High fail 1: " << highFail << std::endl;
+	    //	    std::cout << "High fail 1: " << highFail << std::endl;
 	    //	    highFail *= multijetAJFactors[multijetAJ_Fail_h[jI][cI][idI][aI][jetI]->GetNbinsX()-1];
-	    std::cout << " " << highFail << std::endl;
+	    //	    std::cout << " " << highFail << std::endl;
 
 	    for(Int_t bIX = 0; bIX < multijetAJ_All_h[jI][cI][0][aI][jetI]->GetNbinsX(); ++bIX){
 	      if(multijetAJ_All_h[jI][cI][0][aI][jetI]->GetBinContent(bIX+1) > 0 && multijetAJ_Pass_h[jI][cI][idI][aI][jetI]->GetBinContent(bIX+1) == 0) clone_p->SetBinContent(bIX+1, 0.0000001);

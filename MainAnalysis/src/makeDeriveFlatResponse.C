@@ -1,21 +1,21 @@
 //cpp dependencies
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-#include <cstdlib>
 
 //ROOT dependencies
-#include "TFile.h"
 #include "TDirectory.h"
-#include "TTree.h"
+#include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
-#include "TNamed.h"
 #include "TMath.h"
+#include "TNamed.h"
 #include "TRandom3.h"
+#include "TTree.h"
 
 //Local FullJR (MainAnalysis) dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -27,9 +27,9 @@
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
-#include "Utility/include/plotUtilities.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/scaleErrorTool.h"
 #include "Utility/include/specialHYDJETEventExclude.h"

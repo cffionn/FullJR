@@ -1,15 +1,16 @@
 //cpp dependencies
 #include <iostream>
 #include <string>
+#include <vector>
 
 //ROOT dependencies
+#include "TCanvas.h"
+#include "TDatime.h"
 #include "TFile.h"
 #include "TH2D.h"
-#include "TCanvas.h"
-#include "TPad.h"
-#include "TDatime.h"
-#include "TStyle.h"
 #include "TLatex.h"
+#include "TPad.h"
+#include "TStyle.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -62,7 +63,14 @@ int plotJetResponse(const std::string inResponseName)
   Int_t nIDTemp = cutProp.GetNID();
   std::vector<std::string> idStrTemp = cutProp.GetIdStr();
 
+  const Int_t nMaxResponseMod = 4;
   const Int_t nResponseMod = cutProp.GetNResponseMod();
+
+  if(nResponseMod > nMaxResponseMod){
+    std::cout << "nResponseMod \'" << nResponseMod << "\' is greater than nMaxResponseMod \'" << nMaxResponseMod << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<double> responseMod = cutProp.GetResponseMod();
 
   if(nCentBins < 0) std::cout << "nCentBins less than 0. please check input file. return 1" << std::endl;
@@ -83,7 +91,14 @@ int plotJetResponse(const std::string inResponseName)
   if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
   if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
+  const Int_t nMaxJtAbsEtaBins = 8;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
+
+  if(nJtAbsEtaBins > nMaxJtAbsEtaBins){
+    std::cout << "nJtAbsEtaBins \'" << nJtAbsEtaBins << "\' is greater than nMaxJtAbsEtaBins \'" << nMaxJtAbsEtaBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
   Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
   for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
@@ -96,18 +111,31 @@ int plotJetResponse(const std::string inResponseName)
     std::cout << " " << cI << "/" << nCentBins << ": " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << std::endl;
   }
 
+  const Int_t nMaxID = 8;
   const Int_t nID = nIDTemp;
   std::string idStr[nID];
   for(Int_t i = 0; i < nID; ++i){
     idStr[i] = idStrTemp.at(i);
   }
+
+  if(nID > nMaxID){
+    std::cout << "nID \'" << nID << "\' is greater than nMaxID \'" << nMaxID << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   
   const Int_t nManip = 6;
   const std::string recoTruncStr[nManip] = {"_RecoGenSymm", "_RecoGenAsymm", "_RecoGenSymm", "_RecoGenAsymm", "_RecoGenSymm", "_RecoGenAsymm"};
   Bool_t renormX[nManip] = {false, false, true, true, false, false};
   Bool_t renormY[nManip] = {false, false, false, false, true, true};
 
+  const Int_t nMaxJets = 10;
   const Int_t nJets = jetDirList.size(); 
+
+  if(nJets > nMaxJets){
+    std::cout << "nJets \'" << nJets << "\' is greater than nMaxJets \'" << nMaxJets << "\'. return 1" << std::endl;
+    return 1;
+  }
 
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
@@ -125,8 +153,9 @@ int plotJetResponse(const std::string inResponseName)
 
     const Int_t rVal = getRVal(dirName);
     const bool isSmallR = rReader.GetIsSmallR(rVal);
+    const Int_t nMaxPtBins = 50;
     const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-    Double_t genJtPtBins[nGenJtPtBins+1];
+    Double_t genJtPtBins[nMaxPtBins+1];
     rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
     std::cout << "Bins for rVal = " << rVal << std::endl;

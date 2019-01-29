@@ -1,20 +1,21 @@
 //cpp dependenciGGGSjtptes
 #include <iostream>
 #include <string>
+#include <vector>
 
 //ROOT dependencies
+#include "TCanvas.h"
+#include "TDatime.h"
 #include "TFile.h"
 #include "TH1D.h"
-#include "TCanvas.h"
-#include "TPad.h"
-#include "TDatime.h"
-#include "TStyle.h"
-#include "TLegend.h"
 #include "TLatex.h"
+#include "TLegend.h"
+#include "TPad.h"
+#include "TStyle.h"
 
 //RooUnfold dependencies
-#include "src/RooUnfoldResponse.h"
 #include "src/RooUnfoldBayes.h"
+#include "src/RooUnfoldResponse.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -80,12 +81,24 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   Int_t nIDTemp = 1;
   std::vector<std::string> idStr = {"LightMUAndCHID"};
 
+  const Int_t nMaxCentBins = 8;
   const Int_t nCentBins = nCentBinsTemp;
 
+  if(nCentBins > nMaxCentBins){
+    std::cout << "nCentBins \'" << nCentBins << "\' is greater than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::cout << std::endl;
+  const Int_t nMaxJtAbsEtaBins = 8;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
-  Double_t jtAbsEtaBinsLow[nJtAbsEtaBins];
-  Double_t jtAbsEtaBinsHi[nJtAbsEtaBins];
+  if(nJtAbsEtaBins > nMaxJtAbsEtaBins){
+    std::cout << "nJtAbsEtaBins \'" << nJtAbsEtaBins << "\' is greater than nMaxJtAbsEtaBins \'" << nMaxJtAbsEtaBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  Double_t jtAbsEtaBinsLow[nMaxJtAbsEtaBins];
+  Double_t jtAbsEtaBinsHi[nMaxJtAbsEtaBins];
   std::cout << "nJtAbsEtaBins: ";
 
   for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){

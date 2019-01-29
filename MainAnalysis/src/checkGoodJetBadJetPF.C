@@ -1,28 +1,31 @@
+//cpp dependencies
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
 
+//ROOT dependencies
+#include "TCanvas.h"
+#include "TDatime.h"
 #include "TFile.h"
-#include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
-#include "TDatime.h"
-#include "TCanvas.h"
-#include "TStyle.h"
 #include "TLatex.h"
-#include "TPad.h"
 #include "TLegend.h"
 #include "TLine.h"
+#include "TPad.h"
+#include "TStyle.h"
+#include "TTree.h"
 
+//Local dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/etaPhiFunc.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
-#include "Utility/include/plotUtilities.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/smearingFuncs.h"
 #include "Utility/include/specialHYDJETEventExclude.h"
@@ -116,8 +119,15 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
 
   Int_t nCentBinsTemp = nCentBinsPerma;
   if(isPP) nCentBinsTemp = 1;
-  
+
+  const Int_t nCentBinsMax = 8;
   const Int_t nCentBins = nCentBinsTemp;
+
+  if(nCentBins > nCentBinsMax){
+    std::cout << "nCentBins \'" << nCentBins << "\' is more than nCentBinsMax \'" << nCentBinsMax << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<Int_t> centBinsLow;
   std::vector<Int_t> centBinsHi;
 
@@ -161,7 +171,14 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   delete inFile_p;
   inFile_p = NULL;
 
+  const Int_t nMaxJetAlgos = 10;
   const Int_t nJetAlgos = jetList.size();
+
+  if(nJetAlgos > nMaxJetAlgos){
+    std::cout << "nJetAlgos \'" << nJetAlgos << "\' is more than nMaxJetAlgos \'" << nMaxJetAlgos << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<std::string> jetAlgos;
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
     jetAlgos.push_back(jetList.at(jI).substr(0, jetList.at(jI).find("JetAna")));
@@ -192,7 +209,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   const std::string weightStr[nWeighted] = {"Unweighted", "Weighted"};
 
   //FULL ID taken from here https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016, FullLight and FullTight correspond to previous levels of cuts + the Loose and TightLepVeto versions, respectively                                                                                                                
-    const Int_t nID = 5;
+  const Int_t nID = 5;
   const std::string idStr[nID] = {"NoID", "LightMUID", "LightMUAndCHID", "FullLight", "FullTight"};
   const Double_t jtPfCHMFCutLow[nID] = {0.0, 0.0, 0.00, 0.00, 0.00};
   const Double_t jtPfCHMFCutHi[nID] = {1.0, 1.0, 0.90, 0.90, 0.90};
@@ -211,7 +228,6 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
   
-
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
   //https://root-forum.cern.ch/t/closing-root-files-is-dead-slow-is-this-a-normal-thing/5273/16
@@ -220,102 +236,102 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  TH1D* jtPt_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH1D* jtPt_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH1D* jtPt_FineTot_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH1D* jtPt_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH1D* jtPt_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH1D* jtPt_FineTot_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH1D* jtPfCHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfCEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfNHF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNEF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH1D* jtPfCHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHMF_jtPfCEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfCEMF_jtPfNHMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNHMF_jtPfNEMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNEMF_jtPfMUMF_Good_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
 
-  TH1D* jtPfCHM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUM_Good_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
-  TH1D* jtPfCHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfCEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfNHF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNEF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH1D* jtPfCHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHMF_jtPfCEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfCEMF_jtPfNHMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNHMF_jtPfNEMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH2D* jtPfNEMF_jtPfMUMF_Bad_h[nJetAlgos][nCentBins][nWeighted][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
 
-  TH1D* jtPfCHM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUM_Bad_h[nJetAlgos][nCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
 
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -443,37 +459,37 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   }
 
   const Int_t nMaxJet_ = 500;
-  Float_t pthat_[nJetAlgos];
-  Int_t nref_[nJetAlgos];
-  Float_t jtpt_[nJetAlgos][nMaxJet_];
-  Float_t jteta_[nJetAlgos][nMaxJet_];
-  Float_t jtphi_[nJetAlgos][nMaxJet_];
-  Float_t refpt_[nJetAlgos][nMaxJet_];
-  Float_t refphi_[nJetAlgos][nMaxJet_];
-  Float_t refeta_[nJetAlgos][nMaxJet_];
-  Float_t jtPfCHF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfCEF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfNHF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfNEF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfMUF_[nJetAlgos][nMaxJet_];
+  Float_t pthat_[nMaxJetAlgos];
+  Int_t nref_[nMaxJetAlgos];
+  Float_t jtpt_[nMaxJetAlgos][nMaxJet_];
+  Float_t jteta_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtphi_[nMaxJetAlgos][nMaxJet_];
+  Float_t refpt_[nMaxJetAlgos][nMaxJet_];
+  Float_t refphi_[nMaxJetAlgos][nMaxJet_];
+  Float_t refeta_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfCHF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfCEF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfNHF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfNEF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfMUF_[nMaxJetAlgos][nMaxJet_];
 
-  Float_t jtPfCHMF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfCEMF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfNHMF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfNEMF_[nJetAlgos][nMaxJet_];
-  Float_t jtPfMUMF_[nJetAlgos][nMaxJet_];
+  Float_t jtPfCHMF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfCEMF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfNHMF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfNEMF_[nMaxJetAlgos][nMaxJet_];
+  Float_t jtPfMUMF_[nMaxJetAlgos][nMaxJet_];
 
-  Int_t jtPfCHM_[nJetAlgos][nMaxJet_];
-  Int_t jtPfCEM_[nJetAlgos][nMaxJet_];
-  Int_t jtPfNHM_[nJetAlgos][nMaxJet_];
-  Int_t jtPfNEM_[nJetAlgos][nMaxJet_];
-  Int_t jtPfMUM_[nJetAlgos][nMaxJet_];
+  Int_t jtPfCHM_[nMaxJetAlgos][nMaxJet_];
+  Int_t jtPfCEM_[nMaxJetAlgos][nMaxJet_];
+  Int_t jtPfNHM_[nMaxJetAlgos][nMaxJet_];
+  Int_t jtPfNEM_[nMaxJetAlgos][nMaxJet_];
+  Int_t jtPfMUM_[nMaxJetAlgos][nMaxJet_];
 
-  Int_t ngen_[nJetAlgos];
-  Float_t genpt_[nJetAlgos][nMaxJet_];
-  Float_t geneta_[nJetAlgos][nMaxJet_];
-  Float_t genphi_[nJetAlgos][nMaxJet_];
-  Int_t gensubid_[nJetAlgos][nMaxJet_];
+  Int_t ngen_[nMaxJetAlgos];
+  Float_t genpt_[nMaxJetAlgos][nMaxJet_];
+  Float_t geneta_[nMaxJetAlgos][nMaxJet_];
+  Float_t genphi_[nMaxJetAlgos][nMaxJet_];
+  Int_t gensubid_[nMaxJetAlgos][nMaxJet_];
 
   unsigned int run_, lumi_;
   unsigned long long evt_;
@@ -496,7 +512,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
 
     inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
-    TTree* jetTree_p[nJetAlgos];
+    TTree* jetTree_p[nMaxJetAlgos];
 
     for(Int_t jI = 0; jI < nJetAlgos; ++jI){
       jetTree_p[jI] = (TTree*)inFile_p->Get(jetList.at(jI).c_str());

@@ -4,18 +4,18 @@
 #include <vector>
 
 //ROOT dependencies
-#include "TFile.h"
+#include "TCollection.h"
 #include "TDirectory.h"
-#include "TTree.h"
+#include "TFile.h"
 #include "TH1D.h"
 #include "TH1F.h"
 #include "TH1I.h"
 #include "TH2D.h"
 #include "TH2F.h"
 #include "TH2I.h"
-#include "TNamed.h"
 #include "TKey.h"
-#include "TCollection.h"
+#include "TNamed.h"
+#include "TTree.h"
 
 //RooUnfold dependencies
 #include "src/RooUnfoldResponse.h"

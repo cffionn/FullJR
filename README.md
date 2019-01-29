@@ -104,3 +104,8 @@ At this point it is highly convenient to combine files into single for PbPb and 
 ./bin/combineFiles.exe <outFileName> <Long> <List> <Of> <Input> <Files> 
 
 Step 8 (start plotting):
+
+Using bash scripts:
+bash bash/runResponse.sh # Step 4, long
+bash bash/runProcess.sh # Step 5, quick
+bash bash/runUnfold.sh # Step 6, 

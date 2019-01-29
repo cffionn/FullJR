@@ -1,11 +1,14 @@
-#include "TFile.h"
-#include "TTree.h"
-#include "TObjArray.h"
-
-#include <string>
-#include <iostream>
+//cpp dependencies
 #include <fstream>
+#include <iostream>
+#include <string>
 
+//ROOT dependencies
+#include "TFile.h"
+#include "TObjArray.h"
+#include "TTree.h"
+
+//Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/mntToXRootdFileString.h"

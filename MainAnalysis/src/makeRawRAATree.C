@@ -1,21 +1,24 @@
-#include <iostream>
-#include <vector>
-#include <string>
+//cpp dependencies
 #include <fstream>
+#include <iostream>
 #include <map>
+#include <string>
+#include <vector>
 
-#include "TFile.h"
+//ROOT dependencies
 #include "TDirectory.h"
-#include "TTree.h"
-#include "TNamed.h"
+#include "TFile.h"
 #include "TH1.h"
+#include "TNamed.h"
+#include "TTree.h"
 
-#include "Utility/include/returnFileList.h"
-#include "Utility/include/doGlobalDebug.h"
+//Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
-#include "Utility/include/returnRootFileContentsList.h"
-#include "Utility/include/mntToXRootdFileString.h"
+#include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/inToOutFileString.h"
+#include "Utility/include/mntToXRootdFileString.h"
+#include "Utility/include/returnFileList.h"
+#include "Utility/include/returnRootFileContentsList.h"
 
 int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
 {
@@ -103,7 +106,14 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
 
   if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+  const int nMaxJetAlgos = 10;
   const int nJetAlgos = inJetTreeList_.size();
+
+  if(nMaxJetAlgos < nJetAlgos){
+    std::cout << "nMaxJetAlgos \'" << nMaxJetAlgos << "\' is less than given nJetAlgos << \'" << nJetAlgos << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<int> algoPos;
   for(Int_t i = 0; i < nJetAlgos; ++i){
     algoPos.push_back(i);
@@ -112,20 +122,25 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
   int tempNJetAlgosPlus = nJetAlgos;
   const int nJetAlgosPlus = tempNJetAlgosPlus;
 
+  if(nMaxJetAlgos < nJetAlgosPlus){
+    std::cout << "nMaxJetAlgos \'" << nMaxJetAlgos << "\' is less than given nJetAlgosPlus << \'" << nJetAlgosPlus << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   Int_t hiBin_;
   Float_t vz_;
 
   const Int_t nMaxJets = 500;
-  Int_t nref_[nJetAlgos];
-  Float_t jtpt_[nJetAlgos][nMaxJets];
-  Float_t rawpt_[nJetAlgos][nMaxJets];
-  Float_t jteta_[nJetAlgos][nMaxJets];
-  Float_t jtphi_[nJetAlgos][nMaxJets]; 
-  Float_t jtPfCHF_[nJetAlgos][nMaxJets];
-  Float_t jtPfCEF_[nJetAlgos][nMaxJets];
-  Float_t jtPfNHF_[nJetAlgos][nMaxJets];
-  Float_t jtPfNEF_[nJetAlgos][nMaxJets];
-  Float_t jtPfMUF_[nJetAlgos][nMaxJets];
+  Int_t nref_[nMaxJetAlgos];
+  Float_t jtpt_[nMaxJetAlgos][nMaxJets];
+  Float_t rawpt_[nMaxJetAlgos][nMaxJets];
+  Float_t jteta_[nMaxJetAlgos][nMaxJets];
+  Float_t jtphi_[nMaxJetAlgos][nMaxJets]; 
+  Float_t jtPfCHF_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfCEF_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfNHF_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfNEF_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfMUF_[nMaxJetAlgos][nMaxJets];
 
   Int_t HBHENoiseFilterResultRun2Loose_;
   Int_t pprimaryVertexFilter_;
@@ -133,7 +148,7 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
   Int_t phfCoincFilter3_;
   Int_t pclusterCompatibilityFilter_;
 
-  TTree* jetTrees_p[nJetAlgos];
+  TTree* jetTrees_p[nMaxJetAlgos];
   TTree* skimTree_p = NULL;
   TTree* hltTree_p = NULL;
     
@@ -158,21 +173,21 @@ int makeRawRAATree(const std::string inFileName, std::string outFileName = "")
 
   UInt_t run_, lumi_;
 
-  Int_t hiBinOut_[nJetAlgos];
-  Int_t nrefOut_[nJetAlgos];
-  Float_t jtptOut_[nJetAlgos][nMaxJets];
-  Float_t rawptOut_[nJetAlgos][nMaxJets];
-  Float_t jtetaOut_[nJetAlgos][nMaxJets];
-  Float_t jtphiOut_[nJetAlgos][nMaxJets];
-  Float_t jtPfCHFOut_[nJetAlgos][nMaxJets];
-  Float_t jtPfCEFOut_[nJetAlgos][nMaxJets];
-  Float_t jtPfNHFOut_[nJetAlgos][nMaxJets];
-  Float_t jtPfNEFOut_[nJetAlgos][nMaxJets];
-  Float_t jtPfMUFOut_[nJetAlgos][nMaxJets];
+  Int_t hiBinOut_[nMaxJetAlgos];
+  Int_t nrefOut_[nMaxJetAlgos];
+  Float_t jtptOut_[nMaxJetAlgos][nMaxJets];
+  Float_t rawptOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtetaOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtphiOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfCHFOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfCEFOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfNHFOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfNEFOut_[nMaxJetAlgos][nMaxJets];
+  Float_t jtPfMUFOut_[nMaxJetAlgos][nMaxJets];
 
-  TTree* jetTreesOut_p[nJetAlgosPlus];
+  TTree* jetTreesOut_p[nMaxJetAlgos];
 
-  TDirectory* algoDir_p[nJetAlgosPlus];
+  TDirectory* algoDir_p[nMaxJetAlgos];
 
   if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 

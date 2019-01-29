@@ -4,20 +4,20 @@
 #include <vector>
 
 //ROOT dependencies
+#include "TBox.h"
+#include "TCanvas.h"
+#include "TCollection.h"
+#include "TDatime.h"
+#include "TDirectory.h"
+#include "TError.h"
 #include "TFile.h"
 #include "TH1D.h"
-#include "TDirectory.h"
-#include "TCanvas.h"
+#include "TKey.h"
+#include "TLatex.h"
+#include "TLegend.h"
+#include "TMath.h"
 #include "TPad.h"
 #include "TStyle.h"
-#include "TDatime.h"
-#include "TMath.h"
-#include "TCollection.h"
-#include "TKey.h"
-#include "TLegend.h"
-#include "TLatex.h"
-#include "TBox.h"
-#include "TError.h"
 
 //Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
@@ -34,9 +34,9 @@
 #include "Utility/include/getLogBins.h"
 #include "Utility/include/histDefUtility.h"
 #include "Utility/include/kirchnerPalette.h"
-#include "Utility/include/vanGoghPalette.h"
 #include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/returnRootFileContentsList.h"
+#include "Utility/include/vanGoghPalette.h"
 
 void doRatioPlotting(std::vector<TH1D*> inHist_p, int divPos, const std::string xStr, const std::string yStr, const int xMin, const int xMax, const std::string labelStr, std::string saveName)
 {
@@ -121,13 +121,11 @@ void doRatioPlotting(std::vector<TH1D*> inHist_p, int divPos, const std::string 
   Double_t interval = maxVal - minVal;
   maxVal += interval/10.;
   minVal = TMath::Max(0., minVal - interval/10.);
-
   
   if(maxVal < 1.0001 && minVal > .9999){
     maxVal = 1.0001;
     minVal = 0.9999;
-  }
-  
+  } 
 
   tempHist_p->SetMaximum(maxVal);
   tempHist_p->SetMinimum(minVal);
@@ -260,7 +258,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     return 1;
   }
 
-
+  const Int_t nMaxJtPtBins = 50;
   const Int_t nGenJtPtBinsSmallR = cutPropPbPb.GetNGenJtPtBinsSmallR();
   const Int_t nGenJtPtBinsLargeR = cutPropPbPb.GetNGenJtPtBinsLargeR();
   std::vector<Double_t> genJtPtBinsSmallRTemp = cutPropPbPb.GetGenJtPtBinsSmallR();
@@ -292,13 +290,24 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t nAdditionalSyst = 4;
   const std::string additionalSyst[nAdditionalSyst] = {"LumiUp", "LumiDown", "TAAUp", "TAADown"};
 
+  const Int_t nJtMax = 10;
   const Int_t nJtPP = jetPPList.size();
   const Int_t nJtPbPb = jetPbPbList.size();
 
-  const Int_t nSystOrig = cutPropPbPb.GetNSyst() - 1; // Minus 1 because removing priorflat
+  if(nJtPP > nJtMax){
+    std::cout << "nJtPP \'" << nJtPP << "\' greater than nJtMax \'" << nJtMax << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  if(nJtPbPb > nJtMax){
+    std::cout << "nJtPbPb \'" << nJtPbPb << "\' greater than nJtMax \'" << nJtMax << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  const Int_t nSystOrig = 1;//cutPropPbPb.GetNSyst() - 1; // Minus 1 because removing priorflat
   //  const Int_t nSyst = TMath::Min(minForForLoop, nSystOrig + nAdditionalSyst);
   const Int_t nSyst = nSystOrig + nAdditionalSyst; 
-  std::vector<std::string> systStr = cutPropPbPb.GetSystStr();
+  std::vector<std::string> systStr = {""};//cutPropPbPb.GetSystStr();
   Int_t jerDataPos = -1;
 
   for(unsigned int sI = 0; sI < systStr.size(); ++sI){
@@ -328,11 +337,24 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   std::vector<int> bayesVal = cutPropPbPb.GetBayesVal();
   const Int_t nSuperBayes = cutPropPbPb.GetNSuperBayes();
 
+  
   const Int_t nResponseMod = TMath::Min(minForForLoop, cutPropPbPb.GetNResponseMod());
   //  const Int_t nResponseMod = cutPropPbPb.GetNResponseMod();
   std::vector<double> responseMod = cutPropPbPb.GetResponseMod();
+  
+  /*
+  const Int_t nResponseMod = 1;
+  std::vector<double> responseMod = {0.10};
+  */
 
+  const Int_t nMaxCentBins = 8;
   const Int_t nCentBins = cutPropPbPb.GetNCentBins();
+
+  if(nCentBins > nMaxCentBins){
+    std::cout << "nCentBins \'" << nCentBins << "\' greater than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<Int_t> centBinsLow = cutPropPbPb.GetCentBinsLow();
   std::vector<Int_t> centBinsHi = cutPropPbPb.GetCentBinsHi();
   std::vector<Double_t> centBinsScalingFact;
@@ -344,17 +366,40 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   //  std::vector<Double_t> jtPtBinsTemp = cutPropPbPb.GetJtPtBins();
 
   //  const Int_t nJtAbsEtaBins = TMath::Min(minForForLoop, cutPropPbPb.GetNJtAbsEtaBins());
+
+  
+  const Int_t nMaxJtAbsEtaBins = 8;
   const Int_t nJtAbsEtaBins = cutPropPbPb.GetNJtAbsEtaBins();
+
+  if(nJtAbsEtaBins > nMaxJtAbsEtaBins){
+    std::cout << "nJtAbsEtaBins \'" << nJtAbsEtaBins << "\' greater than nMaxJtAbsEtaBins \'" << nMaxJtAbsEtaBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<Double_t> jtAbsEtaBinsLow = cutPropPbPb.GetJtAbsEtaBinsLow();
   std::vector<Double_t> jtAbsEtaBinsHi = cutPropPbPb.GetJtAbsEtaBinsHi();
+  
+  /*
+  const Int_t nJtAbsEtaBins = 1;
+  std::vector<Double_t> jtAbsEtaBinsLow = {0.0};
+  std::vector<Double_t> jtAbsEtaBinsHi = {2.0};
+  */
 
   //  const Int_t nID = cutPropPbPb.GetNID();
+
+  const Int_t nMaxID = 8;
   const Int_t nID = TMath::Min(minForForLoop, cutPropPbPb.GetNID());
   std::vector<std::string> idStr = cutPropPbPb.GetIdStr();
-  std::vector<double> jtPfCHMFCutLow = cutPropPbPb.GetJtPfCHMFCutLow();
-  std::vector<double> jtPfCHMFCutHi = cutPropPbPb.GetJtPfCHMFCutHi();
-  std::vector<double> jtPfMUMFCutLow = cutPropPbPb.GetJtPfMUMFCutLow();
-  std::vector<double> jtPfMUMFCutHi = cutPropPbPb.GetJtPfMUMFCutHi();
+
+  if(nID > nMaxID){
+    std::cout << "nID \'" << nID << "\' greater than nMaxID \'" << nMaxID << "\'. return 1" << std::endl;
+    return 1;
+  }
+  
+  /*
+  const Int_t nID = 1;
+  std::vector<std::string> idStr = {"LightMUAndCHID"};
+  */
 
   std::vector<int> jetPPMatchedToPbPb;
   for(Int_t jI = 0; jI < nJtPbPb; ++jI){
@@ -421,8 +466,13 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   const Int_t sizeToTruncName = 40;
   while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
   while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + outFileName + "_" + outFileName2 + "_NSuperBayes" + std::to_string(nSuperBayes) + "_PlotUnfoldedSpectra_" + dateStr + ".root";
 
+  std::string tagStr = "";
+  if(nJtPbPb == 1){
+    tagStr = jetPbPbList.at(0) + "_" + jetPPList.at(jetPPMatchedToPbPb.at(0)) + "_";
+  }
+
+  outFileName = "output/plotUnfoldedSpectra_NSuperBayes" + std::to_string(nSuperBayes) + "_" + tagStr + dateStr + ".root";
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
   //Following two lines necessary else you get absolutely clobbered on deletion timing. See threads here:
@@ -432,8 +482,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
  
-  TDirectory* dirPP_p[nJtPP];
-  TDirectory* dirPbPb_p[nJtPbPb];
+  TDirectory* dirPP_p[nJtMax];
+  TDirectory* dirPbPb_p[nJtMax];
   
   for(Int_t tI = 0; tI < nJtPbPb; ++tI){
     std::string tempStr = jetPbPbList.at(tI);
@@ -442,8 +492,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     dirPbPb_p[tI]->cd();
   }
 
-  TH1D* jtPtUnfolded_RecoGenAsymm_PbPb_h[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  Int_t bayesPosPbPb[nJtPbPb][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* jtPtUnfolded_RecoGenAsymm_PbPb_h[nJtMax][nMaxCentBins][nMaxID][nResponseMod][nMaxJtAbsEtaBins][nSyst][nBayes];
+  Int_t bayesPosPbPb[nJtMax][nMaxCentBins][nMaxID][nResponseMod][nMaxJtAbsEtaBins][nSyst];
   
 
   for(Int_t tI = 0; tI < nJtPP; ++tI){
@@ -453,8 +503,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     dirPP_p[tI]->cd();
   }
 
-  TH1D* jtPtUnfolded_RecoGenAsymm_PP_h[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  Int_t bayesPosPP[nJtPP][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* jtPtUnfolded_RecoGenAsymm_PP_h[nJtMax][nMaxID][nResponseMod][nMaxJtAbsEtaBins][nSyst][nBayes];
+  Int_t bayesPosPP[nJtMax][nMaxID][nResponseMod][nMaxJtAbsEtaBins][nSyst];
 
 
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -601,15 +651,17 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow.at(aI), 1, true) + "to" + prettyString(jtAbsEtaBinsHi.at(aI), 1, true);	
 	    
 	    for(Int_t sI = nSystOrig; sI < nSyst; ++sI){
-	      const std::string tempSystStr = systStr.at(sI) + "_";
+	      std::string tempSystStr = "_" + systStr.at(sI) + "_";
+	      while(tempSystStr.find("__") != std::string::npos){tempSystStr.replace(tempSystStr.find("__"), 2, "_");}
 
 	      bayesPosPbPb[tI][cI][idI][mI][aI][sI] = bayesPosPbPb[tI][cI][idI][mI][aI][0];
 
 	      for(Int_t bI = 0; bI < nBayes; ++bI){
 		const std::string bayesStr = "Bayes" + std::to_string(bayesVal.at(bI));
 		
-		const std::string newName = "jtPtUnfolded_RecoGenAsymm_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr + bayesStr + "_h";
+		const std::string newName = "jtPtUnfolded_RecoGenAsymm_" + jetPbPbList.at(tI) + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + bayesStr + "_h";
 		
+		std::cout << " Name to grab: " << newName << std::endl;
 		jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][0][bI]->Clone(newName.c_str());
 
 	      }
@@ -927,7 +979,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
     const bool isSmallR = rReader.GetIsSmallR(rVal);
     const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    Double_t recoJtPtBins[nRecoJtPtBins+1];
+    Double_t recoJtPtBins[nMaxJtPtBins+1];
     rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
 
     std::string rStr = "R=";
@@ -939,6 +991,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
     //	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
 
+    std::cout << __LINE__ << std::endl;
 
     for(Int_t mI = 0; mI < nResponseMod; ++mI){
       //start pp closures
@@ -963,10 +1016,13 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  bigBayesClones_p.at(ucI) = NULL;
 	}
       }
-      
+
+      std::cout << __LINE__ << std::endl;      
       
       slideTitles.push_back("BestComp. " + jetStrPP + " (ModRes " + prettyString(responseMod[mI],2,false) + ")");
       pdfPerSlide.push_back({});
+
+      std::cout << __LINE__ << std::endl;      
       
       for(Int_t sI = 0; sI < nSyst; ++sI){	  
 	std::vector<TH1D*> clones_p;
@@ -975,16 +1031,28 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI][binPos]->Clone(("clone_" + std::to_string(binPos)).c_str()));
 	
 	if(bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] < 0) bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] = 25;
-	
+
+	std::cout << __LINE__ << std::endl;      
+      
+	std::cout << jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI][binPos]->GetName() << std::endl;
 	Int_t tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][sI];
+
+	std::cout << __LINE__ << ", " << ppPos << ", " << idPos << ", " << mI << ", " << absEtaPos << ", " << sI << ", " << tempBayesPos << std::endl;      
+       
 	
 	clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI][tempBayesPos]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 	
+      std::cout << __LINE__ << std::endl;      
+
 	std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPPList.at(ppPos) + "_R" + rValStr + "_PP_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
 	pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+
+      std::cout << __LINE__ << std::endl;      
 	
 	std::string labelStr = systStr.at(sI) + ", Bayes" + std::to_string(tempBayesPos);
 	doRatioPlotting(clones_p, 0, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 w/ " + std::to_string(tempBayesPos) + ")", recoJtPtBins[0], 1000., labelStr, saveName);
+
+      std::cout << __LINE__ << std::endl;      
 	
 	for(unsigned int ucI = 0; ucI < clones_p.size(); ++ucI){
 	  delete clones_p.at(ucI);
@@ -993,6 +1061,9 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       }
       //end pp closure ratios
 
+      std::cout << __LINE__ << std::endl;      
+
+      std::cout << __LINE__ << std::endl;
 
       for(Int_t cI = 0; cI < nCentBins; ++ cI){
 	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
@@ -1051,6 +1122,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     }
   }
 
+  std::cout << __LINE__ << std::endl;
 
   //Actual spectra plots...
   for(Int_t tI = 0; tI < nJtPbPb; ++tI){
@@ -1220,7 +1292,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	std::cout << "Title offset: " << tempHist_p->GetYaxis()->GetTitleOffset() << std::endl;
 	
 	getLogBins(minVal, maxVal, nYBins, yBins);
-	
+    
 	tempHist_p->DrawCopy("HIST E1 P");
 	
 	TLegend* leg_p = new TLegend(0.7, 0.65, 0.95, 0.88);
@@ -1258,24 +1330,26 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	if(mI == 0) resStyle = getStyleFromCent("", true);
 	else resStyle = getAltStyleFromCent("", true);
 
-	systHistVectPP.at(jerDataPos)->SetMarkerSize(0.8);
-	systHistVectPP.at(jerDataPos)->SetMarkerStyle(resStyle);
-	systHistVectPP.at(jerDataPos)->SetMarkerColor(resCol);
-	systHistVectPP.at(jerDataPos)->SetLineColor(resCol);
+	if(jerDataPos >= 0){
+	  systHistVectPP.at(jerDataPos)->SetMarkerSize(0.8);
+	  systHistVectPP.at(jerDataPos)->SetMarkerStyle(resStyle);
+	  systHistVectPP.at(jerDataPos)->SetMarkerColor(resCol);
+	  systHistVectPP.at(jerDataPos)->SetLineColor(resCol);
+	  
+	  systHistVectPP.at(jerDataPos)->DrawCopy(drawStr.c_str());
+	  
+	  if(systHistVectPP.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPP.at(jerDataPos)->GetMaximum());
 
-	systHistVectPP.at(jerDataPos)->DrawCopy(drawStr.c_str());
+	  if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPP.at(jerDataPos)->Clone((std::string(systHistVectPP.at(jerDataPos)->GetName()) + "_CLONE").c_str()));
+	  else{
+	    if(usI == 0) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(0));
+	    else if(usI == 1) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins));
+	    
+	    resModCompCanv_p[usI]->cd();
+	    resModCompPad_p[usI][1]->cd();
 
-	if(systHistVectPP.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPP.at(jerDataPos)->GetMaximum());
-
-	if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPP.at(jerDataPos)->Clone((std::string(systHistVectPP.at(jerDataPos)->GetName()) + "_CLONE").c_str()));
-	else{
-	  if(usI == 0) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(0));
-	  else if(usI == 1) systHistVectPP.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins));
-
-	  resModCompCanv_p[usI]->cd();
-	  resModCompPad_p[usI][1]->cd();
-
-	  systHistVectPP.at(jerDataPos)->DrawCopy("HIST P SAME");	  
+	    systHistVectPP.at(jerDataPos)->DrawCopy("HIST P SAME");	  
+	  }
 	}
    
 	std::cout << __LINE__ << std::endl;
@@ -1325,28 +1399,29 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  if(mI == 0) resStyle = getStyleFromCent(centStr, false);
 	  else resStyle = getAltStyleFromCent(centStr, false);
 	  
-	  systHistVectPbPb.at(jerDataPos)->SetMarkerSize(0.8);
-	  systHistVectPbPb.at(jerDataPos)->SetMarkerStyle(resStyle);
-	  systHistVectPbPb.at(jerDataPos)->SetMarkerColor(resCol);
-	  systHistVectPbPb.at(jerDataPos)->SetLineColor(resCol);
-
-	  std::cout << __LINE__ << std::endl;
-	  
-	  systHistVectPbPb.at(jerDataPos)->DrawCopy(drawStr.c_str());
-
-	  if(systHistVectPbPb.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPbPb.at(jerDataPos)->GetMaximum());
-
-	  if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPbPb.at(jerDataPos)->Clone((std::string(systHistVectPbPb.at(jerDataPos)->GetName()) + "_CLONE").c_str()));	  
-	  else{
-	    if(usI == 0) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(0 + cI + 1));
-	    else if(usI == 1) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins + cI + 1));
+	  if(jerDataPos >= 0){
+	    systHistVectPbPb.at(jerDataPos)->SetMarkerSize(0.8);
+	    systHistVectPbPb.at(jerDataPos)->SetMarkerStyle(resStyle);
+	    systHistVectPbPb.at(jerDataPos)->SetMarkerColor(resCol);
+	    systHistVectPbPb.at(jerDataPos)->SetLineColor(resCol);
 	    
-	    resModCompCanv_p[usI]->cd();
-	    resModCompPad_p[usI][1]->cd();
+	    std::cout << __LINE__ << std::endl;
 	    
-	    systHistVectPbPb.at(jerDataPos)->DrawCopy("HIST P SAME");
+	    systHistVectPbPb.at(jerDataPos)->DrawCopy(drawStr.c_str());
+	    
+	    if(systHistVectPbPb.at(jerDataPos)->GetMaximum() > resModHist_p[usI]->GetMaximum()) resModHist_p[usI]->SetMaximum(systHistVectPbPb.at(jerDataPos)->GetMaximum());
+	    
+	    if(mI == 0) prevJERData.push_back((TH1D*)systHistVectPbPb.at(jerDataPos)->Clone((std::string(systHistVectPbPb.at(jerDataPos)->GetName()) + "_CLONE").c_str()));	  
+	    else{
+	      if(usI == 0) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(0 + cI + 1));
+	      else if(usI == 1) systHistVectPbPb.at(jerDataPos)->Divide(prevJERData.at(1 + nCentBins + cI + 1));
+	      
+	      resModCompCanv_p[usI]->cd();
+	      resModCompPad_p[usI][1]->cd();
+	    
+	      systHistVectPbPb.at(jerDataPos)->DrawCopy("HIST P SAME");
+	    }
 	  }
-	
 
 	  std::cout << __LINE__ << std::endl;
 
@@ -1519,6 +1594,32 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   std::cout << "Closing files..." << std::endl;
+
+  const Int_t nHistDim = cutPropPbPb.GetNHistDim() + cutPropPP.GetNHistDim();
+  histTagPbPb.insert(histTagPbPb.end(), histTagPP.begin(), histTagPP.end());
+  histBestBayesPbPb.insert(histBestBayesPbPb.end(), histBestBayesPP.begin(), histBestBayesPP.end());
+
+  std::cout << "nHistDim: " << nHistDim << ", " << cutPropPbPb.GetNHistDim() << ", " << cutPropPP.GetNHistDim() << std::endl;
+  std::cout << " vect: " << histTagPbPb.size() << ", " << histTagPP.size() << std::endl;
+  std::cout << " vect: " << histBestBayesPbPb.size() << ", " << histBestBayesPP.size() << std::endl;
+
+  if(nHistDim != (int)(histTagPbPb.size())){
+    std::cout << "Warning: Error in combination of histTags from pp and pbpb" << std::endl;
+  }
+  if(nHistDim != (int)(histBestBayesPbPb.size())){
+    std::cout << "Warning: Error in combination of histTags from pp and pbpb" << std::endl;
+  }
+
+  cutPropPbPb.SetNHistDim(nHistDim);
+  cutPropPbPb.SetHistTag(histTagPbPb);
+  cutPropPbPb.SetHistBestBayes(histBestBayesPbPb);
+
+  TDirectory* cutDir_p = (TDirectory*)outFile_p->mkdir("cutDir");
+  TDirectory* subDir_p = (TDirectory*)cutDir_p->mkdir("subDir");
+  TDirectory* unfoldDir_p = (TDirectory*)cutDir_p->mkdir("unfoldDir");
+
+  if(!cutPropPbPb.WriteAllVarToFile(outFile_p, cutDir_p, subDir_p, unfoldDir_p)) std::cout << "Warning: Cut writing has failed" << std::endl;
+
   
   outFile_p->Close();
   delete outFile_p;

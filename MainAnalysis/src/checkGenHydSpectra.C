@@ -1,13 +1,16 @@
- #include <iostream>
+//cpp dependencies
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
-#include "TFile.h"
-#include "TTree.h"
-#include "TH1D.h"
+//ROOT dependencies
 #include "TDatime.h"
+#include "TFile.h"
+#include "TH1D.h"
+#include "TTree.h"
 
+//Local dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/histDefUtility.h"
@@ -73,7 +76,13 @@ int checkGenHydSpectra(const std::string inName)
     return 1;
   }
 
+  const Int_t nMaxJetAlgos = 10;
   const Int_t nJetAlgos = jetAlgos.size();
+
+  if(nMaxJetAlgos > nJetAlgos){
+    std::cout << "nJetAlgos \'" << nJetAlgos << "\' is less than nMaxJetAlgos \'" << nMaxJetAlgos << "\'. return 1" << std::endl;
+    return 1;
+  }
 
   std::cout << "Processing " << nJetAlgos << " jet algos..." << std::endl;
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
@@ -109,8 +118,8 @@ int checkGenHydSpectra(const std::string inName)
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  TH1D* genPt_h[nJetAlgos][nCentBins];
-  TH1D* genPt_Exclude_h[nJetAlgos][nCentBins];
+  TH1D* genPt_h[nMaxJetAlgos][nCentBins];
+  TH1D* genPt_Exclude_h[nMaxJetAlgos][nCentBins];
   
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
     std::string genStr = "GenR" + std::to_string(jetRs.at(jI));
@@ -135,7 +144,7 @@ int checkGenHydSpectra(const std::string inName)
 
     inFile_p = new TFile(fileList.at(fI).c_str(), "READ");
     TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
-    TTree* jetTrees_p[nJetAlgos];
+    TTree* jetTrees_p[nMaxJetAlgos];
     for(Int_t jI = 0; jI < nJetAlgos; ++jI){
       jetTrees_p[jI] = (TTree*)inFile_p->Get(jetAlgos.at(jI).c_str());
     }
@@ -156,11 +165,11 @@ int checkGenHydSpectra(const std::string inName)
     hiTree_p->SetBranchAddress("evt", &evt_);
 
     const Int_t nMaxJets = 500;
-    Int_t ngen_[nJetAlgos];
-    Float_t genpt_[nJetAlgos][nMaxJets];
-    Float_t genphi_[nJetAlgos][nMaxJets];
-    Float_t geneta_[nJetAlgos][nMaxJets];
-    Int_t gensubid_[nJetAlgos][nMaxJets];
+    Int_t ngen_[nMaxJetAlgos];
+    Float_t genpt_[nMaxJetAlgos][nMaxJets];
+    Float_t genphi_[nMaxJetAlgos][nMaxJets];
+    Float_t geneta_[nMaxJetAlgos][nMaxJets];
+    Int_t gensubid_[nMaxJetAlgos][nMaxJets];
 
     for(Int_t jI = 0; jI < nJetAlgos; ++jI){
       jetTrees_p[jI]->SetBranchStatus("*", 0);

@@ -1,21 +1,21 @@
 //cpp dependencies
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-#include <cstdlib>
 
 //ROOT dependencies
-#include "TFile.h"
 #include "TDirectory.h"
-#include "TTree.h"
+#include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
-#include "TNamed.h"
 #include "TMath.h"
+#include "TNamed.h"
 #include "TRandom3.h"
+#include "TTree.h"
 
 //RooUnfold dependencies
 #include "src/RooUnfoldResponse.h"
@@ -34,9 +34,9 @@
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/goodGlobalSelection.h"
 #include "Utility/include/histDefUtility.h"
-#include "Utility/include/plotUtilities.h"
 #include "Utility/include/mntToXRootdFileString.h"
 #include "Utility/include/ncollFunctions_5TeV.h"
+#include "Utility/include/plotUtilities.h"
 #include "Utility/include/returnRootFileContentsList.h"
 #include "Utility/include/scaleErrorTool.h"
 #include "Utility/include/specialHYDJETEventExclude.h"
@@ -195,7 +195,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   Int_t posR4Temp = -1;
   Int_t posGeneralTemp = -1;
+  const Int_t nMaxTrees = 10;
   const Int_t nTrees = responseTrees.size(); 
+
+  if(nTrees > nMaxTrees){
+    std::cout << "nTrees \'" << nTrees << "\' is greater than nMaxTrees \'" << nMaxTrees << "\'. return 1" << std::endl;
+    return 1;
+  }
 
   std::cout << "Making response matrices for the following " << nTrees << " jet trees: " << std::endl;
   for(int jI = 0; jI < nTrees; ++jI){
@@ -219,8 +225,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   Int_t nCentBinsTemp = 1;
   if(!isPP) nCentBinsTemp = nCentBinsPerma;
+ 
+  const Int_t nMaxCentBins = 8;
+  const Int_t nCentBins = nCentBinsTemp;
 
-  const Int_t nCentBins =nCentBinsTemp;
+  if(nCentBins > nMaxCentBins){
+    std::cout << "nCentBins \'" << nCentBins << "\' is greater than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   std::vector<Int_t> centBinsLow, centBinsHi;
   if(isPP){
     centBinsLow.push_back(0);
@@ -260,9 +273,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
   else if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
-  outFileName = "output/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_" + dateStr + ".root";
+  outFileName = "output/" + dateStr + "/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_" + dateStr + ".root";
 
   checkMakeDir("output");
+  checkMakeDir("output/" + dateStr);
 
   const Double_t jtAbsEtaMax = 2.;
   Int_t anomolousJetCount = 0;
@@ -303,6 +317,17 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   const int nGenJtPtBinsLargeR = rReader.GetNGenJtPtBinsLargeR();
   std::vector<double> genJtPtBinsLargeR = rReader.GetGenJtPtBinsLargeR();
+
+  const int nPtBinsMax = 50;
+  if(nRecoJtPtBinsSmallR > nPtBinsMax){
+    std::cout << "nRecoJtPtBinsSmallR \'" << nRecoJtPtBinsSmallR << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
+    return 1;
+  }
+
+  if(nGenJtPtBinsSmallR > nPtBinsMax){
+    std::cout << "nGenJtPtBinsSmallR \'" << nGenJtPtBinsSmallR << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
+    return 1;
+  }
 
   Int_t bigJetRecoTrunc = -1;
   for(Int_t jI = 0; jI < nRecoJtPtBinsSmallR; ++jI){
@@ -352,8 +377,16 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Double_t jtPfCEFCutLow[nID] = {0.0, 0.0, 0.0, 0.0, 0.0};
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
+
+  /*  
   const Int_t nSyst = 13;
   const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
+  */
+
+  
+  const Int_t nSyst = 1;
+  const std::string systStr[nSyst] = {""};
+  
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
@@ -468,31 +501,31 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     setSumW2({centrality_h, centralityWeighted_h, centralityFullWeighted_h, centralityFullRatio_h});
   }
 
-  TDirectory* dir_p[nTrees] = {NULL};
-  TH1D* recoJtPt_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPt_RecoTrunc_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPt_NoTruth_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPtPerGenPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBinsSmallR];
-  TH1D* genJtPtPerRecoPtBin_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBinsSmallR];
-  TH1D* recoJtPtPerGenPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nGenJtPtBinsSmallR];
-  TH1D* genJtPtPerRecoPtBinWeighted_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nRecoJtPtBinsSmallR];
+  TDirectory* dir_p[nMaxTrees] = {NULL};
+  TH1D* recoJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPt_RecoTrunc_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPt_NoTruth_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPtPerGenPtBin_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
+  TH1D* genJtPtPerRecoPtBin_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
+  TH1D* recoJtPtPerGenPtBinWeighted_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
+  TH1D* genJtPtPerRecoPtBinWeighted_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
 
-  TH1D* recoJtPt_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPt_RecoTrunc_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPt_NoTruth_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPt_RecoTrunc_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* recoJtPt_NoTruth_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
 
-  TH1D* genJtPt_All_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_GoodReco_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* recoJtPt_GoodGen_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* genJtPt_GoodReco_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* recoJtPt_GoodGen_ParaFills_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH2D* response_RecoGenSymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH2D* response_RecoGenAsymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* genJtPt_All_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_GoodReco_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* recoJtPt_GoodGen_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* genJtPt_GoodReco_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* recoJtPt_GoodGen_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH2D* response_RecoGenSymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH2D* response_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
-  TH1D* genJtPt_CheckFlatPrior_h[nTrees][nCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_CheckFlatPrior_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     if(nTrees == 2 && dI == posR4 && !isPP) continue;
@@ -510,8 +543,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     }  
     const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
     const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-    Double_t recoJtPtBins[nRecoJtPtBins+1];
-    Double_t genJtPtBins[nGenJtPtBins+1];
+    Double_t recoJtPtBins[nPtBinsMax+1];
+    Double_t genJtPtBins[nPtBinsMax+1];
     rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
     rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 
@@ -632,34 +665,34 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
 
     inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
-    TTree* jetTrees_p[nTrees] = {NULL};
-    Int_t nref_[nTrees];
-    Float_t jtpt_[nTrees][nMaxJet];
-    Float_t rawpt_[nTrees][nMaxJet];
-    Float_t jteta_[nTrees][nMaxJet];
-    Float_t jtphi_[nTrees][nMaxJet];
-    Float_t refpt_[nTrees][nMaxJet];
-    Float_t jtPfCHF_[nTrees][nMaxJet];
-    Float_t jtPfCEF_[nTrees][nMaxJet];
-    Float_t jtPfNHF_[nTrees][nMaxJet];
-    Float_t jtPfNEF_[nTrees][nMaxJet];
-    Float_t jtPfMUF_[nTrees][nMaxJet];
-    Float_t jtPfCHMF_[nTrees][nMaxJet];
-    Float_t jtPfCEMF_[nTrees][nMaxJet];
-    Float_t jtPfNHMF_[nTrees][nMaxJet];
-    Float_t jtPfNEMF_[nTrees][nMaxJet];
-    Float_t jtPfMUMF_[nTrees][nMaxJet];
-    Int_t jtPfCHM_[nTrees][nMaxJet];
-    Int_t jtPfCEM_[nTrees][nMaxJet];
-    Int_t jtPfNHM_[nTrees][nMaxJet];
-    Int_t jtPfNEM_[nTrees][nMaxJet];
-    Int_t jtPfMUM_[nTrees][nMaxJet];
+    TTree* jetTrees_p[nMaxTrees] = {NULL};
+    Int_t nref_[nMaxTrees];
+    Float_t jtpt_[nMaxTrees][nMaxJet];
+    Float_t rawpt_[nMaxTrees][nMaxJet];
+    Float_t jteta_[nMaxTrees][nMaxJet];
+    Float_t jtphi_[nMaxTrees][nMaxJet];
+    Float_t refpt_[nMaxTrees][nMaxJet];
+    Float_t jtPfCHF_[nMaxTrees][nMaxJet];
+    Float_t jtPfCEF_[nMaxTrees][nMaxJet];
+    Float_t jtPfNHF_[nMaxTrees][nMaxJet];
+    Float_t jtPfNEF_[nMaxTrees][nMaxJet];
+    Float_t jtPfMUF_[nMaxTrees][nMaxJet];
+    Float_t jtPfCHMF_[nMaxTrees][nMaxJet];
+    Float_t jtPfCEMF_[nMaxTrees][nMaxJet];
+    Float_t jtPfNHMF_[nMaxTrees][nMaxJet];
+    Float_t jtPfNEMF_[nMaxTrees][nMaxJet];
+    Float_t jtPfMUMF_[nMaxTrees][nMaxJet];
+    Int_t jtPfCHM_[nMaxTrees][nMaxJet];
+    Int_t jtPfCEM_[nMaxTrees][nMaxJet];
+    Int_t jtPfNHM_[nMaxTrees][nMaxJet];
+    Int_t jtPfNEM_[nMaxTrees][nMaxJet];
+    Int_t jtPfMUM_[nMaxTrees][nMaxJet];
 
-    Int_t ngen_[nTrees];
-    Float_t genpt_[nTrees][nMaxJet];
-    Float_t genphi_[nTrees][nMaxJet];
-    Float_t geneta_[nTrees][nMaxJet];
-    Int_t gensubid_[nTrees][nMaxJet];
+    Int_t ngen_[nMaxTrees];
+    Float_t genpt_[nMaxTrees][nMaxJet];
+    Float_t genphi_[nMaxTrees][nMaxJet];
+    Float_t geneta_[nMaxTrees][nMaxJet];
+    Int_t gensubid_[nMaxTrees][nMaxJet];
 
     for(Int_t tI = 0; tI < nTrees; ++tI){
       jetTrees_p[tI] = (TTree*)inFile_p->Get(responseTrees.at(tI).c_str());
@@ -888,8 +921,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
 	const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
 	const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-	Double_t recoJtPtBins[nRecoJtPtBins+1];
-	Double_t genJtPtBins[nGenJtPtBins+1];
+	Double_t recoJtPtBins[nPtBinsMax+1];
+	Double_t genJtPtBins[nPtBinsMax+1];
 	rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
 	rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
 	
