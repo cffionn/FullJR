@@ -137,7 +137,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
   const Float_t jtAbsEtaMax = jtAbsEtaMaxTemp;
-  const Int_t nMaxCentBins = 8;
+  const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = nCentBinsTemp;
 
   if(nCentBins > nMaxCentBins){
@@ -153,7 +153,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
     return 1;
   }
 
-  const Int_t nMaxJtAbsEtaBins = 8;
+  const Int_t nMaxJtAbsEtaBins = 6;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
 
   if(nMaxJtAbsEtaBins < nJtAbsEtaBins){
@@ -171,7 +171,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   }
   std::cout << std::endl;
 
-  const Int_t nMaxID = 8;
+  const Int_t nMaxID = 6;
   const Int_t nID = nIDTemp; 
 
   if(nMaxID < nID){

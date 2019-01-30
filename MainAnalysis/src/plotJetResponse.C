@@ -91,7 +91,7 @@ int plotJetResponse(const std::string inResponseName)
   if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
   if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
 
-  const Int_t nMaxJtAbsEtaBins = 8;
+  const Int_t nMaxJtAbsEtaBins = 6;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
 
   if(nJtAbsEtaBins > nMaxJtAbsEtaBins){
@@ -111,7 +111,7 @@ int plotJetResponse(const std::string inResponseName)
     std::cout << " " << cI << "/" << nCentBins << ": " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << std::endl;
   }
 
-  const Int_t nMaxID = 8;
+  const Int_t nMaxID = 6;
   const Int_t nID = nIDTemp;
   std::string idStr[nID];
   for(Int_t i = 0; i < nID; ++i){

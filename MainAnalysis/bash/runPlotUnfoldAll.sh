@@ -7,15 +7,15 @@ if [[ "$runDir" == "$curDir" ]]
 then
     dummyVal=0
 else
-    echo "Please run from $PWD, as bash bash/runPlotUnfold.sh. exit 1"
+    echo "Please run from $PWD, as bash bash/runPlotUnfoldAll.sh. exit 1"
     exit 1
 fi
 
-if [[ -f $runDir/bin/plotUnfoldedSpectra.exe ]]
+if [[ -f $runDir/bin/plotUnfoldedAll.exe ]]
 then
     dummyVal=0
 else
-    echo "Necessary executable ./bin/plotUnfoldedSpectra.exe is missing. run make. exit 1"
+    echo "Necessary executable ./bin/plotUnfoldedAll.exe is missing. run make. exit 1"
     exit 1
 fi
 
@@ -27,10 +27,10 @@ DATE=`date +%Y%m%d`
 mkdir -p logs
 mkdir -p logs/$DATE
 
-pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow CombinedAlgos)
-ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF CombinedAlgos)
-#pbpbVals=(akCs3PU3PFFlow)
-#ppVals=(ak3PF)
+#pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow CombinedAlgos)
+#ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF CombinedAlgos)
+pbpbVals=(akCs3PU3PFFlow)
+ppVals=(ak3PF)
 
 fileOutPbPbPre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR_Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_UnfoldRawData_NSuperBayes0_
 fileOutPbPbPost=_"$dateStrPbPb".root
@@ -50,7 +50,7 @@ do
     then
 	if [[ -f $fileNamePbPb ]]
 	then
-	    echo "./bin/plotUnfoldedSpectra.exe $fileNamePP $fileNamePbPb >& logs/$DATE/plotUnfold_${ppVals[$pos]}_$i.log &"
+	    echo "./bin/plotUnfoldedAll.exe $fileNamePP $fileNamePbPb >& logs/$DATE/plotUnfoldAll_${ppVals[$pos]}_$i.log &"
 	else
 	    echo " $fileNamePbPb not found, continuing on $i, ${ppVals[$pos]}"
 	fi
@@ -63,4 +63,4 @@ done
 
 wait
 
-echo "runPlotUnfold.sh complete!"
+echo "runPlotUnfoldAll.sh complete!"

@@ -257,7 +257,7 @@ std::vector<double> getSyst(const std::string dirStr, TH1D* nominal_p, std::vect
     canv_p->cd();
     centerTitles(tempHist_p);
     tempHist_p->SetMaximum(1.5*max[nI]);
-    tempHist_p->DrawCopy("HIST E1 P");
+    tempHist_p->DrawCopy("HIST  P");
 
     gStyle->SetOptStat(0);
     gPad->SetLogx();
@@ -306,8 +306,8 @@ std::vector<double> getSyst(const std::string dirStr, TH1D* nominal_p, std::vect
       syst_p.at(sI)->SetLineColor(colors[sI%nColor]);
       syst_p.at(sI)->SetMarkerSize(0.8);
 
-      syst_p.at(sI)->DrawCopy("HIST E1 P SAME");
-      syst_p.at(sI)->DrawCopy("HIST E1 SAME");
+      syst_p.at(sI)->DrawCopy("HIST  P SAME");
+      syst_p.at(sI)->DrawCopy("HIST  SAME");
 
       std::string legStr = systLegStr[sI];
       if(systMaxPos == sI) legStr = legStr + " (Dominant)";
@@ -315,7 +315,7 @@ std::vector<double> getSyst(const std::string dirStr, TH1D* nominal_p, std::vect
       leg_p->AddEntry(syst_p.at(sI), legStr.c_str(), "P L");
     }
 
-    tempHist_p->DrawCopy("HIST E1 SAME");
+    tempHist_p->DrawCopy("HIST  SAME");
 
     if(nI == 0){
       std::cout << "Quick closure check: " << std::endl;

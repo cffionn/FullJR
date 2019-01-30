@@ -84,7 +84,7 @@ If you opted to split the response files to run in parallel, I recommend you sti
 
 ./bin/processRawData.exe /data/cmcginn/Forests/pp2015Data/HIHardProbes/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20180627_11Lumi_180627_122059_355_OutOf355_MERGED.root output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_ak10PFJetAnalyzer_FracNEntries1p00_JetResponse_20180827.root 1 ak10PFJetAnalyzer >& logs/processPP_ak10PFJetAnalyzer.log &
 
-This produces output file 'output/output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_ak10PFJetAnalyzer_20180827.root'
+This produces output file 'output/$DATE/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_ak10PFJetAnalyzer_20180827.root'
 
 Step 6 (Unfolding):
 Now that the raw data is processed, we run unfolding of pp and pbpb jtalgos in parallel
@@ -94,7 +94,7 @@ where inDataFileName is the product of step5, inResponseName is the same file w/
 here is an example command
 ./bin/unfoldRawData.exe output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_ak10PFJetAnalyzer_20180827.root output/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_ak10PFJetAnalyzer_FracNEntries1p00_JetResponse_20180827.root ak10PF >& logs/unfoldPP_ak10PF.log &
 
-which will produce the output file 'output/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_UnfoldRawData_NSuperBayes1_ak10PF_20180827.root'
+which will produce the output file 'output/$DATE/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_UnfoldRawData_NSuperBayes1_ak10PF_20180827.root'
 
 NSuperBayes is currently experimental and hardcoded
 
@@ -104,8 +104,12 @@ At this point it is highly convenient to combine files into single for PbPb and 
 ./bin/combineFiles.exe <outFileName> <Long> <List> <Of> <Input> <Files> 
 
 Step 8 (start plotting):
+To do spectra plotting do:
+./bin/plotUnfoldedSpectra.exe <ppFile> <pbpbFile>
 
 Using bash scripts:
 bash bash/runResponse.sh # Step 4, long
 bash bash/runProcess.sh # Step 5, quick
-bash bash/runUnfold.sh # Step 6, 
+bash bash/runUnfold.sh # Step 6, quick-to-long depending on how much unfolding is done
+bash bash/runCombine.sh # Step 7, quick
+bash bash/runPlotUnfold.sh # Step 8, quick

@@ -226,7 +226,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   Int_t nCentBinsTemp = 1;
   if(!isPP) nCentBinsTemp = nCentBinsPerma;
  
-  const Int_t nMaxCentBins = 8;
+  const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = nCentBinsTemp;
 
   if(nCentBins > nMaxCentBins){
@@ -378,15 +378,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
 
-  /*  
   const Int_t nSyst = 13;
   const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
-  */
-
-  
+   
+  /*
   const Int_t nSyst = 1;
   const std::string systStr[nSyst] = {""};
-  
+  */
 
   //LightMUAndCHID == jtPfCHMF < 0.9 && jtPfMUMF < 0.6
 
@@ -461,8 +459,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   std::string flatWeightName = fullPath + "/";
   if(isPP) flatWeightName = flatWeightName + flatWeightNamePP;
   else flatWeightName = flatWeightName + flatWeightNamePbPb;
+  std::cout << "CutProp: " << cutProp.GetNJtAlgos() << std::endl;
   flatWeightReader flatWeight(flatWeightName, cutProp);
-
 
   const Int_t nResponseBins = 300;
   Double_t responseBins[nResponseBins+1];
@@ -907,7 +905,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	if(nTrees == 2 && posR4 == tI) continue;
 
 	std::string algoName = responseTrees.at(tI);
-	//	algoName = algoName.substr(0, algoName.find("/"));
+	//	if(algoName.find("/") != std::string::npos) algoName = algoName.substr(0, algoName.find("/"));
 
 	Double_t rValD = getRVal(algoName);
 	rValD /= 10.;

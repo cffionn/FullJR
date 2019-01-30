@@ -51,6 +51,11 @@ int plotUnfoldedRAA(std::vector<std::string> inFileList)
   std::vector<std::string> fileOfPPAlgo;
   std::vector<int> isPPAlgoUsed;
 
+  const Int_t nJtMax = 10;
+  const Int_t nMaxCentBins = 4;
+  const Int_t nMaxID = 6;
+  const Int_t nMaxSyst = 20;
+
   while(posFI < inFileList.size()){
     bool keep = true;
 
@@ -114,7 +119,6 @@ int plotUnfoldedRAA(std::vector<std::string> inFileList)
 	}
       }
     
-
       inFile_p->Close();
       delete inFile_p;
     }
@@ -212,9 +216,11 @@ int plotUnfoldedRAA(std::vector<std::string> inFileList)
   checkMakeDir("pdfDir/" + dateStr);
   checkMakeDir("pdfDir/" + dateStr + "/PlotUnfolded/");
 
-  std::string outFileName = "plotUnfoldedRAA_" + totRStr + "_" + dateStr + ".root";
-  TFile* outFile_p = new TFile(("pdfDir/" + dateStr + "/PlotUnfolded/" + outFileName).c_str(), "RECREATE");
+  checkMakeDir("output");
+  checkMakeDir("output/" + dateStr);
 
+  std::string outFileName = "output/" + dateStr + "/plotUnfoldedRAA_" + totRStr + "_" + dateStr + ".root";
+  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
   outFile_p->cd();
   

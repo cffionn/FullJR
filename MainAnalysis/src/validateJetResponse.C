@@ -81,7 +81,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   Int_t nIDTemp = 1;
   std::vector<std::string> idStr = {"LightMUAndCHID"};
 
-  const Int_t nMaxCentBins = 8;
+  const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = nCentBinsTemp;
 
   if(nCentBins > nMaxCentBins){
@@ -90,7 +90,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   }
 
   std::cout << std::endl;
-  const Int_t nMaxJtAbsEtaBins = 8;
+  const Int_t nMaxJtAbsEtaBins = 6;
   const Int_t nJtAbsEtaBins = nJtAbsEtaBinsTemp;
   if(nJtAbsEtaBins > nMaxJtAbsEtaBins){
     std::cout << "nJtAbsEtaBins \'" << nJtAbsEtaBins << "\' is greater than nMaxJtAbsEtaBins \'" << nMaxJtAbsEtaBins << "\'. return 1" << std::endl;

@@ -11,6 +11,15 @@ else
     exit 1
 fi
 
+if [[ -f $runDir/bin/processRawData.exe ]]
+then
+    dummyVal=0
+else
+    echo "Necessary executable ./bin/processRawData.exe is missing. run make. exit 1"
+    exit 1
+fi
+
+
 dateStrPP=20190129
 dateStrPbPb=20190129
 

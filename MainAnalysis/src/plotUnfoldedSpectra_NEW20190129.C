@@ -679,7 +679,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 		
 		std::cout << " Name to grab: " << newName << std::endl;
 		jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][sI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idI][mI][aI][0]->Clone(newName.c_str());
-		std::cout << "Grab successful"  << std::endl;
+
 	      }
 	    }
 	  }
@@ -1046,7 +1046,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
       
 	std::cout << jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->GetName() << std::endl;
 	Int_t tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][sI];
-	tempBayesPos = 3;
 	
 	clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 	
@@ -1101,7 +1100,6 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	  if(bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] < 0) bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI] = 25;
 
 	  Int_t tempBayesPos = bayesPosPbPb[tI][cI][idPos][mI][absEtaPos][sI];
-	  tempBayesPos = 3;
 
 	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 

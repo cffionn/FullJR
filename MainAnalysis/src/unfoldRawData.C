@@ -150,14 +150,21 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const Int_t isResponsePP = cutPropResponse.GetIsPP();
 
 
-  /*  
+  
+  const Int_t nMaxSyst = 20;
   const Int_t nSyst = TMath::Min(valForForLoops, cutPropResponse.GetNSyst());
   std::vector<std::string> systStr = cutPropResponse.GetSystStr();
-  */
   
+  /*
   const Int_t nSyst = 1;
   std::vector<std::string> systStr = {""};
-  
+  */
+
+  if(nSyst > nMaxSyst){
+    std::cout << "nSyst \'" << nSyst << "\' is greater than nMaxSyst \'" << nMaxSyst << "\'. return 1" << std::endl;
+    return 1;
+  }
+
   const Int_t nResponseMod = 1;
   std::vector<double> responseMod = {0.10};
   std::vector<double> jerVarData = {0.10};
@@ -169,7 +176,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<double> jerVarData = cutPropResponse.GetJERVarData();
   */
 
-  const Int_t nMaxCentBins = 8;
+  const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = TMath::Min(valForForLoops, cutPropData.GetNCentBins());
   if(nCentBins > nMaxCentBins){
     std::cout << "nCentBins \'" << nCentBins << "\' is greater than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
@@ -368,9 +375,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 
   const Int_t nBayesDraw = TMath::Min(valForForLoops, 4);
   TDirectory* dir_p[nMaxDataJet];
-  TH1D* jtPtUnfolded_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  RooUnfoldBayes* bayes_p[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nBayes];
-  Int_t histTermPos[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  TH1D* jtPtUnfolded_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst][nBayes];
+  RooUnfoldBayes* bayes_p[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst][nBayes];
+  Int_t histTermPos[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = responseJetDirList.at(jI);
@@ -416,9 +423,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
   responseFile_p = new TFile(inResponseName.c_str(), "READ");
-  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* recoJtPt_GoodGen_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* genJtPt_GoodReco_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst];
+  TH1D* recoJtPt_GoodGen_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst];
+  TH1D* genJtPt_GoodReco_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst];
 
   for(Int_t jI = 0; jI < nDataJet; ++jI){
     std::string tempStr = responseJetDirList.at(jI);

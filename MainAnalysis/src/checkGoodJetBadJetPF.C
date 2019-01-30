@@ -120,11 +120,11 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   Int_t nCentBinsTemp = nCentBinsPerma;
   if(isPP) nCentBinsTemp = 1;
 
-  const Int_t nCentBinsMax = 8;
+  const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = nCentBinsTemp;
 
-  if(nCentBins > nCentBinsMax){
-    std::cout << "nCentBins \'" << nCentBins << "\' is more than nCentBinsMax \'" << nCentBinsMax << "\'. return 1" << std::endl;
+  if(nCentBins > nMaxCentBins){
+    std::cout << "nCentBins \'" << nCentBins << "\' is more than nMaxCentBins \'" << nMaxCentBins << "\'. return 1" << std::endl;
     return 1;
   }
 
@@ -171,7 +171,7 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   delete inFile_p;
   inFile_p = NULL;
 
-  const Int_t nMaxJetAlgos = 10;
+  const Int_t nMaxJetAlgos = 12;
   const Int_t nJetAlgos = jetList.size();
 
   if(nJetAlgos > nMaxJetAlgos){
@@ -236,102 +236,102 @@ int checkGoodJetBadJetPF(const std::string inName, bool isPP = false)
   outFile_p->SetBit(TFile::kDevNull);
   TH1::AddDirectory(kFALSE);
 
-  TH1D* jtPt_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH1D* jtPt_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH1D* jtPt_FineTot_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH1D* jtPt_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH1D* jtPt_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH1D* jtPt_FineTot_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfCEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNHF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfNHF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfNEF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNEF_jtPfMUF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHMF_jtPfCEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEMF_jtPfNHMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
 
-  TH1D* jtPfCHM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUM_Good_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHM_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Good_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH1D* jtPfCHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHF_jtPfCEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfCEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNHF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfNEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHF_jtPfMUF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEF_jtPfNHF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNHF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfNEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEF_jtPfMUF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHF_jtPfNEF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfNHF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfNEF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfNHF_jtPfMUF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEF_jtPfMUF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNEF_jtPfMUF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
-  TH2D* jtPfCHMF_jtPfCEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfCEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfCEMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfCEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNHMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfCEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
-  TH2D* jtPfNHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfNEMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
+  TH2D* jtPfNHMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH2D* jtPfNEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID];
+  TH2D* jtPfNEMF_jtPfMUMF_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID];
 
-  TH1D* jtPfCHM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfCEM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNHM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfNEM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
-  TH1D* jtPfMUM_Bad_h[nMaxJetAlgos][nCentBinsMax][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCHM_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfCEM_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNHM_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfNEM_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
+  TH1D* jtPfMUM_Bad_h[nMaxJetAlgos][nMaxCentBins][nWeighted][nID][nJtRecoPtBins2];
 
   for(Int_t jI = 0; jI < nJetAlgos; ++jI){
     for(Int_t cI = 0; cI < nCentBins; ++cI){

@@ -33,9 +33,9 @@ class flatWeightReader{
   cutPropagator cutPropWeight;
   TFile* weightFile_p=NULL;
   
-  static const Int_t nMaxCentBins = 10;
+  static const Int_t nMaxCentBins = 4;
   static const Int_t nMaxJtAbsEtaBins = 6;
-  static const Int_t nMaxJtAlgos = 20;
+  static const Int_t nMaxJtAlgos = 12;
 
   TH1D* genJtPt_h[nMaxJtAlgos][nMaxCentBins][nMaxJtAbsEtaBins];
 
@@ -200,8 +200,9 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
 
   jteta = TMath::Abs(jteta);
 
+
   for(int jI = 0; jI < nJtAlgos; ++jI){
-    if(isStrSame(algo, jtAlgos.at(jI))){
+    if(isStrSame(algo, jtAlgos[jI])){
       algPos = jI;
       break;
     }    
@@ -211,7 +212,7 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
     std::cout << "flatWeightReader: Warning algPos == -1 for \'" << algo << "\', return weight of 1" << std::endl;
     std::cout << " Options were: ";
     for(int jI = 0; jI < nJtAlgos; ++jI){
-      std::cout << jtAlgos.at(jI) << ", ";
+      std::cout << jtAlgos[jI] << ", ";
     }
     std::cout << std::endl;
     return 1.;

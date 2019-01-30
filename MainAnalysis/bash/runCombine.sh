@@ -7,7 +7,15 @@ if [[ "$runDir" == "$curDir" ]]
 then
     dummyVal=0
 else
-    echo "Please run from $PWD, as bash bash/runUnfold.sh. exit 1"
+    echo "Please run from $PWD, as bash bash/runCombine.sh. exit 1"
+    exit 1
+fi
+
+if [[ -f $runDir/bin/combineFiles.exe ]]
+then
+    dummyVal=0
+else
+    echo "Necessary executable ./bin/combineFiles.exe is missing. run make. exit 1"
     exit 1
 fi
 

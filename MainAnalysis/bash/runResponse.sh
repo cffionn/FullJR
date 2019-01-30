@@ -11,6 +11,15 @@ else
     exit 1
 fi
 
+if [[ -f $runDir/bin/makeJetResponseTree.exe ]]
+then
+    dummyVal=0
+else
+    echo "Necessary executable ./bin/makeJetResponseTree.exe is missing. run make. exit 1"
+    exit 1
+fi
+
+
 DATE=`date +%Y%m%d`
 
 mkdir -p logs
@@ -24,10 +33,15 @@ jetsPbPb=(akCs3PU3PFFlowJetAnalyzer akCs4PU3PFFlowJetAnalyzer akCs6PU3PFFlowJetA
 
 for i in "${jetsPP[@]}"
 do
+    echo "Processing $i..."
     ./bin/makeJetResponseTree.exe paths/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_$i.txt 1 1.0 >& logs/$DATE/responsePP_$i.log &
 done
 
 for i in "${jetsPbPb[@]}"
 do
+    echo "Processing $i..."
     ./bin/makeJetResponseTree.exe paths/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_$i.txt 0 1.0 >& logs/$DATE/responsePbPb_$i.log &
 done
+
+wait
+echo "bash/runResponse.sh Complete!"
