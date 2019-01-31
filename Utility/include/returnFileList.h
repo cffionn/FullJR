@@ -71,7 +71,8 @@ std::vector<std::string> returnFileList(std::string dirPath, const std::string f
   }
   else{
     std::cout << "NULL PATH" << std::endl;
-    closedir(dpdf);
+    //Commenting as this should be executed for null only
+    //    closedir(dpdf);
     return fileList;
   }
 
