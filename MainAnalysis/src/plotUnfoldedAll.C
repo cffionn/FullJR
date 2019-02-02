@@ -10,10 +10,21 @@
 #include "TDatime.h"
 #include "TFile.h"
 #include "TKey.h"
+#include "TMath.h"
+#include "TPad.h"
+#include "TStyle.h"
 #include "TTree.h"
 
-//Non-Local dependencies
+//Local dependencies
 #include "MainAnalysis/include/cutPropagator.h"
+#include "MainAnalysis/include/smallOrLargeR.h"
+#include "MainAnalysis/include/systFunctions.h"
+
+//Non-Local dependencies
+#include "Utility/include/checkMakeDir.h"
+#include "Utility/include/kirchnerPalette.h"
+#include "Utility/include/lumiAndTAAUtil.h"
+#include "Utility/include/vanGoghPalette.h"
 
 template <class T>
 bool compWithWarning(const std::string typeStr, T a, T b)
@@ -31,6 +42,7 @@ int posInStrVect(std::string strToCheck, std::string front, std::vector<std::str
 {
   int pos = -1;
   for(unsigned i = 0; i < vect.size(); ++i){
+    if(vect[i].size() == 0) continue;
     if(strToCheck.find(front + vect[i] + back) != std::string::npos){
       pos = i;
       break;
@@ -40,11 +52,138 @@ int posInStrVect(std::string strToCheck, std::string front, std::vector<std::str
   return pos;
 }
 
+int posInStrVectExact(std::string inStr, std::vector<std::string> inVect)
+{
+  Int_t pos = -1;
+  for(unsigned int i = 0; i < inVect.size(); ++i){
+    if(isStrSame(inStr, inVect[i])){pos = i; break;}
+  }
+  return pos;
+}
+
+
+
+void defineCanv(TCanvas* canv_p)
+{
+  canv_p->SetTopMargin(0.14);
+  canv_p->SetRightMargin(0.14);
+  canv_p->SetLeftMargin(0.14);
+  canv_p->SetBottomMargin(0.14);
+
+  return;
+}
+
+template <class T>
+bool setGeneralPtBins(const Int_t nGeneralPtBins, Double_t generalPtBins[], std::vector<T> binVect)
+{
+  if(nGeneralPtBins+1 < (Int_t)binVect.size()){
+    std::cout << "testGeneralPtBins input binVect size \'" << binVect.size() << "\' is greater than the generalBins max+1, \'" << nGeneralPtBins << "+1\'. return false"  << std::endl;
+    return false;
+  }
+  for(unsigned int vI = 0; vI < binVect.size(); ++vI){generalPtBins[vI] = binVect[vI];}
+  return true;
+}
+
+
+bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p)
+{
+  if(macroHist_p->GetBinLowEdge(1) - subsetHist_p->GetBinLowEdge(1) > 1){
+    std::cout << "macroHistToSubsetHist Warning: macroHist low edge \'" << macroHist_p->GetBinLowEdge(1) << "\' is greater than low edge of subset hist, \'" << subsetHist_p->GetBinLowEdge(1) << "\', return false" << std::endl;
+    return false;
+  }
+  if(macroHist_p->GetBinLowEdge(macroHist_p->GetNbinsX()+1) - subsetHist_p->GetBinLowEdge(subsetHist_p->GetNbinsX()+1) < -1){
+    std::cout << "macroHistToSubsetHist Warning: macroHist high edge \'" << macroHist_p->GetBinLowEdge(1) << "\' is less than high edge of subset hist, \'" << subsetHist_p->GetBinLowEdge(1) << "\', return false" << std::endl;
+    return false;
+  }
+
+  for(Int_t bIX = 0; bIX < subsetHist_p->GetNbinsX(); ++bIX){
+    Double_t center = subsetHist_p->GetBinCenter(bIX+1);
+    
+    Int_t pos2 = -1;
+    for(Int_t bIX2 = 0; bIX2 < macroHist_p->GetNbinsX(); ++bIX2){
+      if(center >= macroHist_p->GetBinLowEdge(bIX2+1) && center < macroHist_p->GetBinLowEdge(bIX2+2)){
+	pos2 = bIX2;
+	break;
+      }
+    }
+    
+    subsetHist_p->SetBinContent(bIX+1, macroHist_p->GetBinContent(pos2+1));
+    subsetHist_p->SetBinError(bIX+1, macroHist_p->GetBinError(pos2+1));
+  }  
+  return true;
+}
+
+void divHistByWidth(TH1D* hist_p)
+{
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    Double_t binWidth = hist_p->GetBinWidth(bIX+1);
+    hist_p->SetBinContent(bIX+1, hist_p->GetBinContent(bIX+1)/binWidth);
+    hist_p->SetBinError(bIX+1, hist_p->GetBinError(bIX+1)/binWidth);
+  }
+  return;
+}
+
+void scaleHist(TH1D* hist_p, Double_t scaleFactor)
+{
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    hist_p->SetBinContent(bIX+1, hist_p->GetBinContent(bIX+1)*scaleFactor);
+    hist_p->SetBinError(bIX+1, hist_p->GetBinError(bIX+1)*scaleFactor);
+  }
+  return;
+}
+
+void scaleVect(std::vector<Double_t>* vect, Double_t scaleFactor)
+{
+  for(ULong64_t vI = 0; vI < (ULong64_t)vect->size(); ++vI){    
+    (*vect)[vI] *= scaleFactor;
+  }
+  return;
+}
+
+Double_t getHistMax(TH1D* hist_p)
+{
+  Double_t max = hist_p->GetMinimum();
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    if(max < hist_p->GetBinContent(bIX+1)) max = hist_p->GetBinContent(bIX+1);
+  }
+  return max;
+}
+
+Double_t getHistMin(TH1D* hist_p)
+{
+  Double_t min = hist_p->GetMaximum();
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    if(min > hist_p->GetBinContent(bIX+1)) min = hist_p->GetBinContent(bIX+1);
+  }
+  return min;
+}
+
+Double_t getHistMinGTZero(TH1D* hist_p)
+{
+  Double_t min = hist_p->GetMaximum();
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    if(hist_p->GetBinContent(bIX+1) <= 0) continue;
+    if(min > hist_p->GetBinContent(bIX+1)) min = hist_p->GetBinContent(bIX+1);
+  }
+  return min;
+}
+
+
 int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileNamePbPb)
 {
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
+
+  checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
+
+  gStyle->SetOptStat(0);
+
+  kirchnerPalette kPalette;
+
+  const Double_t lumiFactor = getLumiFactor();
+  const Double_t nMBEvents = getNMBEvents();
 
   const Int_t nFiles = 2;
   TFile* inFile_p[nFiles];
@@ -70,6 +209,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   std::vector<Int_t> centBinsLow;
   std::vector<Int_t> centBinsHi;
   std::vector<std::string> centBinsStr;
+  std::vector<Double_t> centBinsWidth;
 
   Int_t nID = -1;
   std::vector<std::string> idStr;
@@ -85,13 +225,35 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   std::vector<double> jtAbsEtaBinsHi;
   std::vector<std::string> jtAbsEtaBinsStr;
   std::vector<bool> goodJtAbsEtaBins;
+  std::vector<double> jtAbsEtaBinsWidth;
 
-  Int_t nSyst = -1;
-  std::vector<std::string> systStr;
+  Int_t nSystInFile = -1;
+  std::vector<std::string> systStrInFile;
+  Int_t nSystOutFile = 4;
+  std::vector<std::string> systStrOutFile = {"LumiUp", "LumiDown", "TAAUp", "TAADown"};
+
+  std::map<std::string, std::string> systToCombo = {{"JECUpMC", "JECMC"}, {"JECDownMC", "JECMC"}, {"JECUpData", "JECData"}, {"JECDownData", "JECData"}, {"JECUpUE", "JECUE"}, {"JECDownUE", "JECUE"}, {"PriorUp1PowerPthat", "Prior1PowerPthat"}, {"PriorDown1PowerPthat", "Prior1PowerPthat"}, {"LumiUp", "Lumi"}, {"LumiDown", "Lumi"}, {"TAAUp", "TAA"}, {"TAADown", "TAA"}};
+  std::vector<std::string> reducedSystStr;
 
   Int_t nBayes = -1;
+
   std::vector<int> bayesVal;
   std::vector<std::string> bayesValStr;
+
+  //Use this to do any or all pt binnings
+  const Int_t nGeneralPtBins = 100;
+  Double_t generalPtBins[nGeneralPtBins+1];
+
+  Int_t nGenJtPtBinsSmallR;
+  Int_t nGenJtPtBinsLargeR;
+  std::vector<Double_t> genJtPtBinsSmallRTemp;
+  std::vector<Double_t> genJtPtBinsLargeRTemp;
+  std::vector<Double_t> genJtPtBinsSmallR;
+  std::vector<Double_t> genJtPtBinsLargeR;
+  Int_t nRecoJtPtBinsSmallR;
+  Int_t nRecoJtPtBinsLargeR;
+  std::vector<Double_t> recoJtPtBinsSmallRTemp;
+  std::vector<Double_t> recoJtPtBinsLargeRTemp;
 
   std::cout << "Processing inputs..." << std::endl;
   unsigned int pos = 0;
@@ -123,7 +285,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     if(pos == 0){
       nID = cutProps[pos]->GetNID();
       nResponseMod = cutProps[pos]->GetNResponseMod();
-      nSyst = cutProps[pos]->GetNSyst();
+      nSystInFile = cutProps[pos]->GetNSyst();
       nJtAbsEtaBins = cutProps[pos]->GetNJtAbsEtaBins();
       nBayes = cutProps[pos]->GetNBayes();
 
@@ -131,13 +293,22 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
       responseMod = cutProps[pos]->GetResponseMod();
       jtAbsEtaBinsLow = cutProps[pos]->GetJtAbsEtaBinsLow();
       jtAbsEtaBinsHi = cutProps[pos]->GetJtAbsEtaBinsHi();
-      systStr = cutProps[pos]->GetSystStr();
+      systStrInFile = cutProps[pos]->GetSystStr();
       bayesVal = cutProps[pos]->GetBayesVal();
+
+      nGenJtPtBinsSmallR = cutProps[pos]->GetNGenJtPtBinsSmallR();
+      nGenJtPtBinsLargeR = cutProps[pos]->GetNGenJtPtBinsLargeR();
+      genJtPtBinsSmallRTemp = cutProps[pos]->GetGenJtPtBinsSmallR();
+      genJtPtBinsLargeRTemp = cutProps[pos]->GetGenJtPtBinsLargeR();
+      nRecoJtPtBinsSmallR = cutProps[pos]->GetNRecoJtPtBinsSmallR();
+      nRecoJtPtBinsLargeR = cutProps[pos]->GetNRecoJtPtBinsLargeR();
+      recoJtPtBinsSmallRTemp = cutProps[pos]->GetRecoJtPtBinsSmallR();
+      recoJtPtBinsLargeRTemp = cutProps[pos]->GetRecoJtPtBinsLargeR();
     }
     else{
       if(!compWithWarning("nID", nID, cutProps[pos]->GetNID())) return 1;
       if(!compWithWarning("nResponseMod", nResponseMod, cutProps[pos]->GetNResponseMod())) return 1;
-      if(!compWithWarning("nSyst", nSyst, cutProps[pos]->GetNSyst())) return 1;
+      if(!compWithWarning("nSystInFile", nSystInFile, cutProps[pos]->GetNSyst())) return 1;
       if(!compWithWarning("nJtAbsEtaBins", nJtAbsEtaBins, cutProps[pos]->GetNJtAbsEtaBins())) return 1;
 
       bool propMatch = cutProps[0]->CheckPropagatorsMatch(*(cutProps[pos]), true, false, false);
@@ -150,7 +321,101 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     delete inFile_p[pos];
     ++pos;
   }
+
+  smallOrLargeR rReader;
+  std::cout << "Checking binning against rReader.." << std::endl;
+  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallR)) return 1;
+  else if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeR)) return 1;
+  else if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
+  else if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
+  else if(!rReader.CheckNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallR)) return 1;
+  else if(!rReader.CheckNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeR)) return 1;
+  else if(!rReader.CheckRecoJtPtBinsSmallR(recoJtPtBinsSmallRTemp)) return 1;
+  else if(!rReader.CheckRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp)) return 1;
+  else std::cout << " All bins good!" << std::endl;
+
+  const Double_t minValSmallR = 200;
+  const Double_t minValLargeR = 300;
+  const Double_t maxValSmallR = 1000;
+  const Double_t maxValLargeR = 1000;
+  bool minSmallRFound = false;
+  bool minLargeRFound = false;
+  bool maxSmallRFound = false;
+  bool maxLargeRFound = false;
   
+  for(Int_t gI = 0; gI < nGenJtPtBinsSmallR+1; ++gI){
+    if(TMath::Abs(genJtPtBinsSmallRTemp[gI] - minValSmallR) < 1.) minSmallRFound = true;
+    if(TMath::Abs(genJtPtBinsSmallRTemp[gI] - maxValSmallR) < 1.) maxSmallRFound = true;
+
+    if(minSmallRFound) genJtPtBinsSmallR.push_back(genJtPtBinsSmallRTemp[gI]);
+    if(minSmallRFound && maxSmallRFound) break;
+  }
+
+  for(Int_t gI = 0; gI < nGenJtPtBinsLargeR+1; ++gI){
+    if(TMath::Abs(genJtPtBinsLargeRTemp[gI] - minValLargeR) < 1.) minLargeRFound = true;
+    if(TMath::Abs(genJtPtBinsLargeRTemp[gI] - maxValLargeR) < 1.) maxLargeRFound = true;
+
+    if(minLargeRFound) genJtPtBinsLargeR.push_back(genJtPtBinsLargeRTemp[gI]);
+    if(minLargeRFound && maxLargeRFound) break;
+  }
+
+  if(!minSmallRFound){
+    std::cout << "Min smallR val \'" << minValSmallR << "\' is not found in bins: ";
+    for(Int_t gI = 0; gI < nGenJtPtBinsSmallR; ++gI){
+      std::cout << genJtPtBinsSmallRTemp[gI] << ", ";
+    }
+    std::cout << genJtPtBinsSmallRTemp[nGenJtPtBinsSmallR] << ". return 1" << std::endl;
+    return 1;
+  }
+  if(!maxSmallRFound){
+    std::cout << "Max smallR val \'" << maxValSmallR << "\' is not found in bins: ";
+    for(Int_t gI = 0; gI < nGenJtPtBinsSmallR; ++gI){
+      std::cout << genJtPtBinsSmallRTemp[gI] << ", ";
+    }
+    std::cout << genJtPtBinsSmallRTemp[nGenJtPtBinsSmallR] << ". return 1" << std::endl;
+    return 1;
+  }
+
+  if(!minLargeRFound){
+    std::cout << "Min largeR val \'" << minValLargeR << "\' is not found in bins: ";
+    for(Int_t gI = 0; gI < nGenJtPtBinsLargeR; ++gI){
+      std::cout << genJtPtBinsLargeRTemp[gI] << ", ";
+    }
+    std::cout << genJtPtBinsLargeRTemp[nGenJtPtBinsLargeR] << ". return 1" << std::endl;
+    return 1;
+  }
+  if(!maxLargeRFound){
+    std::cout << "Max largeR val \'" << maxValLargeR << "\' is not found in bins: ";
+    for(Int_t gI = 0; gI < nGenJtPtBinsLargeR; ++gI){
+      std::cout << genJtPtBinsLargeRTemp[gI] << ", ";
+    }
+    std::cout << genJtPtBinsLargeRTemp[nGenJtPtBinsLargeR] << ". return 1" << std::endl;
+    return 1;
+  }
+
+  for(unsigned int sI = 0; sI < systStrInFile.size(); ++sI){
+    if(systToCombo.count(systStrInFile[sI]) > 0){
+      std::string systTemp = systToCombo[systStrInFile[sI]];
+      bool stringIsFound = false;
+      for(auto const & sI2 : reducedSystStr){
+	if(isStrSame(sI2, systTemp)) stringIsFound = true;
+      }
+      if(!stringIsFound) reducedSystStr.push_back(systToCombo[systStrInFile[sI]]);
+    }
+    else reducedSystStr.push_back(systStrInFile[sI]);
+  }
+  Int_t nReducedSyst = reducedSystStr.size();
+
+  std::cout << "Full systematics: " << systStrInFile.size() << std::endl;
+  for(unsigned int sI = 1; sI < systStrInFile.size(); ++sI){
+    std::cout << " " << systStrInFile[sI] << std::endl;
+  }
+
+  std::cout << "Reduced systematics: " << reducedSystStr.size() << std::endl;
+  for(unsigned int sI = 1; sI < reducedSystStr.size(); ++sI){
+    std::cout << " " << reducedSystStr[sI] << std::endl;
+  }
+
   for(unsigned int hI = 0; hI < histTagsPbPb.size(); ++hI){
     if(histTagsPbPb[hI].find("nHistDim") != std::string::npos) continue;
     histTagsToBestBayesPbPb[histTagsPbPb[hI]] = histBestBayesPbPb[hI];
@@ -170,6 +435,12 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 
   for(unsigned int cI = 0; cI < centBinsLow.size(); ++cI){
     centBinsStr.push_back("Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]));
+    centBinsWidth.push_back(centBinsHi[cI] - centBinsLow[cI]);
+  }
+
+  for(unsigned int aI = 0; aI < jtAbsEtaBinsLow.size(); ++aI){
+    jtAbsEtaBinsStr.push_back("JtAbsEta" + std::to_string(jtAbsEtaBinsLow[aI]) + "to" + std::to_string(jtAbsEtaBinsHi[aI]));
+    jtAbsEtaBinsWidth.push_back(jtAbsEtaBinsHi[aI] - jtAbsEtaBinsLow[aI]);
   }
 
   std::cout << "nCentBins: " << nCentBins << std::endl;
@@ -211,7 +482,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	for(ULong64_t aI = 0; aI < (ULong64_t)nJtAbsEtaBins; ++aI){
 	  goodJtAbsEtaBins.push_back(false);
 
-	  for(ULong64_t sI = 0; sI < (ULong64_t)nSyst; ++sI){
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
 	    for(ULong64_t bI = 0; bI < (ULong64_t)nBayes; ++bI){
 
 	      ULong64_t keyPP = getKey(jI, 0, idI, rI, aI, sI, bI);
@@ -264,7 +535,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	  break;
 	}
       }
-
+    
       while((key = (TKey*)next())){
 	const std::string name = key->GetName();
 	const std::string className = key->GetClassName();
@@ -273,7 +544,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	int idPos = posInStrVect(name, "_", idStr, "_");
 	int modPos = posInStrVect(name, "_", responseModStr, "_");
 	int absEtaPos = posInStrVect(name, "_", jtAbsEtaBinsStr, "_");
-	int systPos = posInStrVect(name, "_", systStr, "_");
+	int systPos = posInStrVect(name, "_", systStrInFile, "_");
 	if(systPos < 0 && name.find("FlatPrior") == std::string::npos) systPos = 0;
 	int bayesPos = posInStrVect(name, "_", bayesValStr, "_");
 	int centPos = 0;
@@ -310,7 +581,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     int idPos = posInStrVect(tagToBB.first, "_", idStr, "_");
     int modPos = posInStrVect(tagToBB.first, "_", responseModStr, "_");
     int absEtaPos = posInStrVect(tagToBB.first, "_", jtAbsEtaBinsStr, "_");
-    int systPos = posInStrVect(tagToBB.first, "_", systStr, "_");
+    int systPos = posInStrVect(tagToBB.first, "_", systStrInFile, "");
     if(systPos < 0 && tagToBB.first.find("FlatPrior") == std::string::npos) systPos = 0;
     int centPos = posInStrVect(tagToBB.first, "_", centBinsStr, "_");
     int bayesPos = tagToBB.second;
@@ -337,8 +608,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     int idPos = posInStrVect(tagToBB.first, "_", idStr, "_");
     int modPos = posInStrVect(tagToBB.first, "_", responseModStr, "_");
     int absEtaPos = posInStrVect(tagToBB.first, "_", jtAbsEtaBinsStr, "_");
-    int systPos = posInStrVect(tagToBB.first, "_", systStr, "_");
+    int systPos = posInStrVect(tagToBB.first, "_", systStrInFile, "");
     if(systPos < 0 && tagToBB.first.find("FlatPrior") == std::string::npos) systPos = 0;
+
     int centPos = 0;
     int bayesPos = tagToBB.second;
     
@@ -362,7 +634,23 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   char dummyStr[nDummyStr];
   std::cin.get(dummyStr, nDummyStr);
 
+  std::cout << "Traditional Spectra" << std::endl;
   for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
+    std::cout << "Jet Algo: " << jtAlgosPbPb[jI] << "/" << jtAlgosPP[jI] << std::endl;
+    const Int_t rVal = getRVal(dirListPbPb.at(jI));
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+
+    Int_t nBinsTemp = -1;
+    if(isSmallR){
+      nBinsTemp = genJtPtBinsSmallR.size()-1;
+      setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtBinsSmallR);
+    }
+    else{
+      nBinsTemp = genJtPtBinsLargeR.size()-1;
+      setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtBinsLargeR);
+    }
+    const Int_t nBins = nBinsTemp;
+
     for(ULong64_t idI = 0; idI < (ULong64_t)nID; ++idI){
       if(!goodID[idI]) continue;
 
@@ -372,49 +660,184 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	for(ULong64_t aI = 0; aI < (ULong64_t)nJtAbsEtaBins; ++aI){
 	  if(!goodJtAbsEtaBins[aI]) continue;	 
 
-	  std::cout << jtAlgosPbPb[jI] << ", " << jtAlgosPP[jI] << ", " << idStr[idI] << ", " << responseModStr[rI] << ", " << jtAbsEtaBinsStr[aI] << std::endl;
+	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);	  
 
 	  std::vector<TH1D*> histVectPbPbClones;
-	  histVectPbPbClones.reserve(nSyst*nCentBins);
+	  histVectPbPbClones.reserve(nSystInFile*nCentBins);
 	  std::vector<TH1D*> histVectPPClones;	  
-	  histVectPPClones.reserve(nSyst);
+	  histVectPPClones.reserve(nSystInFile);
 
-	  std::cout << __LINE__ << std::endl;
-	  for(ULong64_t sI = 0; sI < (ULong64_t)nSyst; ++sI){
-	    std::cout << __LINE__ << ", sI " << sI << std::endl;
-
+	  //Grab the subset histograms
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
 	    ULong64_t idKey = getKey(jI, 0, idI, rI, aI, sI);
 	    ULong64_t idKeyBB = histKeyToBestBayesKeyPP[idKey];
-	    std::cout << __LINE__ << ", sI " << sI << std::endl;
-	    histVectPPClones.push_back(NULL);
 	    ULong64_t vectPos = keyToVectPosPP[idKeyBB];
 	    std::string tempName = std::string(histVectPP[vectPos]->GetName()) + "_Clone";
-	    std::cout << __LINE__ << ", sI " << sI << std::endl;
-	    histVectPPClones[sI] = (TH1D*)histVectPP[vectPos]->Clone(tempName.c_str());
-	    std::cout << __LINE__ << ", sI " << sI << std::endl;
+	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";p_{T} GeV/c;", nBins, generalPtBins));
+	    if(!macroHistToSubsetHist(histVectPP[vectPos], histVectPPClones[sI])) return 1;
 
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
-	      std::cout << __LINE__ << ", sI " << sI << ", cI " << cI << std::endl;
 	      idKey = getKey(jI, cI, idI, rI, aI, sI);
 	      idKeyBB = histKeyToBestBayesKeyPbPb[idKey];
-	      histVectPbPbClones.push_back(NULL);
 	      vectPos = keyToVectPosPbPb[idKeyBB];
 	      tempName = std::string(histVectPbPb[vectPos]->GetName()) + "_Clone";
-	      histVectPbPbClones[sI + cI*nSyst] = (TH1D*)histVectPbPb[vectPos]->Clone(tempName.c_str());
+	      histVectPbPbClones.push_back(new TH1D(tempName.c_str(), ";p_{T} GeV/c;", nBins, generalPtBins));
+	      if(!macroHistToSubsetHist(histVectPbPb[vectPos], histVectPbPbClones[cI + sI*nCentBins])) return 1;
 	    }
 	  }
 
+	  //Div by bin widths;
+          for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    divHistByWidth(histVectPPClones[sI]);
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      divHistByWidth(histVectPbPbClones[cI + sI*nCentBins]);
+	    }
+	  }
 
-	  /*
-	  for(ULong64_t sI = 0; sI < (ULong64_t)nSyst; ++sI){
+	  //Setup systematics
+	  std::vector<std::vector<Double_t> > reducedSystPP;
+	  std::vector<std::vector<Double_t> > reducedSystPbPb;
+	  std::vector<Double_t> reducedSystSumPP;
+	  std::vector<std::vector<Double_t> > reducedSystSumPbPb;
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nReducedSyst; ++sI){
+	    reducedSystPP.push_back({});
+	    for(Int_t bI = 0; bI < nBins; ++bI){
+	      if(sI == 0) reducedSystSumPP.push_back(0.0);
+	      reducedSystPP[sI].push_back(1000000000000.);
+	    }
+
+            for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      if(sI == 0) reducedSystSumPbPb.push_back({});
+	      reducedSystPbPb.push_back({});
+
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		if(sI == 0) reducedSystSumPbPb[cI].push_back(0.0);
+		reducedSystPbPb[cI + sI*nCentBins].push_back(1000000000000.);
+	      }
+	    }
+	  }
+
+	  //Extract systematics
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    ULong64_t pos = 0;
+	    if(systToCombo.count(systStrInFile[sI]) > 0) pos = posInStrVectExact(systToCombo[systStrInFile[sI]], reducedSystStr);
+	    else pos = posInStrVectExact(systStrInFile[sI], reducedSystStr);
+
+	    for(Int_t bI = 0; bI < nBins; ++bI){
+	      Double_t delta = TMath::Abs(histVectPPClones[sI]->GetBinContent(bI+1) - histVectPPClones[0]->GetBinContent(bI+1));
+	      (reducedSystPP[pos])[bI] = TMath::Min((reducedSystPP[pos])[bI], delta);
+	    }
+
+            for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		Double_t delta = TMath::Abs(histVectPbPbClones[cI + sI*nCentBins]->GetBinContent(bI+1) - histVectPbPbClones[cI]->GetBinContent(bI+1));
+
+		(reducedSystPbPb[cI + pos*nCentBins])[bI] = TMath::Min((reducedSystPbPb[cI + pos*nCentBins])[bI], delta);
+	      }
+	    }
+	  }
+
+	  for(Int_t bI = 0; bI < nBins; ++bI){
+	    for(ULong64_t sI = 0; sI < (ULong64_t)reducedSystStr.size(); ++sI){
+	      if(reducedSystStr[sI].find("PriorFlat") != std::string::npos) continue;
+	      reducedSystSumPP[bI] = TMath::Sqrt(reducedSystSumPP[bI]*reducedSystSumPP[bI] + (reducedSystPP[sI])[bI]*(reducedSystPP[sI])[bI]);
+	    }
+	    
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      for(ULong64_t sI = 0; sI < (ULong64_t)reducedSystStr.size(); ++sI){
+		if(reducedSystStr[sI].find("PriorFlat") != std::string::npos) continue;
+		(reducedSystSumPbPb[cI])[bI] = TMath::Sqrt((reducedSystSumPbPb[cI])[bI]*(reducedSystSumPbPb[cI])[bI] + (reducedSystPbPb[cI + sI*nCentBins])[bI]*(reducedSystPbPb[cI + sI*nCentBins])[bI]);
+	      }
+	    }
+	  }
+
+	  
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    std::cout << "CentBins: " << centBinsStr[cI] << std::endl;
+	    for(ULong64_t sI = 0; sI < (ULong64_t)reducedSystStr.size(); ++sI){
+	      std::cout << " SYST CHECK: " << reducedSystStr[sI] << std::endl;
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		std::cout <<"  " << bI << ": " << (reducedSystPbPb[cI + nCentBins*sI])[bI] << std::endl;
+	      }	    
+	    }
+	  }
+
+	  scaleHist(histVectPPClones[0], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	  scaleVect(&reducedSystSumPP, 1./(2.*jtAbsEtaBinsWidth[aI]));
+
+	  scaleHist(histVectPPClones[0], 1./(lumiFactor));
+	  scaleVect(&reducedSystSumPP, 1./(lumiFactor));
+
+	  //Rescaling for histogram clarity
+	  Double_t scaleFactor = 1.;
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    Double_t tempTAAFactor = getTAAScaleFactor(centBinsStr[cI]);
+	    
+	    scaleFactor *= 10.;
+
+	    scaleHist(histVectPbPbClones[cI], 1./(tempTAAFactor*nMBEvents));
+	    scaleVect(&(reducedSystSumPbPb[cI]), 1./(tempTAAFactor*nMBEvents));
+
+	    scaleHist(histVectPbPbClones[cI], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	    scaleVect(&(reducedSystSumPbPb[cI]), 1./(2.*jtAbsEtaBinsWidth[aI]));
+
+	    scaleHist(histVectPbPbClones[cI], 100./centBinsWidth[cI]);
+	    scaleVect(&(reducedSystSumPbPb[cI]), 100./centBinsWidth[cI]);
+
+	    scaleHist(histVectPbPbClones[cI], scaleFactor);
+	    scaleVect(&(reducedSystSumPbPb[cI]), scaleFactor);
+	  }
+
+	  //Grab Max and Min vals...	  
+	  Double_t min = getHistMinGTZero(histVectPPClones[0]);
+	  Double_t max = getHistMax(histVectPPClones[0]);
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    Double_t tempMin = getHistMinGTZero(histVectPbPbClones[cI]);
+	    Double_t tempMax = getHistMax(histVectPbPbClones[cI]);
+
+	    if(tempMin < min) min = tempMin;
+	    if(tempMax > max) max = tempMax;
+	  }
+	  max *= 10.;
+	  min /= 10.;
+	  histVectPPClones[0]->SetMaximum(max);
+	  histVectPPClones[0]->SetMinimum(min);
+	  
+	  canv_p->cd();
+	  histVectPPClones[0]->SetMarkerColor(kPalette.getColor(getColorPosFromCent("", true)));
+	  histVectPPClones[0]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
+	  histVectPPClones[0]->SetMarkerStyle(getStyleFromCent("", true));
+	  histVectPPClones[0]->SetMarkerSize(1);
+	  histVectPPClones[0]->DrawCopy("HIST E1 P");	  
+	  drawSyst(canv_p, histVectPPClones[0], reducedSystSumPP, histVectPPClones[0]->GetBinLowEdge(1), histVectPPClones[0]->GetBinLowEdge(histVectPPClones[0]->GetNbinsX()+1));
+	  histVectPPClones[0]->DrawCopy("HIST E1 P SAME");	  
+	  
+
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    histVectPbPbClones[cI]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centBinsStr[cI], false)));
+	    histVectPbPbClones[cI]->SetLineColor(kPalette.getColor(getColorPosFromCent(centBinsStr[cI], false)));
+	    histVectPbPbClones[cI]->SetMarkerStyle(getStyleFromCent(centBinsStr[cI], false));
+	    histVectPbPbClones[cI]->SetMarkerSize(1);
+	    histVectPbPbClones[cI]->DrawCopy("HIST E1 P SAME");
+	    drawSyst(canv_p, histVectPbPbClones[cI], reducedSystSumPbPb[cI], histVectPbPbClones[cI]->GetBinLowEdge(1), histVectPbPbClones[cI]->GetBinLowEdge(histVectPbPbClones[cI]->GetNbinsX()+1));
+	    histVectPbPbClones[cI]->DrawCopy("HIST E1 P SAME");
+	  }
+	  
+
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
 	    delete histVectPPClones[sI];
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
-	      delete histVectPbPbClones[sI + cI*nSyst];
+	      delete histVectPbPbClones[cI + sI*nCentBins];
 	    }
 	  }
 	  histVectPPClones.clear();
 	  histVectPbPbClones.clear();
-	  */
+		
+	  canv_p->cd();
+	  gPad->SetLogy();
+	  const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
+	  canv_p->SaveAs(saveName.c_str());
+	  delete canv_p;
 	}
       }
     }

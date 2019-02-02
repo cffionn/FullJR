@@ -1,5 +1,6 @@
 CXX = g++
-CXXFLAGS = -Wall -Werror -O2 -Wextra -Wno-unused-local-typedefs -Wno-deprecated-declarations -std=c++11 -g
+#O3 for max optimization (go to 0 for debug)
+CXXFLAGS = -Wall -Werror -O0 -Wextra -Wno-unused-local-typedefs -Wno-deprecated-declarations -std=c++11 -g
 ifeq "$(GCCVERSION)" "1"
   CXXFLAGS += -Wno-error=misleading-indentation
 endif
@@ -20,7 +21,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe #bin/plotUnfoldedRAA.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -51,6 +52,12 @@ bin/plotJetResponse.exe: src/plotJetResponse.C
 
 bin/plotUnfoldedSpectra.exe: src/plotUnfoldedSpectra.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedSpectra.exe src/plotUnfoldedSpectra.C
+
+bin/plotUnfoldedAll.exe: src/plotUnfoldedAll.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedAll.exe src/plotUnfoldedAll.C
+
+bin/plotUnfoldedRAA.exe: src/plotUnfoldedRAA.C
+	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedRAA.exe src/plotUnfoldedRAA.C
 
 bin/makeMuonFakeCheck.exe: src/makeMuonFakeCheck.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeMuonFakeCheck.exe src/makeMuonFakeCheck.C
@@ -84,13 +91,14 @@ bin/checkFileNClassContents.exe: src/checkFileNClassContents.C
 
 clean:
 	rm -f ./*~
-	rm -f src/*~
-	rm -f include/*~
-	rm -f configs/*~
 	rm -f ./#*#
-	rm -f src/#*#
-	rm -f include/#*#
-	rm -f configs/#*#
+	rm -f bash/*~
+	rm -f bash/#*#
 	rm -f bin/*.exe
 	rm -rf bin
-	
+	rm -f configs/*~
+	rm -f configs/#*#
+	rm -f include/*~
+	rm -f include/#*#
+	rm -f src/*~
+	rm -f src/#*#
