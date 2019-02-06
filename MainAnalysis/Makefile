@@ -36,58 +36,58 @@ checkFullJRDir:
 	@$(CHECK_FULLJRDIR)
 
 bin/makeRawRAATree.exe: src/makeRawRAATree.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe src/makeRawRAATree.C 
+	$(CXX) $(CXXFLAGS)  src/makeRawRAATree.C  $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe
 
 bin/makeJetResponseTree.exe: src/makeJetResponseTree.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe src/makeJetResponseTree.C 
+	$(CXX) $(CXXFLAGS) src/makeJetResponseTree.C  $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe
 
 bin/makeDeriveFlatResponse.exe: src/makeDeriveFlatResponse.C
 	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeDeriveFlatResponse.exe src/makeDeriveFlatResponse.C
 
 bin/validateJetResponse.exe: src/validateJetResponse.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/validateJetResponse.exe src/validateJetResponse.C
+	$(CXX) $(CXXFLAGS) src/validateJetResponse.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/validateJetResponse.exe
 
 bin/plotJetResponse.exe: src/plotJetResponse.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotJetResponse.exe src/plotJetResponse.C
+	$(CXX) $(CXXFLAGS) src/plotJetResponse.C $(ROOT) $(INCLUDE) -o bin/plotJetResponse.exe
 
 bin/plotUnfoldedSpectra.exe: src/plotUnfoldedSpectra.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedSpectra.exe src/plotUnfoldedSpectra.C
+	$(CXX) $(CXXFLAGS) src/plotUnfoldedSpectra.C $(ROOT) $(INCLUDE) -o bin/plotUnfoldedSpectra.exe
 
 bin/plotUnfoldedAll.exe: src/plotUnfoldedAll.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedAll.exe src/plotUnfoldedAll.C
+	$(CXX) $(CXXFLAGS) src/plotUnfoldedAll.C $(ROOT) $(INCLUDE) -o bin/plotUnfoldedAll.exe
 
 bin/plotUnfoldedRAA.exe: src/plotUnfoldedRAA.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/plotUnfoldedRAA.exe src/plotUnfoldedRAA.C
+	$(CXX) $(CXXFLAGS) src/plotUnfoldedRAA.C $(ROOT) $(INCLUDE) -o bin/plotUnfoldedRAA.exe
 
 bin/makeMuonFakeCheck.exe: src/makeMuonFakeCheck.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeMuonFakeCheck.exe src/makeMuonFakeCheck.C
+	$(CXX) $(CXXFLAGS) src/makeMuonFakeCheck.C $(ROOT) $(INCLUDE) -o bin/makeMuonFakeCheck.exe
 
 bin/checkGoodJetBadJetPF.exe: src/checkGoodJetBadJetPF.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkGoodJetBadJetPF.exe src/checkGoodJetBadJetPF.C
+	$(CXX) $(CXXFLAGS) src/checkGoodJetBadJetPF.C $(ROOT) $(INCLUDE) -o bin/checkGoodJetBadJetPF.exe
 
 bin/checkGenHydSpectra.exe: src/checkGenHydSpectra.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkGenHydSpectra.exe src/checkGenHydSpectra.C
+	$(CXX) $(CXXFLAGS) src/checkGenHydSpectra.C $(ROOT) $(INCLUDE) -o bin/checkGenHydSpectra.exe
 
 bin/processRawData.exe: src/processRawData.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/processRawData.exe src/processRawData.C
+	$(CXX) $(CXXFLAGS) src/processRawData.C $(ROOT) $(INCLUDE) -o bin/processRawData.exe
 
 bin/unfoldRawData.exe: src/unfoldRawData.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldRawData.exe src/unfoldRawData.C
+	$(CXX) $(CXXFLAGS) src/unfoldRawData.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldRawData.exe
 
 bin/deriveDijetWeights.exe: src/deriveDijetWeights.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe src/deriveDijetWeights.C
+	$(CXX) $(CXXFLAGS) src/deriveDijetWeights.C $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe
 
 bin/checkUnfoldTermination.exe: src/checkUnfoldTermination.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkUnfoldTermination.exe src/checkUnfoldTermination.C
+	$(CXX) $(CXXFLAGS) src/checkUnfoldTermination.C $(ROOT) $(INCLUDE) -o bin/checkUnfoldTermination.exe
 
 bin/combineFiles.exe: src/combineFiles.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/combineFiles.exe src/combineFiles.C
+	$(CXX) $(CXXFLAGS) src/combineFiles.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/combineFiles.exe
 
 bin/testRooUnfResUnderflow.exe: src/testRooUnfResUnderflow.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/testRooUnfResUnderflow.exe src/testRooUnfResUnderflow.C
+	$(CXX) $(CXXFLAGS) src/testRooUnfResUnderflow.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/testRooUnfResUnderflow.exe
 
 bin/checkFileNClassContents.exe: src/checkFileNClassContents.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/checkFileNClassContents.exe src/checkFileNClassContents.C
+	$(CXX) $(CXXFLAGS) src/checkFileNClassContents.C $(ROOT) $(INCLUDE) -o bin/checkFileNClassContents.exe
 
 clean:
 	rm -f ./*~
