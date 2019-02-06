@@ -36,13 +36,13 @@ checkFullJRDir:
 	@$(CHECK_FULLJRDIR)
 
 bin/makeRawRAATree.exe: src/makeRawRAATree.C
-	$(CXX) $(CXXFLAGS)  src/makeRawRAATree.C  $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe
+	$(CXX) $(CXXFLAGS) src/makeRawRAATree.C $(ROOT) $(INCLUDE) -o bin/makeRawRAATree.exe
 
 bin/makeJetResponseTree.exe: src/makeJetResponseTree.C
-	$(CXX) $(CXXFLAGS) src/makeJetResponseTree.C  $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe
+	$(CXX) $(CXXFLAGS) src/makeJetResponseTree.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/makeJetResponseTree.exe
 
 bin/makeDeriveFlatResponse.exe: src/makeDeriveFlatResponse.C
-	$(CXX) $(CXXFLAGS) $(ROOT) $(INCLUDE) -o bin/makeDeriveFlatResponse.exe src/makeDeriveFlatResponse.C
+	$(CXX) $(CXXFLAGS) src/makeDeriveFlatResponse.C $(ROOT) $(INCLUDE) -o bin/makeDeriveFlatResponse.exe
 
 bin/validateJetResponse.exe: src/validateJetResponse.C
 	$(CXX) $(CXXFLAGS) src/validateJetResponse.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/validateJetResponse.exe
