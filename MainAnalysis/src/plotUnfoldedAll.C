@@ -10,6 +10,8 @@
 #include "TDatime.h"
 #include "TFile.h"
 #include "TKey.h"
+#include "TLatex.h"
+#include "TLegend.h"
 #include "TMath.h"
 #include "TPad.h"
 #include "TStyle.h"
@@ -22,6 +24,7 @@
 
 //Non-Local dependencies
 #include "Utility/include/checkMakeDir.h"
+#include "Utility/include/histDefUtility.h"
 #include "Utility/include/kirchnerPalette.h"
 #include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/vanGoghPalette.h"
@@ -65,10 +68,10 @@ int posInStrVectExact(std::string inStr, std::vector<std::string> inVect)
 
 void defineCanv(TCanvas* canv_p)
 {
-  canv_p->SetTopMargin(0.14);
-  canv_p->SetRightMargin(0.14);
-  canv_p->SetLeftMargin(0.14);
-  canv_p->SetBottomMargin(0.14);
+  canv_p->SetTopMargin(0.08);
+  canv_p->SetRightMargin(0.01);
+  canv_p->SetLeftMargin(0.18);
+  canv_p->SetBottomMargin(0.1);
 
   return;
 }
@@ -229,7 +232,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 
   Int_t nSystInFile = -1;
   std::vector<std::string> systStrInFile;
-  Int_t nSystOutFile = 4;
+  //  Int_t nSystOutFile = 4;
   std::vector<std::string> systStrOutFile = {"LumiUp", "LumiDown", "TAAUp", "TAADown"};
 
   std::map<std::string, std::string> systToCombo = {{"JECUpMC", "JECMC"}, {"JECDownMC", "JECMC"}, {"JECUpData", "JECData"}, {"JECDownData", "JECData"}, {"JECUpUE", "JECUE"}, {"JECDownUE", "JECUE"}, {"PriorUp1PowerPthat", "Prior1PowerPthat"}, {"PriorDown1PowerPthat", "Prior1PowerPthat"}, {"LumiUp", "Lumi"}, {"LumiDown", "Lumi"}, {"TAAUp", "TAA"}, {"TAADown", "TAA"}};
@@ -334,6 +337,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   else if(!rReader.CheckRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp)) return 1;
   else std::cout << " All bins good!" << std::endl;
 
+  const Int_t nXVals = 5;
+  const Int_t xVals[nXVals] = {200, 400, 600, 800, 1000};
+  
   const Double_t minValSmallR = 200;
   const Double_t minValLargeR = 300;
   const Double_t maxValSmallR = 1000;
@@ -630,9 +636,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     histKeyToBestBayesKeyPP[idKey] = idKeyBB;
   }
   
-  const UInt_t nDummyStr = 256;
-  char dummyStr[nDummyStr];
-  std::cin.get(dummyStr, nDummyStr);
+  //  const UInt_t nDummyStr = 256;
+  //  char dummyStr[nDummyStr];
+  //  std::cin.get(dummyStr, nDummyStr);
 
   std::cout << "Traditional Spectra" << std::endl;
   for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
@@ -660,8 +666,21 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	for(ULong64_t aI = 0; aI < (ULong64_t)nJtAbsEtaBins; ++aI){
 	  if(!goodJtAbsEtaBins[aI]) continue;	 
 
-	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);	  
+	  TLatex* label_p = new TLatex();
+	  //	  label_p->SetNDC();
+	  label_p->SetTextFont(43);
+	  label_p->SetTextSize(16);
+	  
+	  TLegend* leg_p = new TLegend(0.25, 0.12, 0.4, 0.35);
+	  leg_p->SetBorderSize(0);
+	  leg_p->SetFillColor(0);
+	  leg_p->SetFillStyle(0);
+	  leg_p->SetTextFont(43);
+	  leg_p->SetTextSize(16);
 
+	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);	  
+	  defineCanv(canv_p);
+	  
 	  std::vector<TH1D*> histVectPbPbClones;
 	  histVectPbPbClones.reserve(nSystInFile*nCentBins);
 	  std::vector<TH1D*> histVectPPClones;	  
@@ -673,7 +692,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    ULong64_t idKeyBB = histKeyToBestBayesKeyPP[idKey];
 	    ULong64_t vectPos = keyToVectPosPP[idKeyBB];
 	    std::string tempName = std::string(histVectPP[vectPos]->GetName()) + "_Clone";
-	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";p_{T} GeV/c;", nBins, generalPtBins));
+	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];#frac{1}{#LTTAA#GT} #frac{1}{N_{evt}} #frac{d^{2}N_{Jet}}{dp_{T}d#eta} [nb/GeV]", nBins, generalPtBins));
 	    if(!macroHistToSubsetHist(histVectPP[vectPos], histVectPPClones[sI])) return 1;
 
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
@@ -750,7 +769,6 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      }
 	    }
 	  }
-
 	  
 	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
 	    std::cout << "CentBins: " << centBinsStr[cI] << std::endl;
@@ -798,8 +816,11 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    if(tempMin < min) min = tempMin;
 	    if(tempMax > max) max = tempMax;
 	  }
-	  max *= 10.;
-	  min /= 10.;
+	  //	  max *= 10.;
+	  //	  min /= 10.;
+	  max = getNearestFactor10Up(max, 1);
+	  min = getNearestFactor10Down(min, 2);
+
 	  histVectPPClones[0]->SetMaximum(max);
 	  histVectPPClones[0]->SetMinimum(min);
 	  
@@ -808,7 +829,15 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	  histVectPPClones[0]->SetLineColor(kPalette.getColor(getColorPosFromCent("", true)));
 	  histVectPPClones[0]->SetMarkerStyle(getStyleFromCent("", true));
 	  histVectPPClones[0]->SetMarkerSize(1);
+	  centerTitles(histVectPPClones[0]);
+
+	  histVectPPClones[0]->GetXaxis()->SetTitleOffset(histVectPPClones[0]->GetXaxis()->GetTitleOffset()*1.3);
+	  histVectPPClones[0]->GetYaxis()->SetTitleOffset(2.2);
+	  histVectPPClones[0]->GetXaxis()->SetLabelColor(0);
+	  
 	  histVectPPClones[0]->DrawCopy("HIST E1 P");	  
+	  gPad->SetLogx();
+	  
 	  drawSyst(canv_p, histVectPPClones[0], reducedSystSumPP, histVectPPClones[0]->GetBinLowEdge(1), histVectPPClones[0]->GetBinLowEdge(histVectPPClones[0]->GetNbinsX()+1));
 	  histVectPPClones[0]->DrawCopy("HIST E1 P SAME");	  
 	  
@@ -823,7 +852,42 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    histVectPbPbClones[cI]->DrawCopy("HIST E1 P SAME");
 	  }
 	  
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    ULong64_t pos = nCentBins - 1 - cI;
+	    std::string centStr = std::to_string(centBinsLow[pos]) + "-" + std::to_string(centBinsHi[pos]) + "%";
+	    leg_p->AddEntry(histVectPbPbClones[pos], (centStr + " #times 10^{" + std::to_string((Int_t)pos+1) + "}").c_str(), "F P L");
+	  }
 
+	  leg_p->AddEntry(histVectPPClones[0], "pp #times 10^{0}", "F P L");
+		
+	  canv_p->cd();
+	  gPad->SetLogy();
+	  const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
+
+
+	  Double_t firstXVal = -1;
+	  Double_t secondXVal = -1;
+	  for(Int_t xI = 0; xI < nXVals; ++xI){
+	    if(xVals[xI] < histVectPPClones[0]->GetBinLowEdge(1)) continue;
+	    if(xVals[xI] >= histVectPPClones[0]->GetBinLowEdge(histVectPPClones[0]->GetNbinsX()+1)) continue;
+
+	    if(firstXVal < 0) firstXVal = xVals[xI];
+	    else if(secondXVal < 0) secondXVal = xVals[xI];
+	    label_p->DrawLatex(xVals[xI], min/3., std::to_string(xVals[xI]).c_str());
+	  }
+	  label_p->DrawLatex(firstXVal + 10, max/5., "#bf{CMS}");
+	  label_p->DrawLatex(firstXVal + 5, max*2., "#sqrt{s_{NN}} = 5.02 TeV, PbPb 404 #mub^{-1}, pp 27.3 pb^{-1}");
+	  label_p->DrawLatex(secondXVal, max/5., "anti-k_{t} R=0.4 jets");
+	  label_p->DrawLatex(secondXVal, max/25., "|#eta_{jets}| #LT 2");
+	  
+	  leg_p->Draw("SAME");
+	  gPad->RedrawAxis();
+	  canv_p->SaveAs(saveName.c_str());
+	  delete canv_p;
+	  delete leg_p;
+
+	  delete label_p;
+	  
 	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
 	    delete histVectPPClones[sI];
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
@@ -832,12 +896,6 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	  }
 	  histVectPPClones.clear();
 	  histVectPbPbClones.clear();
-		
-	  canv_p->cd();
-	  gPad->SetLogy();
-	  const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
-	  canv_p->SaveAs(saveName.c_str());
-	  delete canv_p;
 	}
       }
     }
