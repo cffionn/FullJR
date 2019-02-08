@@ -415,7 +415,7 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
 
   writingWatch.stop();
   
-  std::cout << "Write time: " << writingWatch.total() << std::endl;
+  std::cout << "Write time: " << writingWatch.totalWall() << std::endl;
 
   prevProp.SetNHistDim(combinedHistTag.size());
   prevProp.SetHistTag(combinedHistTag);
@@ -437,7 +437,7 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   globalWatch.stop();
 
   std::cout << "Job complete." << std::endl;
-  std::cout << "Total time: " << globalWatch.total() << std::endl;
+  std::cout << "Total time: " << globalWatch.totalWall() << std::endl;
 
   return 0;
 }

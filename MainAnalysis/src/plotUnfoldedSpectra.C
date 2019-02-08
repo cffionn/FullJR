@@ -192,8 +192,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   checkMakeDir(dirStr);
 
   toPPFile.stop();
-  total += toPPFile.total();
-  std::cout << "To PP File time: " << toPPFile.total() << "/" << total << std::endl;
+  total += toPPFile.totalWall();
+  std::cout << "To PP File time: " << toPPFile.totalWall() << "/" << total << std::endl;
   ppFile.start();
 
   TFile* inFilePP_p = new TFile(inFileNamePP.c_str(), "READ");
@@ -217,8 +217,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   ppFile.stop();
-  total += ppFile.total();
-  std::cout << "PP File time: " << ppFile.total() << "/" << total << std::endl;
+  total += ppFile.totalWall();
+  std::cout << "PP File time: " << ppFile.totalWall() << "/" << total << std::endl;
   pbpbFile.start();
 
   TFile* inFilePbPb_p = new TFile(inFileNamePbPb.c_str(), "READ");
@@ -240,8 +240,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   pbpbFile.stop();
-  total += pbpbFile.total();
-  std::cout << "PBPB File time: " << pbpbFile.total() << "/" << total << std::endl;
+  total += pbpbFile.totalWall();
+  std::cout << "PBPB File time: " << pbpbFile.totalWall() << "/" << total << std::endl;
   comparisonOfFiles.start();
 
   if(!cutPropPP.GetIsPP() || cutPropPbPb.GetIsPP() || !cutPropPP.CheckPropagatorsMatch(cutPropPbPb, true, false)){
@@ -279,8 +279,8 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   if(!rReader.CheckRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp)) return 1;
 
   comparisonOfFiles.stop();
-  total += comparisonOfFiles.total();
-  std::cout << "Comp File time: " << comparisonOfFiles.total() << "/" << total << std::endl;
+  total += comparisonOfFiles.totalWall();
+  std::cout << "Comp File time: " << comparisonOfFiles.totalWall() << "/" << total << std::endl;
 
   Int_t minForForLoop = 10000000;
   if(doLocalDebug || doGlobalDebug) minForForLoop = 1;
@@ -690,7 +690,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     histCloneLocal.stop();
     histClone.stop();
 
-    std::cout << "  Local histgrab, clone times: "<< histGrabLocal.total() << ", " << histCloneLocal.total() << std::endl;
+    std::cout << "  Local histgrab, clone times: "<< histGrabLocal.totalWall() << ", " << histCloneLocal.totalWall() << std::endl;
   }
 
   
@@ -830,14 +830,14 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     histCloneLocal.stop();
     histClone.stop();
 
-    std::cout << "  Local histgrab, clone times: " << histGrabLocal.total() << ", " << histCloneLocal.total() << std::endl;
+    std::cout << "  Local histgrab, clone times: " << histGrabLocal.totalWall() << ", " << histCloneLocal.totalWall() << std::endl;
   }
 
   
   histGrabTot.stop();
-  std::cout << "Total histGrabTot: " << histGrabTot.total() << std::endl;
-  std::cout << "  just grabbing: " << histGrab.total() << std::endl;
-  std::cout << "  just cloning: " << histClone.total() << std::endl;
+  std::cout << "Total histGrabTot: " << histGrabTot.totalWall() << std::endl;
+  std::cout << "  just grabbing: " << histGrab.totalWall() << std::endl;
+  std::cout << "  just cloning: " << histClone.totalWall() << std::endl;
 
 
   if(doLocalDebug || doGlobalDebug){

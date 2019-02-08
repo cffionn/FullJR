@@ -98,5 +98,30 @@ int getRVal(const std::string inStr)
   return rVal;
 }
 
+std::string getRValStr(const std::string inStr)
+{
+  std::string rVal = "999";
+  if(inStr.find("ak1PF") != std::string::npos) rVal = "0.1";
+  else if(inStr.find("ak2PF") != std::string::npos) rVal = "0.2";
+  else if(inStr.find("ak3PF") != std::string::npos) rVal = "0.3";
+  else if(inStr.find("ak4PF") != std::string::npos) rVal = "0.4";
+  else if(inStr.find("ak5PF") != std::string::npos) rVal = "0.5";
+  else if(inStr.find("ak6PF") != std::string::npos) rVal = "0.6";
+  else if(inStr.find("ak8PF") != std::string::npos) rVal = "0.8";
+  else if(inStr.find("ak10PF") != std::string::npos) rVal = "1.0";
+  else if(inStr.find("akCs1P") != std::string::npos) rVal = "0.1";
+  else if(inStr.find("akCs2P") != std::string::npos) rVal = "0.2";
+  else if(inStr.find("akCs3P") != std::string::npos) rVal = "0.3";
+  else if(inStr.find("akCs4P") != std::string::npos) rVal = "0.4";
+  else if(inStr.find("akCs5P") != std::string::npos) rVal = "0.5";
+  else if(inStr.find("akCs6P") != std::string::npos) rVal = "0.6";
+  else if(inStr.find("akCs8P") != std::string::npos) rVal = "0.8";
+  else if(inStr.find("akCs10P") != std::string::npos) rVal = "1.0";
+  else if(inStr.find("akPu3P") != std::string::npos) rVal = "0.3";
+  else if(inStr.find("akPu4P") != std::string::npos) rVal = "0.4";
+
+  return rVal;
+}
+
 
 #endif

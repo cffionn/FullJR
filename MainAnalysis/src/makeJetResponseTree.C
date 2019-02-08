@@ -830,7 +830,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       if(nEntriesToProcess >= 50000 && entry%printInterval == 0){
 	std::cout << " Entry: " << entry << "/" << nEntriesToProcess << std::endl;
 	subEntryWatch.stop();
-	std::cout << "  Timing: " << subEntryWatch.total() << std::endl;
+	std::cout << "  Timing: " << subEntryWatch.totalWall() << std::endl;
 	subEntryWatch.clear();
 	subEntryWatch.start();
       }
@@ -1342,24 +1342,24 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   delete randGen_p;
 
   totalRunWatch.stop();
-  const double fileLoopWatchTotal = fileLoopWatch.total();
-  const double totalRunWatchTotal = totalRunWatch.total();
-  const double writeLoopWatchTotal = writeLoopWatch.total();
-  const double deleteLoopWatchTotal = deleteLoopWatch.total();
-  const double nonFileLoopTotal = totalRunWatch.total() - fileLoopWatch.total(); 
+  const double fileLoopWatchTotal = fileLoopWatch.totalWall();
+  const double totalRunWatchTotal = totalRunWatch.totalWall();
+  const double writeLoopWatchTotal = writeLoopWatch.totalWall();
+  const double deleteLoopWatchTotal = deleteLoopWatch.totalWall();
+  const double nonFileLoopTotal = totalRunWatch.totalWall() - fileLoopWatch.totalWall(); 
   const double nJetTrees = responseTrees.size();
 
-  std::cout << "File loop watch: " << fileLoopWatch.total() << std::endl;
+  std::cout << "File loop watch: " << fileLoopWatch.totalWall() << std::endl;
   std::cout << " Per event: " << fileLoopWatchTotal/nFileLoopEvt << std::endl;
   std::cout << " Per jetTree: " << fileLoopWatchTotal/nJetTrees << std::endl;
   std::cout << " Per event x jetTree: " << fileLoopWatchTotal/(nJetTrees*nFileLoopEvt) << std::endl;
 
-  std::cout << "Total run watch: " << totalRunWatch.total() << std::endl;
+  std::cout << "Total run watch: " << totalRunWatch.totalWall() << std::endl;
   std::cout << " File loop fraction: " << fileLoopWatchTotal/totalRunWatchTotal << std::endl;
-  std::cout << " Non-file loop num: " << totalRunWatch.total() - fileLoopWatch.total() << std::endl;
-  std::cout << " Write loop num: " << writeLoopWatch.total() << std::endl;
+  std::cout << " Non-file loop num: " << totalRunWatch.totalWall() - fileLoopWatch.totalWall() << std::endl;
+  std::cout << " Write loop num: " << writeLoopWatch.totalWall() << std::endl;
   std::cout << "  Fraction of non-file loop: " << writeLoopWatchTotal/nonFileLoopTotal << std::endl;
-  std::cout << " Delete loop num: " << deleteLoopWatch.total() << std::endl;
+  std::cout << " Delete loop num: " << deleteLoopWatch.totalWall() << std::endl;
   std::cout << "  Fraction of non-file loop: " << deleteLoopWatchTotal/nonFileLoopTotal << std::endl;
 
   return 0;

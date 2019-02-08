@@ -172,6 +172,23 @@ Double_t getHistMinGTZero(TH1D* hist_p)
 }
 
 
+void createRAA(TH1D* pbpbHist_p, TH1D* ppHist_p)
+{
+  for(Int_t bIX = 0; bIX < pbpbHist_p->GetNbinsX(); ++bIX){
+    Double_t val = pbpbHist_p->GetBinContent(bIX+1)/ppHist_p->GetBinContent(bIX+1);
+    Double_t relErr1 = pbpbHist_p->GetBinError(bIX+1)/pbpbHist_p->GetBinContent(bIX+1);
+    Double_t relErr2 = ppHist_p->GetBinError(bIX+1)/ppHist_p->GetBinContent(bIX+1);
+    Double_t relErr = TMath::Sqrt(relErr1*relErr1 + relErr2*relErr2);
+    Double_t err = val*relErr;
+
+    pbpbHist_p->SetBinContent(bIX+1, val);
+    pbpbHist_p->SetBinError(bIX+1, err);
+  }
+  
+  return;
+}
+
+
 int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileNamePbPb)
 {
   TDatime* date = new TDatime();
@@ -188,6 +205,14 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   const Double_t lumiFactor = getLumiFactor();
   const Double_t nMBEvents = getNMBEvents();
 
+  checkMakeDir("output");
+  checkMakeDir("output/" + dateStr);
+  std::string outFileName = "output/" + dateStr + "/plotUnfoldedAll_";
+  if(checkFile(outFileName + dateStr + ".root")) outFileName = outFileName + "UPDATED_" + dateStr + ".root";
+  else outFileName = outFileName + dateStr + ".root";
+
+  TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE"); 
+  
   const Int_t nFiles = 2;
   TFile* inFile_p[nFiles];
   std::vector<bool> isPbPb = {true, false};
@@ -238,6 +263,8 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   std::map<std::string, std::string> systToCombo = {{"JECUpMC", "JECMC"}, {"JECDownMC", "JECMC"}, {"JECUpData", "JECData"}, {"JECDownData", "JECData"}, {"JECUpUE", "JECUE"}, {"JECDownUE", "JECUE"}, {"PriorUp1PowerPthat", "Prior1PowerPthat"}, {"PriorDown1PowerPthat", "Prior1PowerPthat"}, {"LumiUp", "Lumi"}, {"LumiDown", "Lumi"}, {"TAAUp", "TAA"}, {"TAADown", "TAA"}};
   std::vector<std::string> reducedSystStr;
 
+  std::vector<std::string> corrSystStr = {"JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
+  
   Int_t nBayes = -1;
 
   std::vector<int> bayesVal;
@@ -644,6 +671,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
     std::cout << "Jet Algo: " << jtAlgosPbPb[jI] << "/" << jtAlgosPP[jI] << std::endl;
     const Int_t rVal = getRVal(dirListPbPb.at(jI));
+    const std::string rValStr = getRValStr(dirListPbPb.at(jI));
     const bool isSmallR = rReader.GetIsSmallR(rVal);
 
     Int_t nBinsTemp = -1;
@@ -692,7 +720,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    ULong64_t idKeyBB = histKeyToBestBayesKeyPP[idKey];
 	    ULong64_t vectPos = keyToVectPosPP[idKeyBB];
 	    std::string tempName = std::string(histVectPP[vectPos]->GetName()) + "_Clone";
-	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];#frac{1}{#LTTAA#GT} #frac{1}{N_{evt}} #frac{d^{2}N_{Jet}}{dp_{T}d#eta} [nb/GeV]", nBins, generalPtBins));
+	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];#frac{1}{#LTTAA#GT} #frac{1}{N_{evt}} #frac{d^{2}N_{Jet}}{dp_{T}d#eta}  and  #frac{d^{2}#sigma_{Jet}}{dp_{T}d#eta} [nb/GeV]", nBins, generalPtBins));
 	    if(!macroHistToSubsetHist(histVectPP[vectPos], histVectPPClones[sI])) return 1;
 
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
@@ -700,7 +728,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      idKeyBB = histKeyToBestBayesKeyPbPb[idKey];
 	      vectPos = keyToVectPosPbPb[idKeyBB];
 	      tempName = std::string(histVectPbPb[vectPos]->GetName()) + "_Clone";
-	      histVectPbPbClones.push_back(new TH1D(tempName.c_str(), ";p_{T} GeV/c;", nBins, generalPtBins));
+	      histVectPbPbClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];#frac{1}{#LTTAA#GT} #frac{1}{N_{evt}} #frac{d^{2}N_{Jet}}{dp_{T}d#eta}  and  #frac{d^{2}#sigma_{Jet}}{dp_{T}d#eta} [nb/GeV]", nBins, generalPtBins));
 	      if(!macroHistToSubsetHist(histVectPbPb[vectPos], histVectPbPbClones[cI + sI*nCentBins])) return 1;
 	    }
 	  }
@@ -710,6 +738,24 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    divHistByWidth(histVectPPClones[sI]);
 	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
 	      divHistByWidth(histVectPbPbClones[cI + sI*nCentBins]);
+	    }
+	  }
+
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){	  
+	    scaleHist(histVectPPClones[sI], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	    scaleHist(histVectPPClones[sI], 1./(lumiFactor));
+	  }
+
+	  Double_t scaleFactor = 1.;
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    Double_t tempTAAFactor = getTAAScaleFactor(centBinsStr[cI]);
+	    scaleFactor *= 10.;
+	    
+	    for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./(nMBEvents*tempTAAFactor));
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 100./centBinsWidth[cI]);
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], scaleFactor);
 	    }
 	  }
 
@@ -779,32 +825,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      }	    
 	    }
 	  }
-
-	  scaleHist(histVectPPClones[0], 1./(2.*jtAbsEtaBinsWidth[aI]));
-	  scaleVect(&reducedSystSumPP, 1./(2.*jtAbsEtaBinsWidth[aI]));
-
-	  scaleHist(histVectPPClones[0], 1./(lumiFactor));
-	  scaleVect(&reducedSystSumPP, 1./(lumiFactor));
-
-	  //Rescaling for histogram clarity
-	  Double_t scaleFactor = 1.;
-	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
-	    Double_t tempTAAFactor = getTAAScaleFactor(centBinsStr[cI]);
-	    
-	    scaleFactor *= 10.;
-
-	    scaleHist(histVectPbPbClones[cI], 1./(tempTAAFactor*nMBEvents));
-	    scaleVect(&(reducedSystSumPbPb[cI]), 1./(tempTAAFactor*nMBEvents));
-
-	    scaleHist(histVectPbPbClones[cI], 1./(2.*jtAbsEtaBinsWidth[aI]));
-	    scaleVect(&(reducedSystSumPbPb[cI]), 1./(2.*jtAbsEtaBinsWidth[aI]));
-
-	    scaleHist(histVectPbPbClones[cI], 100./centBinsWidth[cI]);
-	    scaleVect(&(reducedSystSumPbPb[cI]), 100./centBinsWidth[cI]);
-
-	    scaleHist(histVectPbPbClones[cI], scaleFactor);
-	    scaleVect(&(reducedSystSumPbPb[cI]), scaleFactor);
-	  }
+	  
 
 	  //Grab Max and Min vals...	  
 	  Double_t min = getHistMinGTZero(histVectPPClones[0]);
@@ -816,8 +837,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    if(tempMin < min) min = tempMin;
 	    if(tempMax > max) max = tempMax;
 	  }
-	  //	  max *= 10.;
-	  //	  min /= 10.;
+
 	  max = getNearestFactor10Up(max, 1);
 	  min = getNearestFactor10Down(min, 2);
 
@@ -862,8 +882,6 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		
 	  canv_p->cd();
 	  gPad->SetLogy();
-	  const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
-
 
 	  Double_t firstXVal = -1;
 	  Double_t secondXVal = -1;
@@ -877,16 +895,35 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	  }
 	  label_p->DrawLatex(firstXVal + 10, max/5., "#bf{CMS}");
 	  label_p->DrawLatex(firstXVal + 5, max*2., "#sqrt{s_{NN}} = 5.02 TeV, PbPb 404 #mub^{-1}, pp 27.3 pb^{-1}");
-	  label_p->DrawLatex(secondXVal, max/5., "anti-k_{t} R=0.4 jets");
+	  label_p->DrawLatex(secondXVal, max/5., ("anti-k_{t} R=" + rValStr + " jets").c_str());
 	  label_p->DrawLatex(secondXVal, max/25., "|#eta_{jets}| #LT 2");
 	  
 	  leg_p->Draw("SAME");
 	  gPad->RedrawAxis();
+	  const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
 	  canv_p->SaveAs(saveName.c_str());
 	  delete canv_p;
 	  delete leg_p;
 
 	  delete label_p;
+
+	  outFile_p->cd();
+
+	  scaleFactor = 1.;
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    scaleFactor *= 10.;
+	    for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./scaleFactor);
+	    }
+	  }
+	  
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    histVectPPClones[sI]->Write("", TObject::kOverwrite);
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      histVectPbPbClones[cI + sI*nCentBins]->Write("", TObject::kOverwrite);
+	    }
+	  }
+	
 	  
 	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
 	    delete histVectPPClones[sI];
@@ -894,13 +931,271 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      delete histVectPbPbClones[cI + sI*nCentBins];
 	    }
 	  }
+
 	  histVectPPClones.clear();
 	  histVectPbPbClones.clear();
 	}
       }
     }
   }  
+  std::cout << "End Traditional Spectra" << std::endl;
 
+  std::cout << "Traditional RAA" << std::endl;
+  for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
+    std::cout << "Jet Algo: " << jtAlgosPbPb[jI] << "/" << jtAlgosPP[jI] << std::endl;
+    const Int_t rVal = getRVal(dirListPbPb.at(jI));
+    const std::string rValStr = getRValStr(dirListPbPb.at(jI));
+    const bool isSmallR = rReader.GetIsSmallR(rVal);
+    
+    Int_t nBinsTemp = -1;
+    if(isSmallR){
+      nBinsTemp = genJtPtBinsSmallR.size()-1;
+      setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtBinsSmallR);
+    }
+    else{
+      nBinsTemp = genJtPtBinsLargeR.size()-1;
+      setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtBinsLargeR);
+    }
+    const Int_t nBins = nBinsTemp;
+
+    for(ULong64_t idI = 0; idI < (ULong64_t)nID; ++idI){
+      if(!goodID[idI]) continue;
+
+      for(ULong64_t rI = 0; rI < (ULong64_t)nResponseMod; ++rI){
+	if(!goodResponseMod[rI]) continue;
+
+	for(ULong64_t aI = 0; aI < (ULong64_t)nJtAbsEtaBins; ++aI){
+	  if(!goodJtAbsEtaBins[aI]) continue;	 
+
+	  TLatex* label_p = new TLatex();
+	  //	  label_p->SetNDC();
+	  label_p->SetTextFont(43);
+	  label_p->SetTextSize(16);
+	  
+	  TLegend* leg_p = new TLegend(0.25, 0.12, 0.4, 0.35);
+	  leg_p->SetBorderSize(0);
+	  leg_p->SetFillColor(0);
+	  leg_p->SetFillStyle(0);
+	  leg_p->SetTextFont(43);
+	  leg_p->SetTextSize(16);
+
+	  TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);	  
+	  defineCanv(canv_p);
+	  
+	  std::vector<TH1D*> histVectPbPbClones;
+	  histVectPbPbClones.reserve(nSystInFile*nCentBins);
+	  std::vector<TH1D*> histVectPPClones;	  
+	  histVectPPClones.reserve(nSystInFile);
+
+	  //Grab the subset histograms
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    ULong64_t idKey = getKey(jI, 0, idI, rI, aI, sI);
+	    ULong64_t idKeyBB = histKeyToBestBayesKeyPP[idKey];
+	    ULong64_t vectPos = keyToVectPosPP[idKeyBB];
+	    std::string tempName = "raa_" + std::string(histVectPP[vectPos]->GetName()) + "_Clone";
+	    histVectPPClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];R_{AA}", nBins, generalPtBins));
+	    if(!macroHistToSubsetHist(histVectPP[vectPos], histVectPPClones[sI])) return 1;
+
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      idKey = getKey(jI, cI, idI, rI, aI, sI);
+	      idKeyBB = histKeyToBestBayesKeyPbPb[idKey];
+	      vectPos = keyToVectPosPbPb[idKeyBB];
+	      tempName = "raa_" + std::string(histVectPbPb[vectPos]->GetName()) + "_Clone";
+	      histVectPbPbClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];R_{AA}", nBins, generalPtBins));
+	      if(!macroHistToSubsetHist(histVectPbPb[vectPos], histVectPbPbClones[cI + sI*nCentBins])) return 1;
+	    }
+	  }
+
+	  //Div by bin widths;
+          for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    divHistByWidth(histVectPPClones[sI]);
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      divHistByWidth(histVectPbPbClones[cI + sI*nCentBins]);
+	    }
+	  }
+
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){	  
+	    scaleHist(histVectPPClones[sI], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	    scaleHist(histVectPPClones[sI], 1./(lumiFactor));
+	  }
+
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    Double_t tempTAAFactor = getTAAScaleFactorNB(centBinsStr[cI]);
+	    
+	    for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./(tempTAAFactor*nMBEvents));
+	      //	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./tempTAAFactor);
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 1./(2.*jtAbsEtaBinsWidth[aI]));
+	      scaleHist(histVectPbPbClones[cI + sI*nCentBins], 100./centBinsWidth[cI]);
+
+	      bool isSystCorr = false;
+	      for(ULong64_t sI2 = 0; sI2 < (ULong64_t)corrSystStr.size(); ++sI2){
+		if(isStrSame(corrSystStr[sI2], systStrInFile[sI])){
+		  isSystCorr = true;
+		  break;
+		}
+	      }
+
+	      if(isSystCorr) createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[sI]);
+	      else createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[0]);
+	    }
+	  }
+	  
+	  
+
+	  //Setup systematics
+	  std::vector<std::vector<Double_t> > reducedSystPbPb;
+	  std::vector<std::vector<Double_t> > reducedSystSumPbPb;
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nReducedSyst; ++sI){
+            for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      if(sI == 0) reducedSystSumPbPb.push_back({});
+	      reducedSystPbPb.push_back({});
+
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		if(sI == 0) reducedSystSumPbPb[cI].push_back(0.0);
+		reducedSystPbPb[cI + sI*nCentBins].push_back(1000000000000.);
+	      }
+	    }
+	  }
+
+	  //Extract systematics
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    ULong64_t pos = 0;
+	    if(systToCombo.count(systStrInFile[sI]) > 0) pos = posInStrVectExact(systToCombo[systStrInFile[sI]], reducedSystStr);
+	    else pos = posInStrVectExact(systStrInFile[sI], reducedSystStr);
+
+            for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		Double_t delta = TMath::Abs(histVectPbPbClones[cI + sI*nCentBins]->GetBinContent(bI+1) - histVectPbPbClones[cI]->GetBinContent(bI+1));
+
+		(reducedSystPbPb[cI + pos*nCentBins])[bI] = TMath::Min((reducedSystPbPb[cI + pos*nCentBins])[bI], delta);
+	      }
+	    }
+	  }
+
+	  for(Int_t bI = 0; bI < nBins; ++bI){	    
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      for(ULong64_t sI = 0; sI < (ULong64_t)reducedSystStr.size(); ++sI){
+		if(reducedSystStr[sI].find("PriorFlat") != std::string::npos) continue;
+		(reducedSystSumPbPb[cI])[bI] = TMath::Sqrt((reducedSystSumPbPb[cI])[bI]*(reducedSystSumPbPb[cI])[bI] + (reducedSystPbPb[cI + sI*nCentBins])[bI]*(reducedSystPbPb[cI + sI*nCentBins])[bI]);
+	      }
+	    }
+	  }
+	  
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    std::cout << "CentBins: " << centBinsStr[cI] << std::endl;
+	    for(ULong64_t sI = 0; sI < (ULong64_t)reducedSystStr.size(); ++sI){
+	      std::cout << " SYST CHECK: " << reducedSystStr[sI] << std::endl;
+	      for(Int_t bI = 0; bI < nBins; ++bI){
+		std::cout <<"  " << bI << ": " << (reducedSystPbPb[cI + nCentBins*sI])[bI] << std::endl;
+	      }	    
+	    }
+	  }
+	  
+
+	  //Grab Max and Min vals...	  
+	  Double_t min = getHistMinGTZero(histVectPbPbClones[0]);
+	  Double_t max = getHistMax(histVectPbPbClones[0]);
+	  for(ULong64_t cI = 1; cI < (ULong64_t)nCentBins; ++cI){
+	    Double_t tempMin = getHistMinGTZero(histVectPbPbClones[cI]);
+	    Double_t tempMax = getHistMax(histVectPbPbClones[cI]);
+
+	    if(tempMin < min) min = tempMin;
+	    if(tempMax > max) max = tempMax;
+	  }
+
+	  max *= 1.5;
+	  min = 0.0;
+
+	  histVectPbPbClones[0]->SetMaximum(max);
+	  histVectPbPbClones[0]->SetMinimum(min);
+	  
+	  canv_p->cd();
+	  histVectPbPbClones[0]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centBinsStr[0], false)));
+	  histVectPbPbClones[0]->SetLineColor(kPalette.getColor(getColorPosFromCent(centBinsStr[0], false)));
+	  histVectPbPbClones[0]->SetMarkerStyle(getStyleFromCent(centBinsStr[0], false));
+	  histVectPbPbClones[0]->SetMarkerSize(1);
+	  centerTitles(histVectPbPbClones[0]);
+
+	  histVectPbPbClones[0]->GetXaxis()->SetTitleOffset(histVectPbPbClones[0]->GetXaxis()->GetTitleOffset()*1.3);
+	  histVectPbPbClones[0]->GetYaxis()->SetTitleOffset(2.2);
+	  histVectPbPbClones[0]->GetXaxis()->SetLabelColor(0);
+
+	  histVectPbPbClones[0]->Print("ALL");
+	  histVectPbPbClones[0]->DrawCopy("HIST E1 P");	  
+	  gPad->SetLogx();
+	  
+	  drawSyst(canv_p, histVectPbPbClones[0], reducedSystSumPbPb[0], histVectPbPbClones[0]->GetBinLowEdge(1), histVectPbPbClones[0]->GetBinLowEdge(histVectPbPbClones[0]->GetNbinsX()+1));
+	  histVectPbPbClones[0]->DrawCopy("HIST E1 P SAME");	  
+	  
+
+	  for(ULong64_t cI = 1; cI < (ULong64_t)nCentBins; ++cI){
+	    histVectPbPbClones[cI]->SetMarkerColor(kPalette.getColor(getColorPosFromCent(centBinsStr[cI], false)));
+	    histVectPbPbClones[cI]->SetLineColor(kPalette.getColor(getColorPosFromCent(centBinsStr[cI], false)));
+	    histVectPbPbClones[cI]->SetMarkerStyle(getStyleFromCent(centBinsStr[cI], false));
+	    histVectPbPbClones[cI]->SetMarkerSize(1);
+	    histVectPbPbClones[cI]->DrawCopy("HIST E1 P SAME");
+	    drawSyst(canv_p, histVectPbPbClones[cI], reducedSystSumPbPb[cI], histVectPbPbClones[cI]->GetBinLowEdge(1), histVectPbPbClones[cI]->GetBinLowEdge(histVectPbPbClones[cI]->GetNbinsX()+1));
+	    histVectPbPbClones[cI]->DrawCopy("HIST E1 P SAME");
+	  }
+	  
+	  for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	    ULong64_t pos = nCentBins - 1 - cI;
+	    std::string centStr = std::to_string(centBinsLow[pos]) + "-" + std::to_string(centBinsHi[pos]) + "%";
+	    leg_p->AddEntry(histVectPbPbClones[pos], centStr.c_str(), "F P L");
+	  }
+		
+	  canv_p->cd();
+
+	  Double_t firstXVal = -1;
+	  Double_t secondXVal = -1;
+	  for(Int_t xI = 0; xI < nXVals; ++xI){
+	    if(xVals[xI] < histVectPPClones[0]->GetBinLowEdge(1)) continue;
+	    if(xVals[xI] >= histVectPPClones[0]->GetBinLowEdge(histVectPPClones[0]->GetNbinsX()+1)) continue;
+
+	    if(firstXVal < 0) firstXVal = xVals[xI];
+	    else if(secondXVal < 0) secondXVal = xVals[xI];
+	    label_p->DrawLatex(xVals[xI], min - (max - min)/25., std::to_string(xVals[xI]).c_str());
+	  }
+	  label_p->DrawLatex(firstXVal + 10, max*9.5/10., "#bf{CMS}");
+	  label_p->DrawLatex(firstXVal + 5, max*10.25/10., "#sqrt{s_{NN}} = 5.02 TeV, PbPb 404 #mub^{-1}, pp 27.3 pb^{-1}");
+	  label_p->DrawLatex(secondXVal, max*9.5/10., ("anti-k_{t} R=" + rValStr + " jets").c_str());
+	  label_p->DrawLatex(secondXVal, max*8.75/10., "|#eta_{jets}| #LT 2");
+	  
+	  leg_p->Draw("SAME");
+	  gPad->RedrawAxis();
+	  const std::string saveName = "pdfDir/" + dateStr + "/raa_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + dateStr+ ".pdf";
+	  canv_p->SaveAs(saveName.c_str());
+	  delete canv_p;
+	  delete leg_p;
+
+	  delete label_p;
+
+	  outFile_p->cd();
+
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      histVectPbPbClones[cI + sI*nCentBins]->Write("", TObject::kOverwrite);
+	    }
+	  }
+	
+	  
+	  for(ULong64_t sI = 0; sI < (ULong64_t)nSystInFile; ++sI){
+	    delete histVectPPClones[sI];
+	    for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
+	      delete histVectPbPbClones[cI + sI*nCentBins];
+	    }
+	  }
+
+	  histVectPPClones.clear();
+	  histVectPbPbClones.clear();
+	}
+      }
+    }
+  }
+    
+  std::cout << "End Traditional RAA" << std::endl;
+  
   for(Int_t fI = 0; fI < nFiles; ++fI){
     inFile_p[fI]->Close();
     delete inFile_p[fI];
@@ -910,6 +1205,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     delete (cutProps[i]);
   }
 
+  outFile_p->Close();
+  delete outFile_p;
+  
   return 0;
 }
 

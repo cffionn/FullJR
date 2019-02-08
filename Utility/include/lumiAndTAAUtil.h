@@ -1,6 +1,9 @@
 #ifndef LUMIANDTAAUTIL_H
 #define LUMIANDTAAUTIL_H
 
+//Sources:
+//https://twiki.cern.ch/twiki/bin/viewauth/CMS/GlauberTables
+
 #include "TH1.h"
 #include "TMath.h"
 
@@ -39,6 +42,11 @@ double getTAAScaleFactor(const std::string inStr)
     std::cout << "WARNING: \'" << inStr << "\' is not found, return -1" << std::endl;
   }
   return scaleFactor;
+}
+
+double getTAAScaleFactorNB(const std::string inStr)
+{
+  return getTAAScaleFactor(inStr)/100000.;
 }
 
 double getTAAScaleFactorUp(const std::string inStr)

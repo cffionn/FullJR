@@ -62,4 +62,43 @@ void quietSaveAs(TCanvas* canv_p, const std::string saveName)
 }
 
 
+double getNearestFactor10Up(double inVal, UInt_t steps = 0)
+{
+  double val = 0.00000000000001;
+ 
+  for(UInt_t i = 0; i < 28; ++i){
+    //    std::cout << val << std::endl;
+    if(inVal >= val && inVal < val*10){
+      val *= 10;
+      break;
+    }
+    else val *= 10;
+  }
+
+  for(UInt_t i = 0; i < steps; ++i){
+    val *= 10;
+  }
+  
+  return val;
+}
+
+double getNearestFactor10Down(double inVal, UInt_t steps = 0)
+{
+  double val = 0.00000000000001;
+ 
+  for(UInt_t i = 0; i < 28; ++i){
+    //    std::cout << val << std::endl;
+    if(inVal >= val && inVal < val*10){
+      break;
+    }
+    else val *= 10;
+  }
+
+  for(UInt_t i = 0; i < steps; ++i){
+    val /= 10;
+  }
+  
+  return val;
+}
+
 #endif

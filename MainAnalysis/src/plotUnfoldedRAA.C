@@ -28,7 +28,6 @@
 
 //Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
-#include "Utility/include/cppWatch.h"
 #include "Utility/include/doGlobalDebug.h"
 #include "Utility/include/getLinBins.h"
 #include "Utility/include/getLogBins.h"
