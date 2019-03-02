@@ -42,7 +42,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 
   std::cout << "Validating " << jetDirList.size() << " jets..." << std::endl;
   for(unsigned int jI = 0; jI < jetDirList.size(); ++jI){
-    std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList.at(jI) << std::endl;
+    std::cout << " " << jI << "/" << jetDirList.size() << ": " << jetDirList[jI] << std::endl;
   }
 
   std::string paraString = "";
@@ -102,8 +102,8 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   std::cout << "nJtAbsEtaBins: ";
 
   for(Int_t jI = 0; jI < nJtAbsEtaBins; ++jI){
-    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp.at(jI);
-    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp.at(jI);
+    jtAbsEtaBinsLow[jI] = jtAbsEtaBinsLowTemp[jI];
+    jtAbsEtaBinsHi[jI] = jtAbsEtaBinsHiTemp[jI];
     std::cout << " " << jtAbsEtaBinsLow[jI] << "-" << jtAbsEtaBinsHi[jI] << ",";
   }
   std::cout << std::endl;
@@ -112,7 +112,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 
   std::cout << "nCentBins: " << nCentBins << std::endl;
   for(Int_t cI = 0; cI < nCentBins; ++cI){
-    std::cout << " " << cI << "/" << nCentBins << ": " << centBinsLow.at(cI) << "-" << centBinsHi.at(cI) << std::endl;
+    std::cout << " " << cI << "/" << nCentBins << ": " << centBinsLow[cI] << "-" << centBinsHi[cI] << std::endl;
   }
 
   const Int_t nResponseMod = cutProp.GetNResponseMod();
@@ -154,15 +154,15 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
   checkMakeDir("pdfDir/" + dateStr + "/Validate");
 
   for(Int_t jI = 0; jI < nJets; ++jI){
-    std::string dirName = jetDirList.at(jI);
+    std::string dirName = jetDirList[jI];
     dirName = dirName.substr(0, dirName.find("/"));
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "PP";
       std::string centStr2 = "PP";
       if(!isResponsePP){
-	centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-	centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+	centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
+	centStr2 = std::to_string(centBinsLow[cI]) + "-" + std::to_string(centBinsHi[cI]) + "%";
       }
 
       for(Int_t idI = 0; idI < nID; ++idI){
@@ -175,14 +175,14 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 	    const std::string resStr2 = "#sigma_{#frac{Data}{MC}}=" + prettyString(responseMod[mI], 2, false);
 	   
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      std::string tempSystStr = "_" + systStr.at(sI) + "_";
+	      std::string tempSystStr = "_" + systStr[sI] + "_";
 	      while(tempSystStr.find("__") != std::string::npos){tempSystStr.replace(tempSystStr.find("__"), 2, "_");}
 
-	      RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)responseFile_p->Get((dirName + "/rooResponse_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
+	      RooUnfoldResponse* rooRes_p = (RooUnfoldResponse*)responseFile_p->Get((dirName + "/rooResponse_" + dirName + "_" + centStr + "_" + idStr[idI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
 
-	      TH1D* recoJtPt_RecoGenAsymm_h = (TH1D*)responseFile_p->Get((dirName + "/recoJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "GoodGen" + paraString + "_h").c_str());
+	      TH1D* recoJtPt_RecoGenAsymm_h = (TH1D*)responseFile_p->Get((dirName + "/recoJtPt_" + dirName + "_" + centStr + "_" + idStr[idI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "GoodGen" + paraString + "_h").c_str());
 
-	      TH1D* genJtPt_h = (TH1D*)responseFile_p->Get((dirName + "/genJtPt_" + dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr+ "GoodReco" + paraString + "_h").c_str());
+	      TH1D* genJtPt_h = (TH1D*)responseFile_p->Get((dirName + "/genJtPt_" + dirName + "_" + centStr + "_" + idStr[idI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr+ "GoodReco" + paraString + "_h").c_str());
 	     
 	      slideTitles->push_back(rooRes_p->GetName());
 	      /*
@@ -319,7 +319,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 		}
 
 
-		std::string labelStr = dirName + ", " + centStr2 + ", " + idStr.at(idI) + ", " + jtAbsEtaStr2;
+		std::string labelStr = dirName + ", " + centStr2 + ", " + idStr[idI] + ", " + jtAbsEtaStr2;
 		std::string labelStr2 = resStr2 + ", " + tempSystStr + ", Bayes=" + std::to_string(bI);
 		label_p->DrawLatex(xLowReco, drawHigh, labelStr.c_str());
 		label_p->DrawLatex(xLowReco, drawHigh2, labelStr2.c_str());
@@ -418,7 +418,7 @@ int validateJetResponse(const std::string inResponseName, const bool doParaFills
 		  label_p->DrawLatex(1000, drawLow, "1000");
 		}
 		
-		const std::string saveName = dirName + "_" + centStr + "_" + idStr.at(idI) + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "Bayes" + std::to_string(bI+1) + paraString + "_" + dateStr + ".pdf";
+		const std::string saveName = dirName + "_" + centStr + "_" + idStr[idI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "Bayes" + std::to_string(bI+1) + paraString + "_" + dateStr + ".pdf";
 
 		pdfPerSlide->at(pdfPerSlide->size()-1).push_back(saveName);
 		quietSaveAs(canv_p, "pdfDir/" + dateStr + "/Validate/" + saveName);

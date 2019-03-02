@@ -16,7 +16,7 @@
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/cppWatch.h"
 
-int compareAllHist(const std::string inFileName1, const std::string inFileName2)
+int compareAllHist(const std::string inFileName1, const std::string inFileName2, const std::string stringToRemoveFile2 = "")
 {
   cppWatch totalTimer;
   totalTimer.start();
@@ -48,7 +48,11 @@ int compareAllHist(const std::string inFileName1, const std::string inFileName2)
 
       ++(histNamesToCounts[name]);
       if(tI == 0) histNamesToFile1Contents[name] = (TH1D*)inFile_p[tI]->Get(name.c_str());
-      else histNamesToFile2Contents[name] = (TH1D*)inFile_p[tI]->Get(name.c_str());
+      else{
+	std::string name2 = name;
+	if(stringToRemoveFile2.size() != 0) name2.replace(name2.find(stringToRemoveFile2), stringToRemoveFile2.size(), "");
+	histNamesToFile2Contents[name2] = (TH1D*)inFile_p[tI]->Get(name.c_str());	
+      }
     }
 
     if(tI == 0){
@@ -194,12 +198,13 @@ int compareAllHist(const std::string inFileName1, const std::string inFileName2)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 3){
-    std::cout << "Usage: ./bin/compareAllHist.exe <inFileName1> <inFileName2>" << std::endl;
+  if(argc < 3 || argc > 4){
+    std::cout << "Usage: ./bin/compareAllHist.exe <inFileName1> <inFileName2> <stringToRemoveFile2>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += compareAllHist(argv[1], argv[2]);
+  if(argc == 3) retVal += compareAllHist(argv[1], argv[2]);
+  else if(argc == 4) retVal += compareAllHist(argv[1], argv[2], argv[3]);
   return retVal;
 }
