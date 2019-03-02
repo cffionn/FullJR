@@ -21,7 +21,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe #bin/plotUnfoldedRAA.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe #bin/plotUnfoldedRAA.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -91,6 +91,21 @@ bin/checkFileNClassContents.exe: src/checkFileNClassContents.C
 
 bin/compareAllHist.exe: src/compareAllHist.C
 	$(CXX) $(CXXFLAGS) src/compareAllHist.C $(ROOT) $(INCLUDE) -o bin/compareAllHist.exe
+
+bin/lumiComp.exe: src/lumiComp.C
+	$(CXX) $(CXXFLAGS) src/lumiComp.C $(ROOT) $(INCLUDE) -o bin/lumiComp.exe
+
+bin/extractNMB.exe: src/extractNMB.C
+	$(CXX) $(CXXFLAGS) src/extractNMB.C $(ROOT) $(INCLUDE) -o bin/extractNMB.exe
+
+bin/checkOverlap.exe: src/checkOverlap.C
+	$(CXX) $(CXXFLAGS) src/checkOverlap.C $(ROOT) $(INCLUDE) -o bin/checkOverlap.exe
+
+bin/comboTest.exe: src/comboTest.C
+	$(CXX) $(CXXFLAGS) src/comboTest.C $(ROOT) $(INCLUDE) -o bin/comboTest.exe
+
+bin/combineResponse.exe: src/combineResponse.C
+	$(CXX) $(CXXFLAGS) src/combineResponse.C $(ROOT) $(INCLUDE) -o bin/combineResponse.exe
 
 clean:
 	rm -f ./*~

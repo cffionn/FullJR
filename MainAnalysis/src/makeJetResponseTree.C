@@ -132,15 +132,15 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     bool isMoved = false;
     for(unsigned int pI = pos+1; pI < pthats.size(); ++pI){
 
-      if(pthats.at(pI) < pthats.at(pos)){
-	double pthatTemp = pthats.at(pos);
-	double pthatWeightTemp = pthatWeights.at(pos);
+      if(pthats[pI] < pthats[pos]){
+	double pthatTemp = pthats[pos];
+	double pthatWeightTemp = pthatWeights[pos];
 	
-	pthats.at(pos) = pthats.at(pI);
-	pthatWeights.at(pos) = pthatWeights.at(pI);
+	pthats[pos] = pthats[pI];
+	pthatWeights[pos] = pthatWeights[pI];
 	
-	pthats.at(pI) = pthatTemp;
-	pthatWeights.at(pI) = pthatWeightTemp;
+	pthats[pI] = pthatTemp;
+	pthatWeights[pI] = pthatWeightTemp;
 
 	isMoved = true;
       }
@@ -151,12 +151,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   std::cout << "Pthats and weights: " << std::endl;
   for(unsigned int pI = 0; pI < pthats.size(); ++pI){
-    std::cout << " " << pI << "/" << pthats.size() << ": " << pthats.at(pI) << ", " << pthatWeights.at(pI) << std::endl;
+    std::cout << " " << pI << "/" << pthats.size() << ": " << pthats[pI] << ", " << pthatWeights[pI] << std::endl;
   }
 
   std::cout << "IsPP: " << isPP << std::endl;
 
-  TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(0)).c_str(), "READ");
+  TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList[0]).c_str(), "READ");
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
   
   
@@ -165,23 +165,23 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   pos = 0;
   while(responseTrees.size() > pos){
     //For testing, uncomment to exclude all but R=0.4 trees
-    //    if(responseTrees.at(pos).find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+    //    if(responseTrees[pos].find("akCs4") == std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
 
     if(isPP){
-      if(responseTrees.at(pos).find("akCs") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akPu") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      if(responseTrees[pos].find("akCs") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akPu") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
       else ++pos;
     }
     else{
-      if(responseTrees.at(pos).find("akCs3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos); 
-      else if(responseTrees.at(pos).find("akPu3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akPu4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs3PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs4PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs6PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs8PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
-      else if(responseTrees.at(pos).find("akCs10PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      if(responseTrees[pos].find("akCs3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos); 
+      else if(responseTrees[pos].find("akPu3PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akPu4PF") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs3PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs4PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs6PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs8PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
+      else if(responseTrees[pos].find("akCs10PU3PFJet") != std::string::npos) responseTrees.erase(responseTrees.begin()+pos);
       else ++pos;
     }
   }
@@ -198,6 +198,21 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Int_t nMaxTrees = 10;
   const Int_t nTrees = responseTrees.size(); 
 
+  Int_t rValI[nMaxTrees];
+  Double_t rValD[nMaxTrees];
+  Bool_t isSmallR[nMaxTrees];
+  Bool_t isLargeR[nMaxTrees];
+
+  smallOrLargeR rReader;
+
+  for(unsigned int tI = 0; tI < responseTrees.size(); ++tI){
+    std::string dirName = responseTrees[tI];
+    rValI[tI] = getRVal(dirName);
+    rValD[tI] = (getRVal(dirName))/10.;
+    isSmallR[tI] = rReader.GetIsSmallR(rValI[tI]);
+    isLargeR[tI] = rReader.GetIsLargeR(rValI[tI]);
+  }
+
   if(nTrees > nMaxTrees){
     std::cout << "nTrees \'" << nTrees << "\' is greater than nMaxTrees \'" << nMaxTrees << "\'. return 1" << std::endl;
     return 1;
@@ -205,10 +220,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   std::cout << "Making response matrices for the following " << nTrees << " jet trees: " << std::endl;
   for(int jI = 0; jI < nTrees; ++jI){
-    std::cout << " " << jI << "/" << nTrees << ": " << responseTrees.at(jI) << std::endl;
+    std::cout << " " << jI << "/" << nTrees << ": " << responseTrees[jI] << std::endl;
 
-    if(responseTrees.at(jI).find("akCs4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
-    else if(responseTrees.at(jI).find("ak4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
+    if(responseTrees[jI].find("akCs4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
+    else if(responseTrees[jI].find("ak4") != std::string::npos && posR4Temp < 0) posR4Temp = jI;
     else posGeneralTemp = jI;
   }
   if(posGeneralTemp < 0 && nTrees == 1) posGeneralTemp = 0;
@@ -223,8 +238,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Int_t centBinsLowPerma[nCentBinsPerma] = {0, 10, 30, 50};
   const Int_t centBinsHiPerma[nCentBinsPerma] = {10, 30, 50, 90};
 
-  Int_t nCentBinsTemp = 1;
-  if(!isPP) nCentBinsTemp = nCentBinsPerma;
+  Int_t nCentBinsTemp = nCentBinsPerma;//1;
+  //  if(!isPP) nCentBinsTemp = nCentBinsPerma;
  
   const Int_t nMaxCentBins = 4;
   const Int_t nCentBins = nCentBinsTemp;
@@ -235,7 +250,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   }
 
   std::vector<Int_t> centBinsLow, centBinsHi;
-  if(isPP){
+  if(isPP && false){ // WE WANT PP DEPENDENT CENTRALITY
     centBinsLow.push_back(0);
     centBinsHi.push_back(100);
   }
@@ -247,8 +262,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   }
 
   const Int_t nPthatBins = 100;
-  const Float_t pthatLow = pthats.at(0);
-  const Float_t pthatHi = pthats.at(pthats.size()-1)*2.;
+  const Float_t pthatLow = pthats[0];
+  const Float_t pthatHi = pthats[pthats.size()-1]*2.;
   Double_t pthatBins[nPthatBins+1];
   getLinBins(pthatLow, pthatHi, nPthatBins, pthatBins);
 
@@ -279,8 +294,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   checkMakeDir("output/" + dateStr);
 
   const Double_t jtAbsEtaMax = 2.;
-  Int_t anomolousJetCount = 0;
-  const Int_t maxAnomolousJet = 1000;
 
   const Int_t nJtAbsEtaBins = 5;
   const Double_t jtAbsEtaBinsLow[nJtAbsEtaBins] = {0.0, 0.5, 1.0, 1.5, 0.0};
@@ -294,8 +307,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Double_t responseMod[nResponseMod] = {0.00, 0.10};
   const Double_t jerVarData[nResponseMod] = {0.15, 0.10};
 
-
-  smallOrLargeR rReader;
   /*
   const Int_t nRecoJtPtBins = 10;
   const Double_t jtPtBins[nRecoJtPtBins+1] = {100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 1100.};
@@ -306,39 +317,44 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const int nLargeR = rReader.GetNLargeR();
   std::vector<int> largeRVals = rReader.GetLargeRVals();
 
-  const int nRecoJtPtBinsSmallR = rReader.GetNRecoJtPtBinsSmallR();
+  const int nRecoJtPtBinsSmallR[nMaxCentBins] = {rReader.GetNRecoJtPtBinsSmallRCent0to10(), rReader.GetNRecoJtPtBinsSmallRCent10to30(), rReader.GetNRecoJtPtBinsSmallRCent30to50(), rReader.GetNRecoJtPtBinsSmallRCent50to90()};
+  const int nGenJtPtSmallBinsSmallR[nMaxCentBins] = {rReader.GetNGenJtPtSmallBinsSmallRCent0to10(), rReader.GetNGenJtPtSmallBinsSmallRCent10to30(), rReader.GetNGenJtPtSmallBinsSmallRCent30to50(), rReader.GetNGenJtPtSmallBinsSmallRCent50to90()};
+  const int nGenJtPtLargeBinsSmallR[nMaxCentBins] = {rReader.GetNGenJtPtLargeBinsSmallRCent0to10(), rReader.GetNGenJtPtLargeBinsSmallRCent10to30(), rReader.GetNGenJtPtLargeBinsSmallRCent30to50(), rReader.GetNGenJtPtLargeBinsSmallRCent50to90()};
+  const int nRecoJtPtBinsLargeR[nMaxCentBins] = {rReader.GetNRecoJtPtBinsLargeRCent0to10(), rReader.GetNRecoJtPtBinsLargeRCent10to30(), rReader.GetNRecoJtPtBinsLargeRCent30to50(), rReader.GetNRecoJtPtBinsLargeRCent50to90()};
+  const int nGenJtPtSmallBinsLargeR[nMaxCentBins] = {rReader.GetNGenJtPtSmallBinsLargeRCent0to10(), rReader.GetNGenJtPtSmallBinsLargeRCent10to30(), rReader.GetNGenJtPtSmallBinsLargeRCent30to50(), rReader.GetNGenJtPtSmallBinsLargeRCent50to90()};
+  const int nGenJtPtLargeBinsLargeR[nMaxCentBins] = {rReader.GetNGenJtPtLargeBinsLargeRCent0to10(), rReader.GetNGenJtPtLargeBinsLargeRCent10to30(), rReader.GetNGenJtPtLargeBinsLargeRCent30to50(), rReader.GetNGenJtPtLargeBinsLargeRCent50to90()};
+
   std::vector<double> recoJtPtBinsSmallR = rReader.GetRecoJtPtBinsSmallR();
-
-  const int nGenJtPtBinsSmallR = rReader.GetNGenJtPtBinsSmallR();
-  std::vector<double> genJtPtBinsSmallR = rReader.GetGenJtPtBinsSmallR();
-
-  const int nRecoJtPtBinsLargeR = rReader.GetNRecoJtPtBinsLargeR();
+  std::vector<double> genJtPtSmallBinsSmallR = rReader.GetGenJtPtSmallBinsSmallR();
+  std::vector<double> genJtPtLargeBinsSmallR = rReader.GetGenJtPtLargeBinsSmallR();
   std::vector<double> recoJtPtBinsLargeR = rReader.GetRecoJtPtBinsLargeR();
-
-  const int nGenJtPtBinsLargeR = rReader.GetNGenJtPtBinsLargeR();
-  std::vector<double> genJtPtBinsLargeR = rReader.GetGenJtPtBinsLargeR();
+  std::vector<double> genJtPtSmallBinsLargeR = rReader.GetGenJtPtSmallBinsLargeR();
+  std::vector<double> genJtPtLargeBinsLargeR = rReader.GetGenJtPtLargeBinsLargeR();
 
   const int nPtBinsMax = 50;
-  if(nRecoJtPtBinsSmallR > nPtBinsMax){
-    std::cout << "nRecoJtPtBinsSmallR \'" << nRecoJtPtBinsSmallR << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
-    return 1;
-  }
-
-  if(nGenJtPtBinsSmallR > nPtBinsMax){
-    std::cout << "nGenJtPtBinsSmallR \'" << nGenJtPtBinsSmallR << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
-    return 1;
+  for(Int_t cI = 0; cI < nMaxCentBins; ++cI){
+    if(nRecoJtPtBinsSmallR[cI] > nPtBinsMax){
+      std::cout << "nRecoJtPtBinsSmallR in centrality " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%" << " \'" << nRecoJtPtBinsSmallR[cI] << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
+      return 1;
+    }
+    if(nGenJtPtSmallBinsSmallR[cI] > nPtBinsMax){
+      std::cout << "nGenJtPtSmallBinsSmallR in centrality " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%" << " \'" << nGenJtPtSmallBinsSmallR[cI] << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
+      return 1;
+    }
+    if(nGenJtPtLargeBinsSmallR[cI] > nPtBinsMax){
+      std::cout << "nGenJtPtLargeBinsSmallR in centrality " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%" << " \'" << nGenJtPtLargeBinsSmallR[cI] << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
+      return 1;
+    }    
   }
 
   Int_t bigJetRecoTrunc = -1;
-  for(Int_t jI = 0; jI < nRecoJtPtBinsSmallR; ++jI){
+  for(Int_t jI = 0; jI < nRecoJtPtBinsSmallR[0]; ++jI){
     Double_t val = (recoJtPtBinsSmallR[jI] + recoJtPtBinsSmallR[jI+1])/2.;
     if(val > 200.){
       bigJetRecoTrunc = jI+1;
       break;
     }
   }
-
-  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::vector<Double_t> minJtPtCut;
   std::vector<Double_t> multiJtPtCut;
@@ -349,11 +365,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     minJtPtCut.push_back(100.);
     recoTruncPos.push_back(1);
 
-    bool isBigJt = responseTrees.at(jI).find("ak8") != std::string::npos || responseTrees.at(jI).find("ak10") != std::string::npos || responseTrees.at(jI).find("akCs8") != std::string::npos || responseTrees.at(jI).find("akCs10") != std::string::npos;
+    bool isBigJt = responseTrees[jI].find("ak8") != std::string::npos || responseTrees[jI].find("ak10") != std::string::npos || responseTrees[jI].find("akCs8") != std::string::npos || responseTrees[jI].find("akCs10") != std::string::npos;
     if(isBigJt){
-      multiJtPtCut.at(jI) = 100;
-      minJtPtCut.at(jI) = 200.;
-      recoTruncPos.at(jI) = bigJetRecoTrunc;
+      multiJtPtCut[jI] = 100;
+      minJtPtCut[jI] = 200.;
+      recoTruncPos[jI] = bigJetRecoTrunc;
     }
   }
 
@@ -409,14 +425,37 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetSmallRVals(smallRVals);
   cutProp.SetNLargeR(nLargeR);
   cutProp.SetLargeRVals(largeRVals);
-  cutProp.SetNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallR);
   cutProp.SetRecoJtPtBinsSmallR(recoJtPtBinsSmallR);
-  cutProp.SetNGenJtPtBinsSmallR(nGenJtPtBinsSmallR);
-  cutProp.SetGenJtPtBinsSmallR(genJtPtBinsSmallR);
-  cutProp.SetNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeR);
+  cutProp.SetGenJtPtSmallBinsSmallR(genJtPtSmallBinsSmallR);
+  cutProp.SetGenJtPtLargeBinsSmallR(genJtPtLargeBinsSmallR);
   cutProp.SetRecoJtPtBinsLargeR(recoJtPtBinsLargeR);
-  cutProp.SetNGenJtPtBinsLargeR(nGenJtPtBinsLargeR);
-  cutProp.SetGenJtPtBinsLargeR(genJtPtBinsLargeR);
+  cutProp.SetGenJtPtSmallBinsLargeR(genJtPtSmallBinsLargeR);
+  cutProp.SetGenJtPtLargeBinsLargeR(genJtPtLargeBinsLargeR);
+  cutProp.SetNRecoJtPtBinsSmallRCent0to10(nRecoJtPtBinsSmallR[0]);
+  cutProp.SetNGenJtPtSmallBinsSmallRCent0to10(nGenJtPtSmallBinsSmallR[0]);
+  cutProp.SetNGenJtPtLargeBinsSmallRCent0to10(nGenJtPtLargeBinsSmallR[0]);
+  cutProp.SetNRecoJtPtBinsLargeRCent0to10(nRecoJtPtBinsLargeR[0]);
+  cutProp.SetNGenJtPtSmallBinsLargeRCent0to10(nGenJtPtSmallBinsLargeR[0]);
+  cutProp.SetNGenJtPtLargeBinsLargeRCent0to10(nGenJtPtLargeBinsLargeR[0]);
+  cutProp.SetNRecoJtPtBinsSmallRCent10to30(nRecoJtPtBinsSmallR[1]);
+  cutProp.SetNGenJtPtSmallBinsSmallRCent10to30(nGenJtPtSmallBinsSmallR[1]);
+  cutProp.SetNGenJtPtLargeBinsSmallRCent10to30(nGenJtPtLargeBinsSmallR[1]);
+  cutProp.SetNRecoJtPtBinsLargeRCent10to30(nRecoJtPtBinsLargeR[1]);
+  cutProp.SetNGenJtPtSmallBinsLargeRCent10to30(nGenJtPtSmallBinsLargeR[1]);
+  cutProp.SetNGenJtPtLargeBinsLargeRCent10to30(nGenJtPtLargeBinsLargeR[1]);
+  cutProp.SetNRecoJtPtBinsSmallRCent30to50(nRecoJtPtBinsSmallR[2]);
+  cutProp.SetNGenJtPtSmallBinsSmallRCent30to50(nGenJtPtSmallBinsSmallR[2]);
+  cutProp.SetNGenJtPtLargeBinsSmallRCent30to50(nGenJtPtLargeBinsSmallR[2]);
+  cutProp.SetNRecoJtPtBinsLargeRCent30to50(nRecoJtPtBinsLargeR[2]);
+  cutProp.SetNGenJtPtSmallBinsLargeRCent30to50(nGenJtPtSmallBinsLargeR[2]);
+  cutProp.SetNGenJtPtLargeBinsLargeRCent30to50(nGenJtPtLargeBinsLargeR[2]);
+  cutProp.SetNRecoJtPtBinsSmallRCent50to90(nRecoJtPtBinsSmallR[3]);
+  cutProp.SetNGenJtPtSmallBinsSmallRCent50to90(nGenJtPtSmallBinsSmallR[3]);
+  cutProp.SetNGenJtPtLargeBinsSmallRCent50to90(nGenJtPtLargeBinsSmallR[3]);
+  cutProp.SetNRecoJtPtBinsLargeRCent50to90(nRecoJtPtBinsLargeR[3]);
+  cutProp.SetNGenJtPtSmallBinsLargeRCent50to90(nGenJtPtSmallBinsLargeR[3]);
+  cutProp.SetNGenJtPtLargeBinsLargeRCent50to90(nGenJtPtLargeBinsLargeR[3]);
+
   cutProp.SetNJtAlgos(nTrees);
   cutProp.SetJtAlgos(responseTrees);
   cutProp.SetMinJtPtCut(minJtPtCut);
@@ -499,155 +538,165 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     setSumW2({centrality_h, centralityWeighted_h, centralityFullWeighted_h, centralityFullRatio_h});
   }
 
+  const Int_t nSmallLargeBins = 2;
+  std::string smallLargeBinsStr[nSmallLargeBins] = {"SmallBins", "LargeBins"};
+
+  Int_t nRecoJtPtBins[nMaxTrees][nMaxCentBins];
+  Int_t nGenJtPtSmallBins[nMaxTrees][nMaxCentBins];
+  Int_t nGenJtPtLargeBins[nMaxTrees][nMaxCentBins];
+  Int_t nGenJtPtBins[nMaxTrees][nMaxCentBins][nSmallLargeBins];
+
+  Double_t recoJtPtBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
+  Double_t genJtPtSmallBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
+  Double_t genJtPtLargeBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
+  Double_t genJtPtBins[nMaxTrees][nMaxCentBins][nSmallLargeBins][nPtBinsMax+1];
+
+  Double_t minGenJtPt = 999999999;
+  Double_t minRecoJtPt = 999999999;
+
+  for(Int_t tI = 0; tI < nTrees; ++tI){
+    std::string dirName = responseTrees[tI];
+    dirName = dirName.substr(0, dirName.find("/"));
+
+    for(Int_t cI = 0; cI < nCentBins; ++cI){
+      std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
+      nRecoJtPtBins[tI][cI] = rReader.GetSmallOrLargeRNBins(isSmallR[tI], false, false, centStr);
+      nGenJtPtSmallBins[tI][cI] = rReader.GetSmallOrLargeRNBins(isSmallR[tI], true, true, centStr);
+      nGenJtPtLargeBins[tI][cI] = rReader.GetSmallOrLargeRNBins(isSmallR[tI], true, false, centStr);
+      
+      rReader.GetSmallOrLargeRBins(isSmallR[tI], false, nRecoJtPtBins[tI][cI]+1, recoJtPtBins[tI][cI], false);
+      rReader.GetSmallOrLargeRBins(isSmallR[tI], true, nGenJtPtSmallBins[tI][cI]+1, genJtPtSmallBins[tI][cI], true);
+      rReader.GetSmallOrLargeRBins(isSmallR[tI], true, nGenJtPtLargeBins[tI][cI]+1, genJtPtLargeBins[tI][cI], false);       
+
+      for(Int_t bIX = 0; bIX < nRecoJtPtBins[tI][cI]+1; ++bIX){
+	if(minRecoJtPt > recoJtPtBins[tI][cI][bIX]) minRecoJtPt = recoJtPtBins[tI][cI][bIX];
+      }
+
+      nGenJtPtBins[tI][cI][0] = nGenJtPtSmallBins[tI][cI];
+      nGenJtPtBins[tI][cI][1] = nGenJtPtLargeBins[tI][cI];
+
+      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	for(Int_t bIX = 0; bIX < nGenJtPtBins[tI][cI][binsI]+1; ++bIX){
+	  if(binsI == 0) genJtPtBins[tI][cI][binsI][bIX] = genJtPtSmallBins[tI][cI][bIX];
+	  else if(binsI == 1) genJtPtBins[tI][cI][binsI][bIX] = genJtPtLargeBins[tI][cI][bIX];	  
+
+	  if(minGenJtPt > genJtPtBins[tI][cI][binsI][bIX]) minGenJtPt = genJtPtBins[tI][cI][binsI][bIX]; 
+	}
+      }
+    }
+  }  
+
   TDirectory* dir_p[nMaxTrees] = {NULL};
   TH1D* recoJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_RecoTrunc_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_NoTruth_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* recoJtPtPerGenPtBin_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
-  TH1D* genJtPtPerRecoPtBin_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
-  TH1D* recoJtPtPerGenPtBinWeighted_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
-  TH1D* genJtPtPerRecoPtBinWeighted_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nPtBinsMax];
 
   TH1D* recoJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_RecoTrunc_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
   TH1D* recoJtPt_NoTruth_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
 
-  TH1D* genJtPt_All_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
-  TH1D* genJtPt_GoodReco_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH1D* recoJtPt_GoodGen_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH1D* genJtPt_GoodReco_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH1D* recoJtPt_GoodGen_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH2D* response_RecoGenSymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  TH2D* response_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
-  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
-  TH1D* genJtPt_CheckFlatPrior_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins];
+  TH1D* genJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
+  TH1D* genJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
+  TH1D* genJtPt_All_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
+  TH1D* genJtPt_GoodReco_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  TH1D* genJtPt_GoodReco_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  TH2D* response_RecoGenSymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  TH2D* response_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  TH1D* genJtPt_CheckFlatPrior_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
 
   for(Int_t dI = 0; dI < nTrees; ++dI){
     if(nTrees == 2 && dI == posR4 && !isPP) continue;
 
     outFile_p->cd();
-    std::string dirName = responseTrees.at(dI);
+    std::string dirName = responseTrees[dI];
     dirName = dirName.substr(0, dirName.find("/"));
 
-    const Int_t rVal = getRVal(dirName);
-    bool isSmallR = rReader.GetIsSmallR(rVal);
-    bool isLargeR = rReader.GetIsLargeR(rVal);
-    if(!isSmallR && !isLargeR){
-      std::cout << "WARNING (LINE " << __LINE__ << ": " << dirName << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+    if(!isSmallR[dI] && !isLargeR[dI]){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dirName << " with rVal=" << rValI[dI] << " is not classified as either small or large R. return 1" << std::endl;
       return 1;
     }  
-    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-    Double_t recoJtPtBins[nPtBinsMax+1];
-    Double_t genJtPtBins[nPtBinsMax+1];
-    rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
-    rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
-
-    if(doLocalDebug || doGlobalDebug){
-      std::cout << "Check reco bins: " << nRecoJtPtBins << std::endl;
-      for(Int_t rI = 0; rI < nRecoJtPtBins; ++rI){
-	std::cout << " " << rI << "/" << nRecoJtPtBins << ": " << recoJtPtBins[rI] << "-" << recoJtPtBins[rI+1] << std::endl;
-      }
-      std::cout << "Check gen bins: " << nGenJtPtBins << std::endl;
-      for(Int_t rI = 0; rI < nGenJtPtBins; ++rI){
-	std::cout << " " << rI << "/" << nGenJtPtBins << ": " << genJtPtBins[rI] << "-" << genJtPtBins[rI+1] << std::endl;
-      }
-    }
 
     dir_p[dI] = (TDirectory*)outFile_p->mkdir(dirName.c_str());
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
-      std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-      if(isPP) centStr = "PP";
-
+      std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);      
+      if(isPP) centStr = "PP_" + centStr;
+      else centStr = "PbPb_" + centStr;
+      
       for(Int_t iI = 0; iI < nID; ++iI){
-
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){
 	  std::string resStr = "ResponseMod" + prettyString(responseMod[mI], 2, true);
 
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    const std::string jtAbsEtaStr = "AbsEta" + prettyString(jtAbsEtaBinsLow[aI], 1, true) + "to" + prettyString(jtAbsEtaBinsHi[aI], 1, true);
 	    
-	    recoJtPt_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_RecoTrunc_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    recoJtPt_NoTruth_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_NoTruth_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    genJtPt_h[dI][cI][iI][mI][aI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
-	    
-	    recoJtPt_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_RecoTrunc_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_NoTruth_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    genJtPt_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_ParaFills_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
-	    	  
-	    genJtPt_All_h[dI][cI][iI][mI][aI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_All_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
+	    recoJtPt_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+	    recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_RecoTrunc_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+	    recoJtPt_NoTruth_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_NoTruth_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+	    	    
+	    recoJtPt_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+	    recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_RecoTrunc_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+	    recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_NoTruth_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
+
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      genJtPt_h[dI][cI][iI][mI][aI][binsI] = new TH1D(("genJtPt_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+	      genJtPt_ParaFills_h[dI][cI][iI][mI][aI][binsI] = new TH1D(("genJtPt_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_ParaFills_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);;	    	  
+	      genJtPt_All_h[dI][cI][iI][mI][aI][binsI] = new TH1D(("genJtPt_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_All_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+	      genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI][binsI] = new TH1D(("rooResponse_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_CheckFlatPrior_h").c_str(), ";Gen. p_{T} (Weighted Flat);Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+	    }
 	    
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      std::string tempSysStr =  "_" + systStr[sI] + "_";	 
 	      while(tempSysStr.find("__") != std::string::npos){tempSysStr.replace(tempSysStr.find("__"), 2, "_");}
 
-	      genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
+	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
 
-	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
+	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
 
-	      genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_ParaFills_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins, genJtPtBins);
-
-	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins, recoJtPtBins);
-	    
-	      response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI] = new TH2D(("response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenSymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nGenJtPtBins, genJtPtBins, nGenJtPtBins, genJtPtBins);
-	      response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI] = new TH2D(("response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nRecoJtPtBins, recoJtPtBins, nGenJtPtBins, genJtPtBins);
-  
-	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI] = new RooUnfoldResponse(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), "");
-	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Setup(recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI]);
-
-	      std::vector<TH1*> tempVect = {genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI], response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI], response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]};
+	      std::vector<TH1*> tempVect = {recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]};
 	      centerTitles(tempVect);
 	      setSumW2(tempVect);
+	      
+	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+		genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI] = new TH1D(("genJtPt_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+
+		genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI] = new TH1D(("genJtPt_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodReco_ParaFills_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+
+		response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI] = new TH2D(("response_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenSymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI], nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+
+		response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI] = new TH2D(("response_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI], nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
+
+
+		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI] = new RooUnfoldResponse(("rooResponse_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), "");
+
+		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Setup(recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI]);
+		
+		tempVect = {genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI], genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI], response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI], response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]};
+		centerTitles(tempVect);
+		setSumW2(tempVect);
+	      }
 	    }
 	    
-	    genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI] = new TH1D(("rooResponse_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_CheckFlatPrior_h").c_str(), ";Gen. p_{T} (Weighted Flat);Counts (Weighted)", nGenJtPtBins, genJtPtBins);
-
-	    std::vector<TH1*> tempVect = {recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], genJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI], genJtPt_All_h[dI][cI][iI][mI][aI], genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI]};
+	    std::vector<TH1*> tempVect = {recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI]};
 	    centerTitles(tempVect);
 	    setSumW2(tempVect);
-	    
-	    
-	    for(Int_t jI = 0; jI < nRecoJtPtBins; ++jI){
-	      const std::string jtPtStr = "Pt" + prettyString(recoJtPtBins[jI], 1, true) + "to" + prettyString(recoJtPtBins[jI+1], 1, true);
-	      const std::string jtPtStr2 = prettyString(recoJtPtBins[jI], 1, false) + "< p_{T,Gen} <" + prettyString(recoJtPtBins[jI+1], 1, false);
-	      const std::string jtPtStr3 = prettyString(recoJtPtBins[jI], 1, false) + "< p_{T,Reco} <" + prettyString(recoJtPtBins[jI+1], 1, false);
-	      
-	      genJtPtPerRecoPtBin_h[dI][cI][iI][mI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
-	    	      
-	      genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][mI][aI][jI] = new TH1D(("genJtPtPerRecoPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Reco" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr3 + ")").c_str(), nResponseBins, responseBins);
 
-	      tempVect.clear();
-	      tempVect = {genJtPtPerRecoPtBin_h[dI][cI][iI][mI][aI][jI], genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][mI][aI][jI]};
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      tempVect = {genJtPt_h[dI][cI][iI][mI][aI][binsI], genJtPt_ParaFills_h[dI][cI][iI][mI][aI][binsI], genJtPt_All_h[dI][cI][iI][mI][aI][binsI], genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI][binsI]};
 	      centerTitles(tempVect);
-	      setSumW2(tempVect);
-	    }
-
-	    for(Int_t jI = 0; jI < nGenJtPtBins; ++jI){
-	      const std::string jtPtStr = "Pt" + prettyString(genJtPtBins[jI], 1, true) + "to" + prettyString(genJtPtBins[jI+1], 1, true);
-	      const std::string jtPtStr2 = prettyString(genJtPtBins[jI], 1, false) + "< p_{T,Gen} <" + prettyString(genJtPtBins[jI+1], 1, false);
-	      const std::string jtPtStr3 = prettyString(genJtPtBins[jI], 1, false) + "< p_{T,Gen} <" + prettyString(genJtPtBins[jI+1], 1, false);
-	      
-	      recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
-
-	      recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][mI][aI][jI] = new TH1D(("recoJtPtPerGenPtBin_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_Gen" + jtPtStr + "_" + jtAbsEtaStr + "_Weighted_h").c_str(), (";Reco p_{T}/Gen p_{T};Counts (" + jtPtStr2 + ")").c_str(), nResponseBins, responseBins);
-	      	      
-
-	      tempVect.clear();
-	      tempVect = {recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI], recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][mI][aI][jI]};
-	      centerTitles(tempVect);
-	      setSumW2(tempVect);
-	    }
+	      setSumW2(tempVect);	      
+	    }	    	    	  
 	  }
 	}
       }
     }
   }
+
+  //  std::cout << "FAILURE FOUND: " << nTrees << ", " << nCentBins << ", " << nID << ", " << nResponseMod << ", " << nJtAbsEtaBins << ", " << nSmallLargeBins << std::endl;
 
 
   const Int_t nMaxJet = 500;
@@ -659,41 +708,46 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   Int_t nFileLoopEvt = 0;
   fileLoopWatch.start();
   
+  std::vector<int> centPos;
+  if(isPP){for(Int_t cI = 0; cI < nCentBins; ++cI){centPos.push_back(cI);}}
+  else centPos.push_back(-1);
+  
+  Int_t nref_[nMaxTrees];
+  Float_t jtpt_[nMaxTrees][nMaxJet];
+  Float_t rawpt_[nMaxTrees][nMaxJet];
+  Float_t jteta_[nMaxTrees][nMaxJet];
+  Float_t jtphi_[nMaxTrees][nMaxJet];
+  Float_t refpt_[nMaxTrees][nMaxJet];
+  Float_t jtPfCHF_[nMaxTrees][nMaxJet];
+  Float_t jtPfCEF_[nMaxTrees][nMaxJet];
+  Float_t jtPfNHF_[nMaxTrees][nMaxJet];
+  Float_t jtPfNEF_[nMaxTrees][nMaxJet];
+  Float_t jtPfMUF_[nMaxTrees][nMaxJet];
+  Float_t jtPfCHMF_[nMaxTrees][nMaxJet];
+  Float_t jtPfCEMF_[nMaxTrees][nMaxJet];
+  Float_t jtPfNHMF_[nMaxTrees][nMaxJet];
+  Float_t jtPfNEMF_[nMaxTrees][nMaxJet];
+  Float_t jtPfMUMF_[nMaxTrees][nMaxJet];
+  Int_t jtPfCHM_[nMaxTrees][nMaxJet];
+  Int_t jtPfCEM_[nMaxTrees][nMaxJet];
+  Int_t jtPfNHM_[nMaxTrees][nMaxJet];
+  Int_t jtPfNEM_[nMaxTrees][nMaxJet];
+  Int_t jtPfMUM_[nMaxTrees][nMaxJet];
+  
+  Int_t ngen_[nMaxTrees];
+  Float_t genpt_[nMaxTrees][nMaxJet];
+  Float_t genphi_[nMaxTrees][nMaxJet];
+  Float_t geneta_[nMaxTrees][nMaxJet];
+  Int_t gensubid_[nMaxTrees][nMaxJet];
+  
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
-    std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList.at(fI) << "\'" << std::endl;
+    std::cout << "Processing file " << fI << "/" << fileList.size() << ": \'" << fileList[fI] << "\'" << std::endl;
 
-    inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
+    inFile_p = TFile::Open(mntToXRootdFileString(fileList[fI]).c_str(), "READ");
     TTree* jetTrees_p[nMaxTrees] = {NULL};
-    Int_t nref_[nMaxTrees];
-    Float_t jtpt_[nMaxTrees][nMaxJet];
-    Float_t rawpt_[nMaxTrees][nMaxJet];
-    Float_t jteta_[nMaxTrees][nMaxJet];
-    Float_t jtphi_[nMaxTrees][nMaxJet];
-    Float_t refpt_[nMaxTrees][nMaxJet];
-    Float_t jtPfCHF_[nMaxTrees][nMaxJet];
-    Float_t jtPfCEF_[nMaxTrees][nMaxJet];
-    Float_t jtPfNHF_[nMaxTrees][nMaxJet];
-    Float_t jtPfNEF_[nMaxTrees][nMaxJet];
-    Float_t jtPfMUF_[nMaxTrees][nMaxJet];
-    Float_t jtPfCHMF_[nMaxTrees][nMaxJet];
-    Float_t jtPfCEMF_[nMaxTrees][nMaxJet];
-    Float_t jtPfNHMF_[nMaxTrees][nMaxJet];
-    Float_t jtPfNEMF_[nMaxTrees][nMaxJet];
-    Float_t jtPfMUMF_[nMaxTrees][nMaxJet];
-    Int_t jtPfCHM_[nMaxTrees][nMaxJet];
-    Int_t jtPfCEM_[nMaxTrees][nMaxJet];
-    Int_t jtPfNHM_[nMaxTrees][nMaxJet];
-    Int_t jtPfNEM_[nMaxTrees][nMaxJet];
-    Int_t jtPfMUM_[nMaxTrees][nMaxJet];
-
-    Int_t ngen_[nMaxTrees];
-    Float_t genpt_[nMaxTrees][nMaxJet];
-    Float_t genphi_[nMaxTrees][nMaxJet];
-    Float_t geneta_[nMaxTrees][nMaxJet];
-    Int_t gensubid_[nMaxTrees][nMaxJet];
 
     for(Int_t tI = 0; tI < nTrees; ++tI){
-      jetTrees_p[tI] = (TTree*)inFile_p->Get(responseTrees.at(tI).c_str());
+      jetTrees_p[tI] = (TTree*)inFile_p->Get(responseTrees[tI].c_str());
 
       if(nTrees != 2 || tI != posR4){
 	jetTrees_p[tI]->SetBranchStatus("*", 0);
@@ -819,7 +873,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     const Int_t nEntriesToProcess = entryFrac*nEntries;
     const Int_t printInterval = TMath::Max(1, nEntriesToProcess/20);
 
-
     nFileLoopEvt += nEntriesToProcess;
 
     cppWatch subEntryWatch;
@@ -849,43 +902,39 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       if(!globalSel.isGood()) continue;
 
       for(Int_t tI = 0; tI < nTrees; ++tI){jetTrees_p[tI]->GetEntry(entry);}
-    
-      Int_t centPos = -1;
 
-      if(isPP) centPos = 0;
-      else{
+      Double_t ncollWeight_ = 1.;      
+      if(!isPP){
+	centPos[0] = -1;
 	for(Int_t cI = 0; cI < nCentBins; ++cI){
-	  if(centBinsLow.at(cI)*2 <= hiBin_ && hiBin_ < centBinsHi.at(cI)*2){
-	    centPos = cI;
+	  if(centBinsLow[cI]*2 <= hiBin_ && hiBin_ < centBinsHi[cI]*2){
+	    centPos[0] = cI;
 	    break;
 	  }
 	}
-	if(centPos < 0) continue;
-      }
-    
-      if(!isPP){
+	if(centPos[0] < 0) continue;
+
 	bool badJetSpecialSel = specialSel.CheckEventBadJet(ngen_[posR4], genpt_[posR4], genphi_[posR4], geneta_[posR4], gensubid_[posR4], entry);
 	if(badJetSpecialSel) continue;
+	
+	ncollWeight_ = findNcoll_Renorm(hiBin_);
       }
-
+      
       Double_t pthatWeight_ = -1;
       for(unsigned int pI = 0; pI < pthats.size()-1; ++pI){
-	if(pthats.at(pI) <= pthat_ && pthat_ < pthats.at(pI+1)){
-	  pthatWeight_ = pthatWeights.at(pI);
+	if(pthats[pI] <= pthat_ && pthat_ < pthats[pI+1]){
+	  pthatWeight_ = pthatWeights[pI];
 	  break;
 	}
       }
-      if(pthat_ > pthats.at(pthats.size()-1)) pthatWeight_ = pthatWeights.at(pthatWeights.size()-1);
-
+      if(pthat_ > pthats[pthats.size()-1]) pthatWeight_ = pthatWeights[pthatWeights.size()-1];
+      
       if(pthatWeight_ < 0){
 	std::cout << "WARNING - NO WEIGHT FOR pthat \'" << pthat_ << "\'. Set to 1" << std::endl;
 	pthatWeight_ = 1.;
       }
 
-      Double_t ncollWeight_ = 1.;
-      if(!isPP) ncollWeight_ = findNcoll_Renorm(hiBin_);
-      Double_t fullWeight_ = ncollWeight_*pthatWeight_;      
-
+      Double_t fullWeight_ = ncollWeight_*pthatWeight_;
       pthat_h->Fill(pthat_);
       pthatWeighted_h->Fill(pthat_, pthatWeight_);
       pthatFullWeighted_h->Fill(pthat_, fullWeight_);
@@ -900,37 +949,22 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       if(!isPP) scaleHiBin = hiBin_/2;
 
       Bool_t isPara = randGen_p->Uniform(0., 1.) < fracParaFills;
-
+    
       for(Int_t tI = 0; tI < nTrees; ++tI){
 	if(nTrees == 2 && posR4 == tI) continue;
 
-	std::string algoName = responseTrees.at(tI);
+	std::string algoName = responseTrees[tI];
 	//	if(algoName.find("/") != std::string::npos) algoName = algoName.substr(0, algoName.find("/"));
 
-	Double_t rValD = getRVal(algoName);
-	rValD /= 10.;
-	const Int_t rVal = getRVal(algoName);
-	bool isSmallR = rReader.GetIsSmallR(rVal);
-	bool isLargeR = rReader.GetIsLargeR(rVal);	
-	if(!isSmallR && !isLargeR){
-	  std::cout << "WARNING (LINE " << __LINE__ << ": " << algoName << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+	if(!isSmallR[tI] && !isLargeR[tI]){
+	  std::cout << "WARNING (LINE " << __LINE__ << ": " << algoName << " with rVal=" << rValI[tI] << " is not classified as either small or large R. return 1" << std::endl;
 	  return 1;
 	}  
 
-	const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-	const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
-	Double_t recoJtPtBins[nPtBinsMax+1];
-	Double_t genJtPtBins[nPtBinsMax+1];
-	rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
-	rReader.GetSmallOrLargeRBins(isSmallR, true, nGenJtPtBins+1, genJtPtBins);
-	
-
 	const Int_t nUsed = ngen_[tI];
 	bool isUsed[nUsed];
-	for(Int_t gI = 0; gI < nUsed; ++gI){
-	  isUsed[gI] = false;
-	}
-	
+	for(Int_t gI = 0; gI < nUsed; ++gI){isUsed[gI] = false;}
+	  
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 	  Double_t refptTemp = refpt_[tI][jI];
@@ -938,36 +972,35 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    for(Int_t gI = 0; gI < ngen_[tI]; ++gI){
 	      if(gensubid_[tI][gI] == 0) continue;
 	      else if(isUsed[gI]) continue;
-	      else if(getDR(jteta_[tI][jI], jtphi_[tI][jI], geneta_[tI][gI], genphi_[tI][gI]) < 0.2 + TMath::Min(0.0, 0.3 - rValD)){
+	      else if(getDR(jteta_[tI][jI], jtphi_[tI][jI], geneta_[tI][gI], genphi_[tI][gI]) < 0.2 + TMath::Min(0.0, 0.3 - rValD[tI])){
 		isUsed[gI] = true;
 		refptTemp = genpt_[tI][gI];
 		break;
 	      }
 	    }
 	  }
-	
-	  bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[0] && refpt_[tI][jI] < genJtPtBins[nGenJtPtBins] && refpt_[tI][jI] > minJtPtCut.at(tI));
+
+	  if(refptTemp < minGenJtPt) continue;
 
 	  for(Int_t mI = 0; mI < nResponseMod; ++mI){
-	    Float_t jtPtFillVal[nSyst];
-	    bool goodReco[nSyst];
-	    bool goodRecoTrunc[nSyst];
+	    Double_t jtPtFillVal[nSyst];
 	    double fullWeight2[nSyst];
-
+	    
+	    bool oneRecoIsGood = false;
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	  
 	      jtPtFillVal[sI] = jtpt_[tI][jI] + (jtpt_[tI][jI] - refpt_[tI][jI])*responseMod[mI];
 	      fullWeight2[sI] = fullWeight_;
-
+	      
 	      if(isStrSame(systStr[sI], "JECUpMC")) jtPtFillVal[sI] += jtPtFillVal[sI]*jecVarMC;
 	      else if(isStrSame(systStr[sI], "JECDownMC")) jtPtFillVal[sI] -= jtPtFillVal[sI]*jecVarMC;
 	      else if(isStrSame(systStr[sI], "JECUpData")) jtPtFillVal[sI] += jtPtFillVal[sI]*jecVarData;
 	      else if(isStrSame(systStr[sI], "JECDownData")) jtPtFillVal[sI] -= jtPtFillVal[sI]*jecVarData;
 	      else if(isStrSame(systStr[sI], "JECUpUE") || isStrSame(systStr[sI], "JECDownUE") ){
-		Float_t tempScale =  jtPtFillVal[sI]/rawpt_[tI][jI];
-		Float_t tempRawPt = rawpt_[tI][jI];
-		if(isStrSame(systStr[sI], "JECUpUE")) tempRawPt += TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
-		else tempRawPt -= TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rVal, "FlowDefaultInRho"));
-
+		Double_t tempScale =  jtPtFillVal[sI]/rawpt_[tI][jI];
+		Double_t tempRawPt = rawpt_[tI][jI];
+		if(isStrSame(systStr[sI], "JECUpUE")) tempRawPt += TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rValI[tI], "FlowDefaultInRho"));
+		else tempRawPt -= TMath::Abs(scaleErr.getMuDataMinusMC(scaleHiBin, jteta_[tI][jI], rValI[tI], "FlowDefaultInRho"));
+		
 		jtPtFillVal[sI] = tempRawPt*tempScale;
 	      }
 	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarMC;
@@ -975,10 +1008,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] *= flatWeight.getJtWeight(algoName, hiBin_/2, refpt_[tI][jI], jteta_[tI][jI]);
 	      else if(isStrSame(systStr[sI], "PriorUp1PowerPthat")) fullWeight2[sI] *= pthat_/pthatLow;
 	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
-
-	      goodReco[sI] = (jtPtFillVal[sI] >= genJtPtBins[0] && jtPtFillVal[sI] < genJtPtBins[nGenJtPtBins]);
-	      goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[0] && jtPtFillVal[sI] < recoJtPtBins[nRecoJtPtBins]); // Since bins are re-asymmetric, just make these the same
+	    
+	      if(jtPtFillVal[sI] > minRecoJtPt) oneRecoIsGood = true;
 	    }
+
+	    if(!oneRecoIsGood) continue;
 
 	    std::vector<bool> passesID;
 	    for(Int_t iI = 0; iI < nID; ++iI){
@@ -995,130 +1029,128 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      passesID.push_back(pass);
 	    }
 	    
-	    Int_t recoJtPos = -1;
-	    Int_t genJtPos = -1;
-	  
-	    for(Int_t posI = 0; posI < nRecoJtPtBins; ++posI){
-	      if(recoJtPtBins[posI] <= jtpt_[tI][jI] && recoJtPtBins[posI+1] > jtpt_[tI][jI]){
-		recoJtPos = posI;
-		break;
-	      }
-	    }
-
-	    for(Int_t posI = 0; posI < nGenJtPtBins; ++posI){
-	      if(genJtPtBins[posI] <= refpt_[tI][jI] && genJtPtBins[posI+1] > refpt_[tI][jI]){
-		genJtPos = posI;
-		break;
-	      }
-	    }
-	    
-	    //	  if(recoJtPos < 0) std::cout << "WARNING: recoJtPos -1 for jtpt==" << jtpt_[tI][jI] << std::endl;
-	    //	  if(genJtPos < 0) std::cout << "WARNING: genJtPos -1 for refpt==" << refpt_[tI][jI] << std::endl;
-	    
 	    std::vector<int> jtAbsEtaPoses;
 	    for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	      if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
 		jtAbsEtaPoses.push_back(aI);
 	      }
 	    }
-
-	    if(!goodTruth && refpt_[tI][jI] < 0){
-	      bool goodTruth2 = (refptTemp >= genJtPtBins[0] && refptTemp < genJtPtBins[nGenJtPtBins] && refptTemp > minJtPtCut.at(tI));
-	      if(!goodTruth2){
-		for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
-		  for(unsigned int iI = 0; iI < passesID.size(); ++iI){
-		    if(!passesID.at(iI)) continue;
-
-		    if(isPara) recoJtPt_NoTruth_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		    else recoJtPt_NoTruth_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		  }
-		}
-	      }
-	      
-	      continue;
-	    }
-	  
 	    
-	    for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
-	      for(unsigned int iI = 0; iI < passesID.size(); ++iI){
-		if(!passesID.at(iI)) continue;
-		
-		if(!isPara){
-		  if(goodTruth) genJtPt_All_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
+	    for(auto const & cent : centPos){
+	      bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[tI][cent][0][0] && refpt_[tI][jI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refpt_[tI][jI] > minJtPtCut[tI]);  
+	      bool goodReco[nSyst];
+	      bool goodRecoTrunc[nSyst];
+	      
+	      for(Int_t sI = 0; sI < nSyst; ++sI){
+		goodReco[sI] = (jtPtFillVal[sI] >= genJtPtBins[tI][cent][0][0] && jtPtFillVal[sI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]);
+		goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[tI][cent][0] && jtPtFillVal[sI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]); // Since bins are re-asymmetric, just make these the same
+	      }
 
-		  for(Int_t sI = 0; sI < nSyst; ++sI){
+	      if(/*!goodTruth &&*/refpt_[tI][jI] < 0){
+		bool goodTruth2 = (refptTemp >= genJtPtBins[tI][cent][0][0] && refptTemp < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refptTemp > minJtPtCut[tI]);
+		if(!goodTruth2){
+		  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+		    for(unsigned int iI = 0; iI < passesID.size(); ++iI){
+		      if(!passesID[iI]) continue;
+		      
+		      if(isPara) recoJtPt_NoTruth_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      else recoJtPt_NoTruth_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		    }
+		  }
+		}	    
+	      }
+	   
+	      
+	      for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+		for(unsigned int iI = 0; iI < passesID.size(); ++iI){
+		  if(!passesID[iI]) continue;
+		  
+		  if(!isPara){
 		    if(goodTruth){
-		      //Debugging:
-		      if(sI == 0 && isStrSame(idStr[iI], "LightMUAndCHID") && aI == 0 && mI == 0){
-			if(jtPtFillVal[sI] >= 1500 && refpt_[tI][jI] >= 300){
-			  std::cout << "WARNING JET IN FILE \'" << fileList.at(fI) << "\', Entry: " << entry << ", jtpt=" << jtPtFillVal[sI] << ", refpt=" << refpt_[tI][jI] << std::endl;
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_All_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
+		      }
+		    }
+		  
+		    for(Int_t sI = 0; sI < nSyst; ++sI){
+		      if(goodTruth){
+			//Debugging:
+			if(sI == 0 && isStrSame(idStr[iI], "LightMUAndCHID") && aI == 0 && mI == 0){
+			  if(jtPtFillVal[sI] >= 1500 && refpt_[tI][jI] >= 300){
+			    std::cout << "WARNING JET IN FILE \'" << fileList[fI] << "\', Entry: " << entry << ", jtpt=" << jtPtFillVal[sI] << ", refpt=" << refpt_[tI][jI] << std::endl;
+			  }
+			}
+			
+			if(goodReco[sI]){
+			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			    response_RecoGenSymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+			  }
+			}
+			
+			if(goodRecoTrunc[sI]){
+			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			    genJtPt_GoodReco_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+			    response_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+			    rooResponse_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+			  }
+			  
+			  recoJtPt_GoodGen_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
+			}
+			
+			if(isStrSame(systStr[sI], "PriorFlat")){
+			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			    genJtPt_CheckFlatPrior_h[tI][cent][iI][mI][aI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+			  }
 			}
 		      }
-
-
-		      if(goodReco[sI]) response_RecoGenSymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-
-		      if(goodRecoTrunc[sI]){
-			genJtPt_GoodReco_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
-			recoJtPt_GoodGen_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
-			response_RecoGenAsymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-			rooResponse_RecoGenAsymm_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
+		    }
+		    
+		    if(goodTruth && goodReco[0]){
+		      recoJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
 		      }
 		      
-		      if(isStrSame(systStr[sI], "PriorFlat")) genJtPt_CheckFlatPrior_h[tI][centPos][iI][mI][aI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+		      if(goodRecoTrunc[0]){
+			recoJtPt_RecoTrunc_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      }
+		    }
+		    else if(goodTruth){
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
+		      }
 		    }
 		  }
-		  
-		  if(goodTruth && goodReco[0]){
-		    recoJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		    genJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
-		    
-		    if(genJtPos >= 0){
-		      if(anomolousJetCount < maxAnomolousJet && jtPtFillVal[0] > 800. && refpt_[tI][jI] < 200. && passesID.at(1) && responseTrees.at(tI).find("akPu") == std::string::npos){
-			std::cout << "Anomolous jet \'" << anomolousJetCount << "\':" << std::endl;
-			std::cout << " File: " << fileList.at(fI) << std::endl;
-			std::cout << " Algo, entry: " << responseTrees.at(tI) << ", " << entry << std::endl;
-			std::cout << " reco,gen: " << jtPtFillVal[0] << ", " << refpt_[tI][jI] << ", " << jteta_[tI][jI] << std::endl;
-			std::cout << " run,lumi,evt: " << run_ << ", " << lumi_ << ", " << evt_ << std::endl;
+		  else{		
+		    for(Int_t sI = 0; sI < nSyst; ++sI){
+		      if(goodRecoTrunc[sI] && goodTruth){
+			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			  genJtPt_GoodReco_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+			}
 			
-			anomolousJetCount++;
+			recoJtPt_GoodGen_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
+		      }
+		    }		  
+		    
+		    if(goodTruth && goodReco[0]){
+		      recoJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
 		      }
 		      
-		      recoJtPtPerGenPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI]);
-		      recoJtPtPerGenPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][genJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI], fullWeight_);
+		      if(goodRecoTrunc[0]) recoJtPt_RecoTrunc_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
 		    }
-		    
-		    if(recoJtPos >= 0 && refpt_[tI][jI] > 0){
-		      genJtPtPerRecoPtBin_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI]);
-		      genJtPtPerRecoPtBinWeighted_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][recoJtPos]->Fill(jtPtFillVal[0]/refpt_[tI][jI], fullWeight_);
-		    }
-		    
-		    if(goodRecoTrunc[0]){
-		      recoJtPt_RecoTrunc_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		    }
-		  }
-		  else if(goodTruth) genJtPt_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
-		}
-		else{
-		
-		  for(Int_t sI = 0; sI < nSyst; ++sI){
-		    if(goodRecoTrunc[sI] && goodTruth){
-		      genJtPt_GoodReco_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
-		      recoJtPt_GoodGen_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
-		    }
-		  }
-		    
-		  if(goodTruth && goodReco[0]){
-		    recoJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		    genJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
-		    
-		    if(goodRecoTrunc[0]) recoJtPt_RecoTrunc_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(jtPtFillVal[0], fullWeight_);
-		  }
-		  else if(goodTruth) genJtPt_ParaFills_h[tI][centPos][iI][mI][jtAbsEtaPoses.at(aI)]->Fill(refpt_[tI][jI], fullWeight_);
+		    else if(goodTruth){
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
+		      }
+		    }		  
+		  }	     
 		}
 	      }
 	    }
-	  }
+	  }	
 	}
       }
     }
@@ -1129,7 +1161,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   }
 
   fileLoopWatch.stop();
-
   writeLoopWatch.start();
 
   outFile_p->cd();
@@ -1156,58 +1187,44 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     outFile_p->cd();
     dir_p[dI]->cd();
 
-    const Int_t rVal = getRVal(dir_p[dI]->GetName());
-    bool isSmallR = rReader.GetIsSmallR(rVal);
-    bool isLargeR = rReader.GetIsLargeR(rVal);	
-    if(!isSmallR && !isLargeR){
-      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+    if(!isSmallR[dI] && !isLargeR[dI]){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rValI[dI] << " is not classified as either small or large R. return 1" << std::endl;
       return 1;
     }      
-    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
     
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t iI = 0; iI < nID; ++iI){
 	for(Int_t mI = 0; mI < nResponseMod; ++mI){
-
 	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
 	    recoJtPt_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 	    recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 	    recoJtPt_NoTruth_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
-	    genJtPt_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
-	    
 	    recoJtPt_ParaFills_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 	    recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 	    recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
-	    genJtPt_ParaFills_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
-	    
 
-	    genJtPt_All_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
-	    
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      genJtPt_h[dI][cI][iI][mI][aI][binsI]->Write("", TObject::kOverwrite);
+	      genJtPt_ParaFills_h[dI][cI][iI][mI][aI][binsI]->Write("", TObject::kOverwrite);
+	      genJtPt_All_h[dI][cI][iI][mI][aI][binsI]->Write("", TObject::kOverwrite);
+	    }
+
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
-
-	      genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
-	      response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
-	      response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
-	      rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
-	    }
-	    
-	    genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI]->Write("", TObject::kOverwrite);
 
-	    for(Int_t jI = 0; jI < nRecoJtPtBins; ++jI){
-	      genJtPtPerRecoPtBin_h[dI][cI][iI][mI][aI][jI]->Write("", TObject::kOverwrite);
-	      genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][mI][aI][jI]->Write("", TObject::kOverwrite);
+	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){	       
+		genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+		genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+		response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+		response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+	      }
 	    }
 
-
-	    for(Int_t jI = 0; jI < nGenJtPtBins; ++jI){
-	      recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI]->Write("", TObject::kOverwrite);
-	      recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][mI][aI][jI]->Write("", TObject::kOverwrite);
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI][binsI]->Write("", TObject::kOverwrite);
 	    }
-
 	  }
 	}
       }
@@ -1243,15 +1260,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     outFile_p->cd();
     dir_p[dI]->cd();
 
-    const Int_t rVal = getRVal(dir_p[dI]->GetName());
-    bool isSmallR = rReader.GetIsSmallR(rVal);
-    bool isLargeR = rReader.GetIsLargeR(rVal);	
-    if(!isSmallR && !isLargeR){
-      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rVal << " is not classified as either small or large R. return 1" << std::endl;
+    if(!isSmallR[dI] && !isLargeR[dI]){
+      std::cout << "WARNING (LINE " << __LINE__ << ": " << dir_p[dI]->GetName() << " with rVal=" << rValI[dI] << " is not classified as either small or large R. return 1" << std::endl;
       return 1;
     }      
-    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    const Int_t nGenJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, true);
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       for(Int_t iI = 0; iI < nID; ++iI){
@@ -1261,36 +1273,32 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    delete recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI];
 	    delete recoJtPt_NoTruth_h[dI][cI][iI][mI][aI];
 	    delete recoJtPt_h[dI][cI][iI][mI][aI];
-	    delete genJtPt_h[dI][cI][iI][mI][aI];
 	    
 	    delete recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI];
 	    delete recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI];
 	    delete recoJtPt_ParaFills_h[dI][cI][iI][mI][aI];
-	    delete genJtPt_ParaFills_h[dI][cI][iI][mI][aI];
-	    
-	    
-	    delete genJtPt_All_h[dI][cI][iI][mI][aI];
+
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      delete genJtPt_h[dI][cI][iI][mI][aI][binsI];
+	      delete genJtPt_ParaFills_h[dI][cI][iI][mI][aI][binsI];	   	    
+	      delete genJtPt_All_h[dI][cI][iI][mI][aI][binsI];
+	    }
 
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
-	      delete genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI];
 	      delete recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI];
-	      delete genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI];
 	      delete recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI];
-	      delete response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI];
-	      delete response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI];
-	      delete rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI];
+
+	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+		delete genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI];
+		delete genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI];
+		delete response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI];
+		delete response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI];
+		delete rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI];
+	      }
 	    }
 	    
-	    delete genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI];
-
-	    for(Int_t jI = 0; jI < nRecoJtPtBins; ++jI){
-	      delete genJtPtPerRecoPtBin_h[dI][cI][iI][mI][aI][jI];
-	      delete genJtPtPerRecoPtBinWeighted_h[dI][cI][iI][mI][aI][jI];
-	    }
-
-	    for(Int_t jI = 0; jI < nGenJtPtBins; ++jI){
-	      delete recoJtPtPerGenPtBin_h[dI][cI][iI][mI][aI][jI];
-	      delete recoJtPtPerGenPtBinWeighted_h[dI][cI][iI][mI][aI][jI];
+	    for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+	      delete genJtPt_CheckFlatPrior_h[dI][cI][iI][mI][aI][binsI];
 	    }
 	  }
 	}

@@ -9,7 +9,7 @@
 
 double getLumiFactor()
 {
-  return 27400.;
+  return 27400.; //in inverse nanobarn
 }
 
 double getLumiPercentError()
@@ -22,16 +22,37 @@ double getLumiAbsError()
   return getLumiFactor()*getLumiPercentError();
 }
 
-double getNMBEvents()
+double getEffectiveMBPrescale()
 {
-  const Double_t nMBEvents_JSON_V2_DEFAULT = 55.1803882404*(49.454572);
-  Double_t nMBEvents_JSON_V2_TEMP = nMBEvents_JSON_V2_DEFAULT;
+  //  NUMBERS W/O EVENT SELECTIONS
+  //  double nHLTJet100JSON = 2575180;//Extracted from HIHardProbes on json
+  //  double nHLTJet100AndMBJSON = 46129;//Extracted from HIHardProbes on json, coincidence of jet100 and MB; see extractNMB.exe
 
-  const Double_t nMBEvents_JSON_V2 = nMBEvents_JSON_V2_TEMP;
-  return nMBEvents_JSON_V2;
+  //  const double nHLTJet100JSON = 2507213;//Extracted from HIHardProbes on json, w/ event selection, in 0-100%
+  //  const double nHLTJet100AndMBJSON = 45792;//Extracted from HIHardProbes on json, coincidence of jet100 and MB; see extractNMB.exe, w/ event selection, in 0-100%
+
+  const double nHLTJet100JSON = 2506791;//Extracted from HIHardProbes on json, w/ event selection, in 0-90%
+  const double nHLTJet100AndMBJSON = 45784;//Extracted from HIHardProbes on json, coincidence of jet100 and MB; see extractNMB.exe, w/ event selection, in 0-90%
+
+  return nHLTJet100JSON/nHLTJet100AndMBJSON;
 }
 
-double getTAAScaleFactor(const std::string inStr)
+double getPrescaledNMB()
+{
+  //  return 50126207+495817;//Number w/o event selection
+  //return 48593783+484885;//These old numbers extracted w/ event selection but w/ 0-100% - since it is unreliable in 90-100, rederived
+  return (45092445 + 450028)/0.9;//Derived w/ event selection in 0-90% THS REQUIRES 0.9 correction
+  //Gotten from HIMinimumBias1 and HIMinimumBias2 combination, following prescription here: https://twiki.cern.ch/twiki/pub/CMS/HINUpsilonRaa2016/Jason_MinBiasCounting_2017-02-02.pdf, slide 8
+  //using extractNMB.exe
+}
+
+double getNMBEvents()
+{
+  return getEffectiveMBPrescale()*getPrescaledNMB();
+}
+
+//In mb-1 as defined by above url and the charged particle RAA (CMS-HIN-15-015)
+double getTAAScaleFactorMB(const std::string inStr)
 {
   double scaleFactor = -1.;
   if(inStr.find("Cent0to10") != std::string::npos) scaleFactor = 23.22;
@@ -44,10 +65,7 @@ double getTAAScaleFactor(const std::string inStr)
   return scaleFactor;
 }
 
-double getTAAScaleFactorNB(const std::string inStr)
-{
-  return getTAAScaleFactor(inStr)/100000.;
-}
+double getTAAScaleFactorNB(const std::string inStr){return getTAAScaleFactorMB(inStr)/1000000.;}
 
 double getTAAScaleFactorUp(const std::string inStr)
 {

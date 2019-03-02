@@ -87,9 +87,9 @@ bool flatWeightReader::Init(std::string inWeightFileName, cutPropagator inCutPro
   //  else if(!cutPropIn.CheckNJtAlgos(cutPropWeight)) cutsMatch = false;
   //  else if(!cutPropIn.CheckJtAlgos(cutPropWeight)) cutsMatch = false;
   else if(!cutPropIn.CheckIsPP(cutPropWeight)) cutsMatch = false;
-  else if(!cutPropIn.CheckNCentBins(cutPropWeight)) cutsMatch = false;
-  else if(!cutPropIn.CheckCentBinsLow(cutPropWeight)) cutsMatch = false;
-  else if(!cutPropIn.CheckCentBinsHi(cutPropWeight)) cutsMatch = false;
+  //  else if(!cutPropIn.CheckNCentBins(cutPropWeight)) cutsMatch = false;
+  //  else if(!cutPropIn.CheckCentBinsLow(cutPropWeight)) cutsMatch = false;
+  //  else if(!cutPropIn.CheckCentBinsHi(cutPropWeight)) cutsMatch = false;
  
   if(!cutsMatch){
     std::cout << "flatWeightReader: cutPropagator for weight file \'" << weightFileName << "\' does not match that of the input cutPropagator. return false" << std::endl;
@@ -128,12 +128,13 @@ bool flatWeightReader::Init(std::string inWeightFileName, cutPropagator inCutPro
     return false;
   }
 
-
   for(Int_t jI = 0; jI < nJtAlgos; ++jI){
     std::string jtName = jtAlgos.at(jI);
     jtName = jtName.substr(0, jtName.find("/"));
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
+      if(cI != 0 && isPP) continue;
+
       std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
       if(isPP) centStr = "PP";
 
@@ -199,8 +200,7 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
   int etaPos = -1;
 
   jteta = TMath::Abs(jteta);
-
-
+  
   for(int jI = 0; jI < nJtAlgos; ++jI){
     if(isStrSame(algo, jtAlgos[jI])){
       algPos = jI;
@@ -227,12 +227,11 @@ double flatWeightReader::getJtWeight(std::string algo, int cent, double jtpt, do
       }    
     }
   }
-    
+
   if(centPos == -1){
     std::cout << "flatWeightReader: Warning centPos == -1, return weight of 1" << std::endl;
     return 1.;
   }
-
 
   for(int aI = 0; aI < nJtAbsEtaBins; ++aI){
     if(jteta >= jtAbsEtaBinsLow.at(aI) && jteta < jtAbsEtaBinsHi.at(aI)){
