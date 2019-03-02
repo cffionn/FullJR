@@ -1,0 +1,5 @@
+qISPP=0
+PTHAT=30,80
+PTHATWEIGHTS=1,0.5,
+/data/cmcginn/L1Ntuples/Dijet_pThat-30_HydjetCymbMB_pp_5p02_Pythia6/Forest/HiForestAOD_crab_Dijet_pThat-30_HydjetCymbMB_pp_5p02_Pythia6_MERGED_Pthat.root
+/data/cmcginn/L1Ntuples/Dijet_pThat-80_HydjetCymbMB_pp_5p02_Pythia6/Forest/HiForestAOD_crab_Dijet_pThat-80_HydjetCymbMB_pp_5p02_Pythia6_MERGED_Pthat.root
