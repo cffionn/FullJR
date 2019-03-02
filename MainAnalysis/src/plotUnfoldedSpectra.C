@@ -259,22 +259,74 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
   }
 
   const Int_t nMaxJtPtBins = 50;
-  const Int_t nGenJtPtBinsSmallR = cutPropPbPb.GetNGenJtPtBinsSmallR();
-  const Int_t nGenJtPtBinsLargeR = cutPropPbPb.GetNGenJtPtBinsLargeR();
-  std::vector<Double_t> genJtPtBinsSmallRTemp = cutPropPbPb.GetGenJtPtBinsSmallR();
-  std::vector<Double_t> genJtPtBinsLargeRTemp = cutPropPbPb.GetGenJtPtBinsLargeR();
-  const Int_t nRecoJtPtBinsSmallR = cutPropPbPb.GetNRecoJtPtBinsSmallR();
-  const Int_t nRecoJtPtBinsLargeR = cutPropPbPb.GetNRecoJtPtBinsLargeR();
+  const Int_t nGenJtPtSmallBinsSmallRCent0to10 = cutPropPbPb.GetNGenJtPtSmallBinsSmallRCent0to10();
+  const Int_t nGenJtPtLargeBinsSmallRCent0to10 = cutPropPbPb.GetNGenJtPtLargeBinsSmallRCent0to10();
+  const Int_t nGenJtPtSmallBinsLargeRCent0to10 = cutPropPbPb.GetNGenJtPtSmallBinsLargeRCent0to10();
+  const Int_t nGenJtPtLargeBinsLargeRCent0to10 = cutPropPbPb.GetNGenJtPtLargeBinsLargeRCent0to10();
+  const Int_t nRecoJtPtBinsSmallRCent0to10 = cutPropPbPb.GetNRecoJtPtBinsSmallRCent0to10();
+  const Int_t nRecoJtPtBinsLargeRCent0to10 = cutPropPbPb.GetNRecoJtPtBinsLargeRCent0to10();
+
+  const Int_t nGenJtPtSmallBinsSmallRCent10to30 = cutPropPbPb.GetNGenJtPtSmallBinsSmallRCent10to30();
+  const Int_t nGenJtPtLargeBinsSmallRCent10to30 = cutPropPbPb.GetNGenJtPtLargeBinsSmallRCent10to30();
+  const Int_t nGenJtPtSmallBinsLargeRCent10to30 = cutPropPbPb.GetNGenJtPtSmallBinsLargeRCent10to30();
+  const Int_t nGenJtPtLargeBinsLargeRCent10to30 = cutPropPbPb.GetNGenJtPtLargeBinsLargeRCent10to30();
+  const Int_t nRecoJtPtBinsSmallRCent10to30 = cutPropPbPb.GetNRecoJtPtBinsSmallRCent10to30();
+  const Int_t nRecoJtPtBinsLargeRCent10to30 = cutPropPbPb.GetNRecoJtPtBinsLargeRCent0to10();
+
+  const Int_t nGenJtPtSmallBinsSmallRCent30to50 = cutPropPbPb.GetNGenJtPtSmallBinsSmallRCent30to50();
+  const Int_t nGenJtPtLargeBinsSmallRCent30to50 = cutPropPbPb.GetNGenJtPtLargeBinsSmallRCent30to50();
+  const Int_t nGenJtPtSmallBinsLargeRCent30to50 = cutPropPbPb.GetNGenJtPtSmallBinsLargeRCent30to50();
+  const Int_t nGenJtPtLargeBinsLargeRCent30to50 = cutPropPbPb.GetNGenJtPtLargeBinsLargeRCent30to50();
+  const Int_t nRecoJtPtBinsSmallRCent30to50 = cutPropPbPb.GetNRecoJtPtBinsSmallRCent30to50();
+  const Int_t nRecoJtPtBinsLargeRCent30to50 = cutPropPbPb.GetNRecoJtPtBinsLargeRCent30to50();
+
+  const Int_t nGenJtPtSmallBinsSmallRCent50to90 = cutPropPbPb.GetNGenJtPtSmallBinsSmallRCent50to90();
+  const Int_t nGenJtPtLargeBinsSmallRCent50to90 = cutPropPbPb.GetNGenJtPtLargeBinsSmallRCent50to90();
+  const Int_t nGenJtPtSmallBinsLargeRCent50to90 = cutPropPbPb.GetNGenJtPtSmallBinsLargeRCent50to90();
+  const Int_t nGenJtPtLargeBinsLargeRCent50to90 = cutPropPbPb.GetNGenJtPtLargeBinsLargeRCent50to90();
+  const Int_t nRecoJtPtBinsSmallRCent50to90 = cutPropPbPb.GetNRecoJtPtBinsSmallRCent50to90();
+  const Int_t nRecoJtPtBinsLargeRCent50to90 = cutPropPbPb.GetNRecoJtPtBinsLargeRCent50to90();
+
+  std::vector<Double_t> genJtPtSmallBinsSmallRTemp = cutPropPbPb.GetGenJtPtSmallBinsSmallR();
+  std::vector<Double_t> genJtPtLargeBinsSmallRTemp = cutPropPbPb.GetGenJtPtLargeBinsSmallR();
+  std::vector<Double_t> genJtPtSmallBinsLargeRTemp = cutPropPbPb.GetGenJtPtSmallBinsLargeR();
+  std::vector<Double_t> genJtPtLargeBinsLargeRTemp = cutPropPbPb.GetGenJtPtLargeBinsLargeR();
   std::vector<Double_t> recoJtPtBinsSmallRTemp = cutPropPbPb.GetRecoJtPtBinsSmallR();
   std::vector<Double_t> recoJtPtBinsLargeRTemp = cutPropPbPb.GetRecoJtPtBinsLargeR();
 
   smallOrLargeR rReader;
-  if(!rReader.CheckNGenJtPtBinsSmallR(nGenJtPtBinsSmallR)) return 1;
-  if(!rReader.CheckNGenJtPtBinsLargeR(nGenJtPtBinsLargeR)) return 1;
-  if(!rReader.CheckGenJtPtBinsSmallR(genJtPtBinsSmallRTemp)) return 1;
-  if(!rReader.CheckGenJtPtBinsLargeR(genJtPtBinsLargeRTemp)) return 1;
-  if(!rReader.CheckNRecoJtPtBinsSmallR(nRecoJtPtBinsSmallR)) return 1;
-  if(!rReader.CheckNRecoJtPtBinsLargeR(nRecoJtPtBinsLargeR)) return 1;
+  if(!rReader.CheckNGenJtPtSmallBinsSmallRCent0to10(nGenJtPtSmallBinsSmallRCent0to10)) return 1;
+  if(!rReader.CheckNGenJtPtSmallBinsLargeRCent0to10(nGenJtPtSmallBinsLargeRCent0to10)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsSmallRCent0to10(nGenJtPtLargeBinsSmallRCent0to10)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsLargeRCent0to10(nGenJtPtLargeBinsLargeRCent0to10)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsSmallRCent0to10(nRecoJtPtBinsSmallRCent0to10)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsLargeRCent0to10(nRecoJtPtBinsLargeRCent0to10)) return 1;
+
+  if(!rReader.CheckNGenJtPtSmallBinsSmallRCent10to30(nGenJtPtSmallBinsSmallRCent10to30)) return 1;
+  if(!rReader.CheckNGenJtPtSmallBinsLargeRCent10to30(nGenJtPtSmallBinsLargeRCent10to30)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsSmallRCent10to30(nGenJtPtLargeBinsSmallRCent10to30)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsLargeRCent10to30(nGenJtPtLargeBinsLargeRCent10to30)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsSmallRCent10to30(nRecoJtPtBinsSmallRCent10to30)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsLargeRCent10to30(nRecoJtPtBinsLargeRCent10to30)) return 1;
+
+  if(!rReader.CheckNGenJtPtSmallBinsSmallRCent30to50(nGenJtPtSmallBinsSmallRCent30to50)) return 1;
+  if(!rReader.CheckNGenJtPtSmallBinsLargeRCent30to50(nGenJtPtSmallBinsLargeRCent30to50)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsSmallRCent30to50(nGenJtPtLargeBinsSmallRCent30to50)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsLargeRCent30to50(nGenJtPtLargeBinsLargeRCent30to50)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsSmallRCent30to50(nRecoJtPtBinsSmallRCent30to50)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsLargeRCent30to50(nRecoJtPtBinsLargeRCent30to50)) return 1;
+
+  if(!rReader.CheckNGenJtPtSmallBinsSmallRCent50to90(nGenJtPtSmallBinsSmallRCent50to90)) return 1;
+  if(!rReader.CheckNGenJtPtSmallBinsLargeRCent50to90(nGenJtPtSmallBinsLargeRCent50to90)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsSmallRCent50to90(nGenJtPtLargeBinsSmallRCent50to90)) return 1;
+  if(!rReader.CheckNGenJtPtLargeBinsLargeRCent50to90(nGenJtPtLargeBinsLargeRCent50to90)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsSmallRCent50to90(nRecoJtPtBinsSmallRCent50to90)) return 1;
+  if(!rReader.CheckNRecoJtPtBinsLargeRCent50to90(nRecoJtPtBinsLargeRCent50to90)) return 1;
+
+  if(!rReader.CheckGenJtPtSmallBinsSmallR(genJtPtSmallBinsSmallRTemp)) return 1;
+  if(!rReader.CheckGenJtPtSmallBinsLargeR(genJtPtSmallBinsLargeRTemp)) return 1;
+  if(!rReader.CheckGenJtPtLargeBinsSmallR(genJtPtLargeBinsSmallRTemp)) return 1;
+  if(!rReader.CheckGenJtPtLargeBinsLargeR(genJtPtLargeBinsLargeRTemp)) return 1;
   if(!rReader.CheckRecoJtPtBinsSmallR(recoJtPtBinsSmallRTemp)) return 1;
   if(!rReader.CheckRecoJtPtBinsLargeR(recoJtPtBinsLargeRTemp)) return 1;
 
@@ -863,7 +915,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 		const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
 		const Double_t centBinWidth = TMath::Abs(centBinsHi[cI] - centBinsLow[cI])/100.;
 
-		Double_t tempTAAFactor = getTAAScaleFactor(centStr);
+		Double_t tempTAAFactor = getTAAScaleFactorMB(centStr);
 		if(isStrSame(systStr[sI], "TAAUp")) tempTAAFactor += tempTAAFactor*getTAAScaleFactorUp(centStr);
 		else if(isStrSame(systStr[sI], "TAADown")) tempTAAFactor -= tempTAAFactor*getTAAScaleFactorDown(centStr);
 
@@ -996,76 +1048,75 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
     const std::string rValStr = std::to_string(rVal);
 
     const bool isSmallR = rReader.GetIsSmallR(rVal);
-    const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false);
-    Double_t recoJtPtBins[nMaxJtPtBins+1];
-    rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins);
 
     std::string rStr = "R=";
     if(getRVal(jetPbPbList.at(tI)) < 10) rStr = rStr + "0." + std::to_string(getRVal(jetPbPbList.at(tI)));
     else rStr = rStr + "1.0";
 
-    const std::string jetStrPbPb = jetPbPbList.at(tI).substr(0, jetPbPbList.at(tI).find("JetAna"));;
-    const std::string jetStrPP = jetPPList.at(ppPos).substr(0, jetPPList.at(ppPos).find("JetAna"));;
+    const std::string jetStrPbPb = jetPbPbList.at(tI).substr(0, jetPbPbList.at(tI).find("JetAna"));
+    const std::string jetStrPP = jetPPList.at(ppPos).substr(0, jetPPList.at(ppPos).find("JetAna"));
 
-    //	      jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][sI][bI] = (TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[tI][idI][mI][aI][0][bI]->Clone(newName.c_str());
-
-    for(Int_t mI = 0; mI < nResponseMod; ++mI){
-      //start pp closures
-      slideTitles.push_back("Conv. " + jetStrPP + " (ModRes " + prettyString(responseMod[mI],2,false) + ")");
-      pdfPerSlide.push_back({});
+    for(Int_t cI = 0; cI < nCentBins; ++ cI){
+      const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
+      const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
       
-      for(Int_t sI = 0; sI < nSyst; ++sI){	  
-	const Int_t totBigBayes = 1 + 2*nBigBayesSymm;
-	std::vector<TH1D*> bigBayesClones_p;
-	bigBayesClones_p.reserve(totBigBayes);
-	for(Int_t bI = 0; bI < totBigBayes; ++bI){
-	  //	  Int_t binPos = nBayes - 1 -2*nBigBayesSymm + bI;
-	  bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
-	}      
+      const Int_t nRecoJtPtBins = rReader.GetSmallOrLargeRNBins(isSmallR, false, false, centStr);
+      Double_t recoJtPtBins[nMaxJtPtBins+1];
+      rReader.GetSmallOrLargeRBins(isSmallR, false, nRecoJtPtBins+1, recoJtPtBins, false);
+      
+      for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	//start pp closures
+	slideTitles.push_back("Conv. " + jetStrPP + " (ModRes " + prettyString(responseMod[mI],2,false) + ")");
+	pdfPerSlide.push_back({});
 	
-	std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPPList.at(ppPos) + "_R" + rValStr + "_PP_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
-	pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
-	
-	doRatioPlotting(bigBayesClones_p, nBigBayesSymm, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 #pm" + std::to_string(nBigBayesSymm) + ")", recoJtPtBins[0], 1000., systStr.at(sI), saveName);
-	for(unsigned int ucI = 0; ucI < bigBayesClones_p.size(); ++ucI){
-	  delete bigBayesClones_p.at(ucI);
-	  bigBayesClones_p.at(ucI) = NULL;
+	for(Int_t sI = 0; sI < nSyst; ++sI){	  
+	  const Int_t totBigBayes = 1 + 2*nBigBayesSymm;
+	  std::vector<TH1D*> bigBayesClones_p;
+	  bigBayesClones_p.reserve(totBigBayes);
+	  for(Int_t bI = 0; bI < totBigBayes; ++bI){
+	    //	  Int_t binPos = nBayes - 1 -2*nBigBayesSymm + bI;
+	    bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
+	  }      
+	  
+	  std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPPList.at(ppPos) + "_R" + rValStr + "_PP_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+	  
+	  doRatioPlotting(bigBayesClones_p, nBigBayesSymm, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 #pm" + std::to_string(nBigBayesSymm) + ")", recoJtPtBins[0], 1000., systStr.at(sI), saveName);
+	  for(unsigned int ucI = 0; ucI < bigBayesClones_p.size(); ++ucI){
+	    delete bigBayesClones_p.at(ucI);
+	    bigBayesClones_p.at(ucI) = NULL;
+	  }
 	}
-      }
-      
-      slideTitles.push_back("BestComp. " + jetStrPP + " (ModRes " + prettyString(responseMod[mI],2,false) + ")");
-      pdfPerSlide.push_back({});
-      
-      for(Int_t sI = 0; sI < nSyst; ++sI){	  
-	std::vector<TH1D*> clones_p;
-      
-       	Int_t binPos = nBayes - 1 -nBigBayesSymm;	  
-	clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(binPos)).c_str()));
 	
-	if(bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] < 0) bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] = 25;
+	slideTitles.push_back("BestComp. " + jetStrPP + " (ModRes " + prettyString(responseMod[mI],2,false) + ")");
+	pdfPerSlide.push_back({});
+	
+	for(Int_t sI = 0; sI < nSyst; ++sI){	  
+	  std::vector<TH1D*> clones_p;
+	  
+	  Int_t binPos = nBayes - 1 -nBigBayesSymm;	  
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(binPos)).c_str()));
+	  
+	  if(bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] < 0) bayesPosPP[ppPos][idPos][mI][absEtaPos][sI] = 25;
       
-	std::cout << jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->GetName() << std::endl;
-	Int_t tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][sI];
-	tempBayesPos = 3;
+	  std::cout << jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->GetName() << std::endl;
+	  Int_t tempBayesPos = bayesPosPP[ppPos][idPos][mI][absEtaPos][sI];
+	  tempBayesPos = 3;
+	  
+	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 	
-	clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PP_h[ppPos][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
+	  std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPPList.at(ppPos) + "_R" + rValStr + "_PP_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
+	  
+	  std::string labelStr = systStr.at(sI) + ", Bayes" + std::to_string(tempBayesPos);
+	  doRatioPlotting(clones_p, 0, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 w/ " + std::to_string(tempBayesPos) + ")", recoJtPtBins[0], 1000., labelStr, saveName);
 	
-	std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPPList.at(ppPos) + "_R" + rValStr + "_PP_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
-	pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
-	
-	std::string labelStr = systStr.at(sI) + ", Bayes" + std::to_string(tempBayesPos);
-	doRatioPlotting(clones_p, 0, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 w/ " + std::to_string(tempBayesPos) + ")", recoJtPtBins[0], 1000., labelStr, saveName);
-
-	for(unsigned int ucI = 0; ucI < clones_p.size(); ++ucI){
-	  delete clones_p.at(ucI);
-	  clones_p.at(ucI) = NULL;
-	}      
-      }
-      //end pp closure ratios
-
-      for(Int_t cI = 0; cI < nCentBins; ++ cI){
-	const std::string centStr = "Cent" + std::to_string(centBinsLow.at(cI)) + "to" + std::to_string(centBinsHi.at(cI));
-	const std::string centStr2 = std::to_string(centBinsLow.at(cI)) + "-" + std::to_string(centBinsHi.at(cI)) + "%";
+	  for(unsigned int ucI = 0; ucI < clones_p.size(); ++ucI){
+	    delete clones_p.at(ucI);
+	    clones_p.at(ucI) = NULL;
+	  }      
+	}
+	//end pp closure ratios
 	
 	slideTitles.push_back("Conv. " + jetStrPbPb + " (ModRes " + prettyString(responseMod[mI],2,false) + ", " + centStr2 + ")");
 	pdfPerSlide.push_back({});
@@ -1079,7 +1130,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	    bigBayesClones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI]->Clone(("bigBayesClone_" + std::to_string(bI)).c_str()));
 	  }      
 
-	  std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  std::string saveName = "convBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_PbPb_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
 	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
 
 	  doRatioPlotting(bigBayesClones_p, nBigBayesSymm, "Jet p_{T} (GeV/c)", "Ratio (Bayes Iter 100 #pm" + std::to_string(nBigBayesSymm) + ")", recoJtPtBins[0], 1000., systStr.at(sI), saveName);
@@ -1105,7 +1156,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 
 	  clones_p.push_back((TH1D*)jtPtUnfolded_RecoGenAsymm_PbPb_h[tI][cI][idPos][mI][absEtaPos][sI]->Clone(("clone_" + std::to_string(tempBayesPos)).c_str()));
 
-	  std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
+	  std::string saveName = "convBestBayes_NBigBayesSymm" + std::to_string(nBigBayesSymm) + "_" + jetPbPbList.at(tI) + "_R" + rValStr + "_PbPb_" + centStr + "_" + idNameStr + "_ResponseMod" + prettyString(responseMod[mI], 2, true) + "_" + plotAbsEtaStr + "_" + systStr.at(sI) + "_" + dateStr + ".pdf";
 	  pdfPerSlide.at(pdfPerSlide.size()-1).push_back(saveName);
 
 	  std::string labelStr = systStr.at(sI) + ", Bayes" + std::to_string(tempBayesPos);
@@ -1233,7 +1284,7 @@ int plotUnfoldedSpectra(const std::string inFileNamePP, const std::string inFile
 	spectCanv_p->SetBottomMargin(0.14);
 	
 	const std::string yAxisTitle = "#frac{d^{2}#sigma^{pp}}{dp_{T}d#eta} or #frac{1}{N_{evt}}#frac{1}{#LTTAA#GT}#frac{d^{2}N^{PbPb}}{dp_{T}d#eta} [#frac{nb}{GeV/c}]";
-	TH1F* tempHist_p = new TH1F("tempHist_p", (";Jet p_{T} (GeV/c);" + yAxisTitle).c_str(), 10, xMinVal, xMaxVal);
+	TH1D* tempHist_p = new TH1D("tempHist_p", (";Jet p_{T} (GeV/c);" + yAxisTitle).c_str(), 10, xMinVal, xMaxVal);
 	centerTitles(tempHist_p);
 	
 	tempHist_p->GetXaxis()->SetTitleOffset(1.8); 
