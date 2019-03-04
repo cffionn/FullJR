@@ -39,16 +39,66 @@ bool checkAllNames(std::vector<std::string> names1, std::vector<std::string> nam
   return true;
 }
 
-void constructHist(std::vector<TH2D*>* hists_p, std::map<std::string, unsigned int>* histNameToPos, TFile* file_p, std::string dirName, bool doNew = false)
+void constructHist1D(TFile* outFile_p, std::vector<TH1D*>* hists_p, std::map<std::string, unsigned int>* histNameToPos, TFile* inFile_p, std::string dirName, bool doNew = false)
 {
-  TDirectory* dir_p = (TDirectory*)file_p->Get(dirName.c_str());
+  TDirectory* dir_p = (TDirectory*)inFile_p->Get(dirName.c_str());
+  TIter next(dir_p->GetListOfKeys());
+  TKey* key=NULL;
+
+  const Int_t nMaxBins = 100;
+  Double_t binsX[nMaxBins];  
+
+  while((key = (TKey*)next())){
+    const std::string name = key->GetName();
+    const std::string name2 = dirName + "/" + name;
+    const std::string className = key->GetClassName();
+
+    if(className.find("TH1D") == std::string::npos) continue;
+    if(histNameToPos->count(name2) == 0) continue;
+
+    unsigned int pos = (*histNameToPos)[name2];
+    TH1D* tempHist_p = (TH1D*)inFile_p->Get((dirName + "/" + name).c_str());
+
+    if(doNew){
+      std::string newName = name;
+      while(newName.find("/") != std::string::npos){newName.replace(0, newName.find("/")+1, "");}
+
+      const Int_t nBinsX = tempHist_p->GetNbinsX();
+
+      for(Int_t bIX = 0; bIX < nBinsX+1; ++bIX){
+	binsX[bIX] = tempHist_p->GetXaxis()->GetBinLowEdge(bIX+1);
+      }
+
+      std::string title = ";" + std::string(tempHist_p->GetXaxis()->GetTitle()) + ";" + std::string(tempHist_p->GetYaxis()->GetTitle());
+      outFile_p->cd();
+      (*hists_p)[pos] = new TH1D(newName.c_str(), title.c_str(), nBinsX, binsX);
+    }
+
+    for(Int_t bIX = 0; bIX < tempHist_p->GetNbinsX(); ++bIX){
+      Double_t val = (*hists_p)[pos]->GetBinContent(bIX+1);
+      Double_t err = (*hists_p)[pos]->GetBinError(bIX+1);
+      
+      val += tempHist_p->GetBinContent(bIX+1);
+      err = TMath::Sqrt(err*err + tempHist_p->GetBinError(bIX+1)*tempHist_p->GetBinError(bIX+1));
+      
+      (*hists_p)[pos]->SetBinContent(bIX+1, val);
+      (*hists_p)[pos]->SetBinError(bIX+1, err);
+    } 
+  }
+
+  return;
+}
+
+
+void constructHist2D(TFile* outFile_p, std::vector<TH2D*>* hists_p, std::map<std::string, unsigned int>* histNameToPos, TFile* inFile_p, std::string dirName, bool doNew = false)
+{
+  TDirectory* dir_p = (TDirectory*)inFile_p->Get(dirName.c_str());
   TIter next(dir_p->GetListOfKeys());
   TKey* key=NULL;
 
   const Int_t nMaxBins = 100;
   Double_t binsX[nMaxBins];
-  Double_t binsY[nMaxBins];
-  
+  Double_t binsY[nMaxBins];  
 
   while((key = (TKey*)next())){
     const std::string name = key->GetName();
@@ -59,7 +109,7 @@ void constructHist(std::vector<TH2D*>* hists_p, std::map<std::string, unsigned i
     if(histNameToPos->count(name2) == 0) continue;
 
     unsigned int pos = (*histNameToPos)[name2];
-    TH2D* tempHist_p = (TH2D*)file_p->Get((dirName + "/" + name).c_str());
+    TH2D* tempHist_p = (TH2D*)inFile_p->Get((dirName + "/" + name).c_str());
 
     if(doNew){
       std::string newName = name;
@@ -76,6 +126,7 @@ void constructHist(std::vector<TH2D*>* hists_p, std::map<std::string, unsigned i
 	binsY[bIY] = tempHist_p->GetYaxis()->GetBinLowEdge(bIY+1);
       }
       std::string title = ";" + std::string(tempHist_p->GetXaxis()->GetTitle()) + ";" + std::string(tempHist_p->GetYaxis()->GetTitle());
+      outFile_p->cd();
       (*hists_p)[pos] = new TH2D(newName.c_str(), title.c_str(), nBinsX, binsX, nBinsY, binsY);
     }
 
@@ -127,25 +178,39 @@ int combineResponse(std::string inFileNames, std::string tagStr)
   checkMakeDir("output/" + dateStr);  
 
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
-  std::vector<TH2D*> hists_p;
-  std::map<std::string, unsigned int> histNameToPos;
+  outFile_p->SetBit(TFile::kDevNull);
+  TH1::AddDirectory(kFALSE);
 
+  std::vector<TH1D*> hists1D_p;
+  std::vector<TH2D*> hists2D_p;
+  std::map<std::string, unsigned int> histNameToPos1D;
+  std::map<std::string, unsigned int> histNameToPos2D;
+
+  ULong64_t totalNResponseTH1 = 0;
   ULong64_t totalNResponseTH2 = 0;
   TFile* inFile_p = new TFile(fileNames[0].c_str(), "READ");
-  std::vector<std::string> responseNames = returnRootFileContentsList(inFile_p, "TH2D", "");
+
+  std::vector<std::string> responseNamesTH1 = returnRootFileContentsList(inFile_p, "TH1D", "");
+  std::vector<std::string> responseNamesTH2 = returnRootFileContentsList(inFile_p, "TH2D", "");
   
   inFile_p->Close();
   delete inFile_p;
 
+  /*
   for(unsigned int fI = 1; fI < fileNames.size(); ++fI){
     inFile_p = new TFile(fileNames[fI].c_str(), "READ");
 
-    std::vector<std::string> responseNames2 = returnRootFileContentsList(inFile_p, "TH2D", "");
+    std::vector<std::string> responseNamesTH12 = returnRootFileContentsList(inFile_p, "TH1D", "");
+    std::vector<std::string> responseNamesTH22 = returnRootFileContentsList(inFile_p, "TH2D", "");
 
-    bool test1 = checkAllNames(responseNames, responseNames2, fileNames[0], fileNames[fI]);
-    bool test2 = checkAllNames(responseNames2, responseNames, fileNames[fI], fileNames[0]);
+    
+    bool testTH11 = checkAllNames(responseNamesTH1, responseNamesTH12, fileNames[0], fileNames[fI]);
+    bool testTH12 = checkAllNames(responseNamesTH12, responseNamesTH1, fileNames[fI], fileNames[0]);
 
-    if(!test1 || !test2){
+    bool testTH21 = checkAllNames(responseNamesTH2, responseNamesTH22, fileNames[0], fileNames[fI]);
+    bool testTH22 = checkAllNames(responseNamesTH22, responseNamesTH2, fileNames[fI], fileNames[0]);
+    
+    if(!testTH11 || !testTH12 || !testTH21 || !testTH22){
       std::cout << "Name in file \'" << fileNames[fI] << "\', not found in \'" << fileNames[0] << "\'. return 1" << std::endl;	
       inFile_p->Close();
       delete inFile_p;
@@ -155,19 +220,31 @@ int combineResponse(std::string inFileNames, std::string tagStr)
       
       return 1;
     }
-
+    
+    
     inFile_p->Close();
     delete inFile_p;
   }
+  */
 
-  std::cout << "N responseNames: " << responseNames.size() << std::endl;
-  for(unsigned int nI = 0; nI < responseNames.size(); ++nI){
-    ++totalNResponseTH2;
-    histNameToPos[responseNames[nI]] = nI;
+  std::cout << "N responseNamesTH1: " << responseNamesTH1.size() << std::endl;
+  for(unsigned int nI = 0; nI < responseNamesTH1.size(); ++nI){
+    ++totalNResponseTH1;
+    histNameToPos1D[responseNamesTH1[nI]] = nI;
   }
-  hists_p.reserve(totalNResponseTH2);
+  hists1D_p.reserve(totalNResponseTH1);
+  for(unsigned int nI = 0; nI < totalNResponseTH1; ++nI){
+    hists1D_p.push_back(NULL);
+  }
+
+  std::cout << "N responseNamesTH2: " << responseNamesTH2.size() << std::endl;
+  for(unsigned int nI = 0; nI < responseNamesTH2.size(); ++nI){
+    ++totalNResponseTH2;
+    histNameToPos2D[responseNamesTH2[nI]] = nI;
+  }
+  hists2D_p.reserve(totalNResponseTH2);
   for(unsigned int nI = 0; nI < totalNResponseTH2; ++nI){
-    hists_p.push_back(NULL);
+    hists2D_p.push_back(NULL);
   }
 
   for(unsigned int fI = 0; fI < fileNames.size(); ++fI){
@@ -178,19 +255,27 @@ int combineResponse(std::string inFileNames, std::string tagStr)
     dirNames.insert(std::end(dirNames), std::begin(dirNames2), std::end(dirNames2));
 
     for(auto const& dir : dirNames){
-      std::cout << "Dir: " << dir << std::endl;
-      if(fI == 0) constructHist(&hists_p, &histNameToPos, inFile_p, dir, true);
-      else constructHist(&hists_p, &histNameToPos, inFile_p, dir, false);
+      if(fI == 0){
+	constructHist1D(outFile_p, &hists1D_p, &histNameToPos1D, inFile_p, dir, true);
+	constructHist2D(outFile_p, &hists2D_p, &histNameToPos2D, inFile_p, dir, true);
+      }
+      else{
+	constructHist1D(outFile_p, &hists1D_p, &histNameToPos1D, inFile_p, dir, false);
+	constructHist2D(outFile_p, &hists2D_p, &histNameToPos2D, inFile_p, dir, false);
+      }
     }
   }
 
   outFile_p->cd();
-  std::cout << "HISTS: " << hists_p.size() << std::endl;
 
-  for(unsigned int hI = 0; hI < hists_p.size(); ++hI){
-    std::cout << "WRITING: " << hists_p[hI]->GetName() << std::endl;
-    hists_p[hI]->Write("", TObject::kOverwrite);
-    delete hists_p[hI];
+  for(unsigned int hI = 0; hI < hists1D_p.size(); ++hI){
+    hists1D_p[hI]->Write("", TObject::kOverwrite);
+    delete hists1D_p[hI];
+  }
+
+  for(unsigned int hI = 0; hI < hists2D_p.size(); ++hI){
+    hists2D_p[hI]->Write("", TObject::kOverwrite);
+    delete hists2D_p[hI];
   }
 
   outFile_p->Close();

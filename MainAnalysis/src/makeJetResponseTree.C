@@ -59,7 +59,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cppWatch writeLoopWatch;
   cppWatch deleteLoopWatch;
   totalRunWatch.start();
-
+  
   std::vector<std::string> fileList;
   std::vector<double> pthats;
   std::vector<double> pthatWeights;
@@ -396,7 +396,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   const Int_t nSyst = 13;
   const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
-   
+  Int_t priorFlatPos = -1;
+  for(Int_t sI = 0; sI < nSyst; ++sI){
+    if(isStrSame(systStr[sI], "PriorFlat")){
+      priorFlatPos = sI;
+      break;
+    }
+  }
+  
   /*
   const Int_t nSyst = 1;
   const std::string systStr[nSyst] = {""};
@@ -875,8 +882,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
     nFileLoopEvt += nEntriesToProcess;
 
-    cppWatch subEntryWatch;
+    cppWatch subEntryWatch, nonJet, jetLoop1, jetLoop2, jetLoop3, jetLoop3Sub1, jetLoop3Sub2, jetLoop3Sub3, jetLoop3Sub3Suba, jetLoop3Sub3Subb, jetLoop3Sub3Subc;
 
+    subEntryWatch.clear();
+    nonJet.clear();
+    jetLoop1.clear();
+    jetLoop2.clear();
+    jetLoop3.clear();
+    
     subEntryWatch.start();
     std::cout << "Processing " << nEntriesToProcess << "... (" << prettyString(entryFrac, 2, false) << " fraction of " << nEntries << ")" << std::endl;
     for(Int_t entry = 0; entry < nEntriesToProcess; ++entry){
@@ -886,6 +899,32 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	std::cout << "  Timing: " << subEntryWatch.totalWall() << std::endl;
 	subEntryWatch.clear();
 	subEntryWatch.start();
+
+	nonJet.stop();
+	
+	std::cout << "   nonjet: " << nonJet.totalWall() << std::endl;	
+	std::cout << "   jetloop1: " << jetLoop1.totalWall() << std::endl;
+	std::cout << "   jetloop2: " << jetLoop2.totalWall() << std::endl;
+	std::cout << "   jetloop3: " << jetLoop3.totalWall() << std::endl;
+	std::cout << "    jetloop3Sub1: " << jetLoop3Sub1.totalWall() << std::endl;
+	std::cout << "    jetloop3Sub2: " << jetLoop3Sub2.totalWall() << std::endl;
+	std::cout << "    jetloop3Sub3: " << jetLoop3Sub3.totalWall() << std::endl;
+	std::cout << "     jetloop3Sub3Suba: " << jetLoop3Sub3Suba.totalWall() << std::endl;
+	std::cout << "     jetloop3Sub3Subb: " << jetLoop3Sub3Subb.totalWall() << std::endl;
+	std::cout << "     jetloop3Sub3Subc: " << jetLoop3Sub3Subc.totalWall() << std::endl;
+
+	nonJet.clear();
+	nonJet.start();
+	
+	jetLoop1.clear();
+	jetLoop2.clear();
+	jetLoop3.clear();
+	jetLoop3Sub1.clear();
+	jetLoop3Sub2.clear();
+	jetLoop3Sub3.clear();
+	jetLoop3Sub3Suba.clear();
+	jetLoop3Sub3Subb.clear();
+	jetLoop3Sub3Subc.clear();
       }
 
       hiTree_p->GetEntry(entry);
@@ -964,8 +1003,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	const Int_t nUsed = ngen_[tI];
 	bool isUsed[nUsed];
 	for(Int_t gI = 0; gI < nUsed; ++gI){isUsed[gI] = false;}
-	  
+
+	nonJet.stop();
+      	
 	for(Int_t jI = 0; jI < nref_[tI]; ++jI){
+	  jetLoop1.start();
+
 	  if(TMath::Abs(jteta_[tI][jI]) > jtAbsEtaMax) continue;
 	  Double_t refptTemp = refpt_[tI][jI];
 	  if(refptTemp < 0){
@@ -980,13 +1023,40 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    }
 	  }
 
+	  jetLoop1.stop();
+	  
 	  if(refptTemp < minGenJtPt) continue;
 
+	  std::vector<bool> passesID;
+	  for(Int_t iI = 0; iI < nID; ++iI){
+	    bool pass = jtPfCHMFCutLow[iI] <= jtPfCHMF_[tI][jI] && jtPfCHMF_[tI][jI] <= jtPfCHMFCutHi[iI];
+	    pass = pass && jtPfMUMFCutLow[iI] <= jtPfMUMF_[tI][jI] && jtPfMUMF_[tI][jI] <= jtPfMUMFCutHi[iI];
+	    pass = pass && jtPfNHFCutLow[iI] <= jtPfNHF_[tI][jI] && jtPfNHF_[tI][jI] <= jtPfNHFCutHi[iI];
+	    pass = pass && jtPfNEFCutLow[iI] <= jtPfNEF_[tI][jI] && jtPfNEF_[tI][jI] <= jtPfNEFCutHi[iI];
+	    pass = pass && jtPfMUFCutLow[iI] <= jtPfMUF_[tI][jI] && jtPfMUF_[tI][jI] <= jtPfMUFCutHi[iI];
+	    pass = pass && jtPfCHFCutLow[iI] <= jtPfCHF_[tI][jI] && jtPfCHF_[tI][jI] <= jtPfCHFCutHi[iI];
+	    pass = pass && jtPfCEFCutLow[iI] <= jtPfCEF_[tI][jI] && jtPfCEF_[tI][jI] <= jtPfCEFCutHi[iI];
+	    pass = pass && jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] >= jtPfMinMult[iI];
+	    pass = pass && jtPfCHM_[tI][jI] >= jtPfMinChgMult[iI];
+	    
+	    passesID.push_back(pass);
+	  }
+	  
+	  std::vector<int> jtAbsEtaPoses;
+	  for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
+	    if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
+	      jtAbsEtaPoses.push_back(aI);
+	    }
+	  }
+
 	  for(Int_t mI = 0; mI < nResponseMod; ++mI){
+	    jetLoop2.start();
+
 	    Double_t jtPtFillVal[nSyst];
 	    double fullWeight2[nSyst];
 	    
 	    bool oneRecoIsGood = false;
+	    
 	    for(Int_t sI = 0; sI < nSyst; ++sI){	  
 	      jtPtFillVal[sI] = jtpt_[tI][jI] + (jtpt_[tI][jI] - refpt_[tI][jI])*responseMod[mI];
 	      fullWeight2[sI] = fullWeight_;
@@ -1011,42 +1081,29 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    
 	      if(jtPtFillVal[sI] > minRecoJtPt) oneRecoIsGood = true;
 	    }
+	  
+	    jetLoop2.stop();
 
 	    if(!oneRecoIsGood) continue;
 
-	    std::vector<bool> passesID;
-	    for(Int_t iI = 0; iI < nID; ++iI){
-	      bool pass = jtPfCHMFCutLow[iI] <= jtPfCHMF_[tI][jI] && jtPfCHMF_[tI][jI] <= jtPfCHMFCutHi[iI];
-	      pass = pass && jtPfMUMFCutLow[iI] <= jtPfMUMF_[tI][jI] && jtPfMUMF_[tI][jI] <= jtPfMUMFCutHi[iI];
-	      pass = pass && jtPfNHFCutLow[iI] <= jtPfNHF_[tI][jI] && jtPfNHF_[tI][jI] <= jtPfNHFCutHi[iI];
-	      pass = pass && jtPfNEFCutLow[iI] <= jtPfNEF_[tI][jI] && jtPfNEF_[tI][jI] <= jtPfNEFCutHi[iI];
-	      pass = pass && jtPfMUFCutLow[iI] <= jtPfMUF_[tI][jI] && jtPfMUF_[tI][jI] <= jtPfMUFCutHi[iI];
-	      pass = pass && jtPfCHFCutLow[iI] <= jtPfCHF_[tI][jI] && jtPfCHF_[tI][jI] <= jtPfCHFCutHi[iI];
-	      pass = pass && jtPfCEFCutLow[iI] <= jtPfCEF_[tI][jI] && jtPfCEF_[tI][jI] <= jtPfCEFCutHi[iI];
-	      pass = pass && jtPfCEM_[tI][jI] + jtPfNEM_[tI][jI] + jtPfCHM_[tI][jI] + jtPfNHM_[tI][jI] + jtPfMUM_[tI][jI] >= jtPfMinMult[iI];
-	      pass = pass && jtPfCHM_[tI][jI] >= jtPfMinChgMult[iI];
-	      
-	      passesID.push_back(pass);
-	    }
-	    
-	    std::vector<int> jtAbsEtaPoses;
-	    for(Int_t aI = 0; aI < nJtAbsEtaBins; ++aI){
-	      if(TMath::Abs(jteta_[tI][jI]) >= jtAbsEtaBinsLow[aI] && TMath::Abs(jteta_[tI][jI]) < jtAbsEtaBinsHi[aI]){
-		jtAbsEtaPoses.push_back(aI);
-	      }
-	    }
-	    
+	    jetLoop3.start();
+	  
 	    for(auto const & cent : centPos){
-	      bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[tI][cent][0][0] && refpt_[tI][jI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refpt_[tI][jI] > minJtPtCut[tI]);  
-	      bool goodReco[nSyst];
-	      bool goodRecoTrunc[nSyst];
+	      jetLoop3Sub1.start();
 	      
+	      bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[tI][cent][0][0] && refpt_[tI][jI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refpt_[tI][jI] > minJtPtCut[tI]);  
+	      std::vector<Int_t> goodRecoPos;
+	      std::vector<Int_t> goodRecoTruncPos;
+
 	      for(Int_t sI = 0; sI < nSyst; ++sI){
-		goodReco[sI] = (jtPtFillVal[sI] >= genJtPtBins[tI][cent][0][0] && jtPtFillVal[sI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]);
-		goodRecoTrunc[sI] = (jtPtFillVal[sI] >= recoJtPtBins[tI][cent][0] && jtPtFillVal[sI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]); // Since bins are re-asymmetric, just make these the same
+		if(jtPtFillVal[sI] >= genJtPtBins[tI][cent][0][0] && jtPtFillVal[sI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]) goodRecoPos.push_back(sI);
+		if(jtPtFillVal[sI] >= recoJtPtBins[tI][cent][0] && jtPtFillVal[sI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]) goodRecoTruncPos.push_back(sI);
 	      }
 
-	      if(/*!goodTruth &&*/refpt_[tI][jI] < 0){
+	      jetLoop3Sub1.stop();
+	      jetLoop3Sub2.start();
+	    
+	      if(refpt_[tI][jI] < 0){
 		bool goodTruth2 = (refptTemp >= genJtPtBins[tI][cent][0][0] && refptTemp < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refptTemp > minJtPtCut[tI]);
 		if(!goodTruth2){
 		  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
@@ -1059,99 +1116,94 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		  }
 		}	    
 	      }
-	   
+
+	      jetLoop3Sub2.stop();
+	      jetLoop3Sub3.start();	      
 	      
-	      for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+	      if(goodTruth){
 		for(unsigned int iI = 0; iI < passesID.size(); ++iI){
 		  if(!passesID[iI]) continue;
-		  
-		  if(!isPara){
-		    if(goodTruth){
+		  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+		    
+		    if(!isPara){
+		      jetLoop3Sub3Suba.start();	      
 		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
 			genJtPt_All_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
 		      }
-		    }
-		  
-		    for(Int_t sI = 0; sI < nSyst; ++sI){
-		      if(goodTruth){
-			//Debugging:
-			if(sI == 0 && isStrSame(idStr[iI], "LightMUAndCHID") && aI == 0 && mI == 0){
-			  if(jtPtFillVal[sI] >= 1500 && refpt_[tI][jI] >= 300){
-			    std::cout << "WARNING JET IN FILE \'" << fileList[fI] << "\', Entry: " << entry << ", jtpt=" << jtPtFillVal[sI] << ", refpt=" << refpt_[tI][jI] << std::endl;
-			  }
-			}
-			
-			if(goodReco[sI]){
-			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			    response_RecoGenSymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-			  }
-			}
-			
-			if(goodRecoTrunc[sI]){
-			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			    genJtPt_GoodReco_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
-			    response_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-			    rooResponse_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(jtPtFillVal[sI], refpt_[tI][jI], fullWeight2[sI]);
-			  }
-			  
-			  recoJtPt_GoodGen_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
-			}
-			
-			if(isStrSame(systStr[sI], "PriorFlat")){
-			  for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			    genJtPt_CheckFlatPrior_h[tI][cent][iI][mI][aI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
-			  }
-			}
-		      }
-		    }
-		    
-		    if(goodTruth && goodReco[0]){
-		      recoJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
-		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			genJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
-		      }
-		      
-		      if(goodRecoTrunc[0]){
-			recoJtPt_RecoTrunc_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
-		      }
-		    }
-		    else if(goodTruth){
-		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			genJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
-		      }
-		    }
-		  }
-		  else{		
-		    for(Int_t sI = 0; sI < nSyst; ++sI){
-		      if(goodRecoTrunc[sI] && goodTruth){
+		      		      
+		      for(unsigned int sI = 0; sI < goodRecoPos.size(); ++sI){
 			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			  genJtPt_GoodReco_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI][binsI]->Fill(refpt_[tI][jI], fullWeight2[sI]);
+			  response_RecoGenSymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoPos[sI]]);
 			}
-			
-			recoJtPt_GoodGen_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][sI]->Fill(jtPtFillVal[sI], fullWeight2[sI]);
+		      }  
+
+		      jetLoop3Sub3Suba.stop();	      		      
+		      jetLoop3Sub3Subb.start();	      
+
+		      for(unsigned int sI = 0; sI < goodRecoTruncPos.size(); ++sI){
+			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			  genJtPt_GoodReco_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
+			  response_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
+			  rooResponse_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
+			}
+		      
+			recoJtPt_GoodGen_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], fullWeight2[goodRecoTruncPos[sI]]);
 		      }
+
+		      jetLoop3Sub3Subb.stop();	      
+		      jetLoop3Sub3Subc.start();	      
+
+		      if(priorFlatPos >= 0){
+			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			  genJtPt_CheckFlatPrior_h[tI][cent][iI][mI][aI][binsI]->Fill(refpt_[tI][jI], fullWeight2[priorFlatPos]);
+			}
+		      }
+		      
+		      if(goodRecoPos.size() != 0){
+			if(goodRecoPos[0] == 0) recoJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      }
+		      
+		      if(goodRecoTruncPos.size() != 0){
+			if(goodRecoTruncPos[0] == 0) recoJtPt_RecoTrunc_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);			
+		      }
+		      
+		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			genJtPt_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
+		      }
+
+		      jetLoop3Sub3Subc.stop();	      
 		    }		  
-		    
-		    if(goodTruth && goodReco[0]){
-		      recoJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		    else{
+		      for(unsigned int sI = 0; sI < goodRecoTruncPos.size(); ++sI){
+			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
+			  genJtPt_GoodReco_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
+			}
+			recoJtPt_GoodGen_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], fullWeight2[goodRecoTruncPos[sI]]);
+		      }		  
+		      
+		      if(goodRecoPos.size() != 0){
+			if(goodRecoPos[0] == 0) recoJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      }
+		      
+		      if(goodRecoTruncPos.size() != 0){		     
+			if(goodRecoTruncPos[0] == 0) recoJtPt_RecoTrunc_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
+		      }
 		      
 		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
 			genJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
 		      }
-		      
-		      if(goodRecoTrunc[0]) recoJtPt_RecoTrunc_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]]->Fill(jtPtFillVal[0], fullWeight_);
 		    }
-		    else if(goodTruth){
-		      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-			genJtPt_ParaFills_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][binsI]->Fill(refpt_[tI][jI], fullWeight_);
-		      }
-		    }		  
-		  }	     
-		}
+		  }		
+		}	     	      
 	      }
-	    }
+	      jetLoop3Sub3.stop();
+	    }	  
+	    jetLoop3.stop();
 	  }	
 	}
+
+	nonJet.start();
+
       }
     }
 

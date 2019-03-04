@@ -19,25 +19,20 @@ else
     exit 1
 fi
 
+jobNumber=20
+if [[ -d /home/cfmcginn ]]
+then
+    jobNumber=12
+fi
 
 DATE=`date +%Y%m%d`
+TIMESTART=`date +%H%M%S`
 
 mkdir -p logs
 mkdir -p logs/$DATE
 
-counts=0
-for i in paths/*/*.txt
-do
-    counts=$((counts + 1))
-done
 
-if [[ $counts -ne 60 ]]
-then
-    echo "$counts should equal 60. exit 1"
-    exit 1
-fi
-
-for i in paths/*/*.txt
+for i in paths/*/*SPLIT*.txt
 do
     pbpbBool=1
     if [[ $i == *"akCs"* ]]
@@ -51,10 +46,10 @@ do
 	logName=${logName#*/}
     done
 
-    ./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/$logName.log &
+    ./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/response_$logName.log &
 
     counts=$(ps | grep makeJet | wc -l)
-    while [[ $counts -ge 16 ]]
+    while [[ $counts -ge $jobNumber ]]
     do
 	sleep 10
 	counts=$(ps | grep makeJet | wc -l)
@@ -62,4 +57,32 @@ do
 done
 
 wait
+
+rVals=(ak3 ak4 ak6 ak8 ak10 akCs3 akCs4 akCs6 akCs8 akCs10)
+for r in "${rVals[@]}"
+do
+    files=""
+
+    count=$(ls output/$DATE/*$r*SPLIT*.root | wc -l)
+
+    if [[ $count -eq 0 ]]
+    then
+	continue
+    fi
+    
+    for i in output/$DATE/*$r*SPLIT*.root
+    do
+	files=$files$i,
+    done
+    
+    ./bin/combineResponse.exe $files $r >& logs/$DATE/combineResponse_$r.log &
+done
+
+wait
+	     
+TIMEEND=`date +%H%M%S`
+
+echo "Time start: $TIMESTART"
+echo "Time end: $TIMEEND"
+
 echo "bash/runSplitResponse.sh Complete!"
