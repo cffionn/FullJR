@@ -65,8 +65,7 @@ do
 	logName=${logName#*/}
     done
 
-    echo "./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/response_$logName.log &"
-    exit 1
+    ./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/response_$logName.log &
 
     counts=$(ps | grep makeJet | wc -l)
     while [[ $counts -ge $jobNumber ]]
