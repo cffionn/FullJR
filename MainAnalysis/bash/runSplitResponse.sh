@@ -22,7 +22,7 @@ fi
 jobNumber=16
 if [[ -d /home/cfmcginn ]]
 then
-    jobNumber=12
+    jobNumber=10
 fi
 
 DATE=`date +%Y%m%d`
