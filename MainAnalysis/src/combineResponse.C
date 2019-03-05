@@ -57,7 +57,8 @@ void constructHist1D(TFile* outFile_p, std::vector<TH1D*>* hists_p, std::map<std
     if(histNameToPos->count(name2) == 0) continue;
 
     unsigned int pos = (*histNameToPos)[name2];
-    TH1D* tempHist_p = (TH1D*)inFile_p->Get((dirName + "/" + name).c_str());
+    //    TH1D* tempHist_p = (TH1D*)inFile_p->Get((dirName + "/" + name).c_str());
+    TH1D* tempHist_p = (TH1D*)key->ReadObj();
 
     if(doNew){
       std::string newName = name;
@@ -84,7 +85,11 @@ void constructHist1D(TFile* outFile_p, std::vector<TH1D*>* hists_p, std::map<std
       (*hists_p)[pos]->SetBinContent(bIX+1, val);
       (*hists_p)[pos]->SetBinError(bIX+1, err);
     } 
+
+    delete tempHist_p;
   }
+
+  delete dir_p;
 
   return;
 }
@@ -109,8 +114,9 @@ void constructHist2D(TFile* outFile_p, std::vector<TH2D*>* hists_p, std::map<std
     if(histNameToPos->count(name2) == 0) continue;
 
     unsigned int pos = (*histNameToPos)[name2];
-    TH2D* tempHist_p = (TH2D*)inFile_p->Get((dirName + "/" + name).c_str());
-
+    //    TH2D* tempHist_p = (TH2D*)inFile_p->Get((dirName + "/" + name).c_str());
+    TH2D* tempHist_p = (TH2D*)key->ReadObj();
+      
     if(doNew){
       std::string newName = name;
       while(newName.find("/") != std::string::npos){newName.replace(0, newName.find("/")+1, "");}
@@ -141,9 +147,12 @@ void constructHist2D(TFile* outFile_p, std::vector<TH2D*>* hists_p, std::map<std
 	(*hists_p)[pos]->SetBinContent(bIX+1, bIY+1, val);
 	(*hists_p)[pos]->SetBinError(bIX+1, bIY+1, err);
       }
-    } 
+    }
+    delete tempHist_p;
   }
 
+  delete dir_p;
+  
   return;
 }
 
@@ -248,7 +257,7 @@ int combineResponse(std::string inFileNames, std::string tagStr)
   }
 
   for(unsigned int fI = 0; fI < fileNames.size(); ++fI){
-    std::cout << "Processing file \'" << fileNames[fI] << "\'.." << std::endl;
+    std::cout << "Processing file " << fI << "/" << fileNames.size() << ", \'" << fileNames[fI] << "\'.." << std::endl;
     inFile_p = new TFile(fileNames[fI].c_str(), "READ");
     std::vector<std::string> dirNames = returnRootFileContentsList(inFile_p, "TDirectory", "");
     std::vector<std::string> dirNames2 = returnRootFileContentsList(inFile_p, "TDirectoryFile", "");
@@ -264,6 +273,9 @@ int combineResponse(std::string inFileNames, std::string tagStr)
 	constructHist2D(outFile_p, &hists2D_p, &histNameToPos2D, inFile_p, dir, false);
       }
     }
+
+    inFile_p->Close();
+    delete inFile_p;
   }
 
   outFile_p->cd();
