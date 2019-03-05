@@ -765,7 +765,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	int idPos = posInStrVect(name, "_", idStr, "_");
 	int modPos = posInStrVect(name, "_", responseModStr, "_");
 	int absEtaPos = posInStrVect(name, "_", jtAbsEtaBinsStr, "_");	int systPos = posInStrVect(name, "_", systStrInFile, "_");
-	if(systPos < 0 && name.find("FlatPrior") == std::string::npos) systPos = 0;
+	if(systPos < 0 && name.find("PriorFlat") == std::string::npos) systPos = 0;
 	int bayesPos = posInStrVect(name, "_", bayesValStr, "_");
 	int centPos = posInStrVect(name, "_", centBinsStr, "_");
 
@@ -799,7 +799,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     int modPos = posInStrVect(tagToBB.first, "_", responseModStr, "_");
     int absEtaPos = posInStrVect(tagToBB.first, "_", jtAbsEtaBinsStr, "_");
     int systPos = posInStrVect(tagToBB.first, "_", systStrInFile, "");
-    if(systPos < 0 && tagToBB.first.find("FlatPrior") == std::string::npos) systPos = 0;
+    if(systPos < 0 && tagToBB.first.find("PriorFlat") == std::string::npos) systPos = 0;
     int centPos = posInStrVect(tagToBB.first, "_", centBinsStr, "_");
     int bayesPos = tagToBB.second;
     
@@ -828,7 +828,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
     int modPos = posInStrVect(tagToBB.first, "_", responseModStr, "_");
     int absEtaPos = posInStrVect(tagToBB.first, "_", jtAbsEtaBinsStr, "_");
     int systPos = posInStrVect(tagToBB.first, "_", systStrInFile, "");
-    if(systPos < 0 && tagToBB.first.find("FlatPrior") == std::string::npos) systPos = 0;
+    if(systPos < 0 && tagToBB.first.find("PriorFlat") == std::string::npos) systPos = 0;
     int centPos = posInStrVect(tagToBB.first, "_", centBinsStr, "_");
 
     int bayesPos = tagToBB.second;

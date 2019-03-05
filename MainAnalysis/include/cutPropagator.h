@@ -292,8 +292,8 @@ class cutPropagator
   bool CheckHistBestBayes(cutPropagator inCutProp);
   bool CheckRCDiffFileName(std::string inRCDiffFileName);
   bool CheckRCDiffFileName(cutPropagator inCutProp);
-  bool CheckFlatPriorFileName(std::string inFlatPriorFileName);
-  bool CheckFlatPriorFileName(cutPropagator inCutProp);
+  bool CheckPriorFlatFileName(std::string inPriorFlatFileName);
+  bool CheckPriorFlatFileName(cutPropagator inCutProp);
   bool CheckJECVarMC(double inJECVarMC);
   bool CheckJECVarMC(cutPropagator inCutProp);
   bool CheckJERVarMC(double inJERVarMC);
@@ -339,7 +339,7 @@ class cutPropagator
   double GetJtAbsEtaMax(){return jtAbsEtaMax;}
 
   std::string GetRCDiffFileName(){return rcDiffFileName;}
-  std::string GetFlatPriorFileName(){return flatPriorFileName;}
+  std::string GetPriorFlatFileName(){return flatPriorFileName;}
 
   double GetJECVarMC(){return jecVarMC;}
   double GetJERVarMC(){return jerVarMC;}
@@ -448,7 +448,7 @@ class cutPropagator
   void SetJtAbsEtaMax(double inJtAbsEtaMax){jtAbsEtaMax = inJtAbsEtaMax; return;}
 
   void SetRCDiffFileName(std::string inRCDiffFileName){rcDiffFileName = inRCDiffFileName; return;}
-  void SetFlatPriorFileName(std::string inFlatPriorFileName){flatPriorFileName = inFlatPriorFileName; return;}
+  void SetPriorFlatFileName(std::string inPriorFlatFileName){flatPriorFileName = inPriorFlatFileName; return;}
   
   void SetJECVarMC(double inJECVarMC){jecVarMC = inJECVarMC; return;}
   void SetJERVarMC(double inJERVarMC){jerVarMC = inJERVarMC; return;}
@@ -1284,7 +1284,7 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
     if(!CheckNSyst(inCutProp)) return false;
     if(!CheckSystStr(inCutProp)) return false;
     if(!CheckRCDiffFileName(inCutProp)) return false;
-    if(!CheckFlatPriorFileName(inCutProp)) return false;
+    if(!CheckPriorFlatFileName(inCutProp)) return false;
     if(!CheckJECVarMC(inCutProp)) return false;
     if(!CheckJERVarMC(inCutProp)) return false;
     if(!CheckJECVarData(inCutProp)) return false;
@@ -1733,13 +1733,13 @@ bool cutPropagator::CheckRCDiffFileName(std::string inRCDiffFileName)
 }
 bool cutPropagator::CheckRCDiffFileName(cutPropagator inCutProp){return CheckRCDiffFileName(inCutProp.GetRCDiffFileName());}
 
-bool cutPropagator::CheckFlatPriorFileName(std::string inFlatPriorFileName)
+bool cutPropagator::CheckPriorFlatFileName(std::string inPriorFlatFileName)
 {
-  bool checkVal = CheckString(inFlatPriorFileName, flatPriorFileName);
+  bool checkVal = CheckString(inPriorFlatFileName, flatPriorFileName);
   if(!checkVal) std::cout << "cutPropagator check failed on flatPriorFileName" << std::endl;
   return checkVal;
 }
-bool cutPropagator::CheckFlatPriorFileName(cutPropagator inCutProp){return CheckFlatPriorFileName(inCutProp.GetFlatPriorFileName());}
+bool cutPropagator::CheckPriorFlatFileName(cutPropagator inCutProp){return CheckPriorFlatFileName(inCutProp.GetPriorFlatFileName());}
 
 bool cutPropagator::CheckJECVarMC(double inJECVarMC)
 {
