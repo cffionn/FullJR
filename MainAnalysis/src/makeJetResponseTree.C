@@ -50,7 +50,7 @@ std::string to_string_with_precision(const T a_value, const int n)
   return out.str();
 }
 
-int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1.)
+int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1., const bool doRooResponse = false)
 {
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -154,7 +154,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     std::cout << " " << pI << "/" << pthats.size() << ": " << pthats[pI] << ", " << pthatWeights[pI] << std::endl;
   }
 
-  std::cout << "IsPP: " << isPP << std::endl;
+  std::cout << "isPP: " << isPP << std::endl;
 
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList[0]).c_str(), "READ");
   std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
@@ -272,9 +272,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
   const Int_t nCentBins2 = 100;
   const Float_t centBinsLow2 = 0;
-  const Float_t centBinHi2 = 100;
+  const Float_t centBinsHi2 = 100;
   Double_t centBins2[nCentBins2+1];
-  getLinBins(centBinsLow2, centBinHi2, nCentBins2, centBins2);
+  getLinBins(centBinsLow2, centBinsHi2, nCentBins2, centBins2);
 
   const double fracParaFills = 0.1;
 
@@ -284,14 +284,24 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   delete date;
   const std::string fullPath = std::getenv("FULLJRDIR");
 
+  std::string inDir = fileList[0];
+  inDir = inDir.substr(0, inDir.rfind("/"));
+
   std::string outFileName = inName;
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
   else if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
   outFileName = "output/" + dateStr + "/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_" + dateStr + ".root";
 
-  checkMakeDir("output");
-  checkMakeDir("output/" + dateStr);
+  if(inDir.find("/mnt") == std::string::npos){
+    outFileName = inDir + "/" + outFileName;
+    checkMakeDir(inDir + "/output");
+    checkMakeDir(inDir + "/output/" + dateStr);
+  }
+  else{
+    checkMakeDir("output");
+    checkMakeDir("output/" + dateStr);
+  }
 
   const Double_t jtAbsEtaMax = 2.;
 
@@ -677,11 +687,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
 		response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI] = new TH2D(("response_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI], nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
 
-
-		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI] = new RooUnfoldResponse(("rooResponse_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), "");
+		if(doRooResponse){
+		  rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI] = new RooUnfoldResponse(("rooResponse_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "RecoGenAsymm_h").c_str(), "");
 
 		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Setup(recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI]);
-		
+		}
+
 		tempVect = {genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI], genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI], response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI], response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]};
 		centerTitles(tempVect);
 		setSumW2(tempVect);
@@ -1078,7 +1089,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] *= flatWeight.getJtWeight(algoName, hiBin_/2, refpt_[tI][jI], jteta_[tI][jI]);
 	      else if(isStrSame(systStr[sI], "PriorUp1PowerPthat")) fullWeight2[sI] *= pthat_/pthatLow;
 	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
-	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] /= pthatWeight_;
+	      else if(isStrSame(systStr[sI], "PriorNoWeight") && refpt_[tI][jI] > 0) fullWeight2[sI] /= pthatWeight_;
 	    
 	      if(jtPtFillVal[sI] > minRecoJtPt) oneRecoIsGood = true;
 	    }
@@ -1145,7 +1156,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 			for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
 			  genJtPt_GoodReco_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
 			  response_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
-			  rooResponse_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
+			  if(doRooResponse) rooResponse_RecoGenAsymm_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]][binsI]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoTruncPos[sI]]);
 			}
 		      
 			recoJtPt_GoodGen_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoTruncPos[sI]]->Fill(jtPtFillVal[goodRecoTruncPos[sI]], fullWeight2[goodRecoTruncPos[sI]]);
@@ -1271,7 +1282,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
 		response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
 		response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
-		rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
+		if(doRooResponse) rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
 	      }
 	    }
 
@@ -1346,7 +1357,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		delete genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI];
 		delete response_RecoGenSymm_h[dI][cI][iI][mI][aI][sI][binsI];
 		delete response_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI];
-		delete rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI];
+		if(doRooResponse) delete rooResponse_RecoGenAsymm_h[dI][cI][iI][mI][aI][sI][binsI];
 	      }
 	    }
 	    
@@ -1428,8 +1439,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2 && argc != 3 && argc != 4){
-    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt> <entryFrac-Opt>" << std::endl;
+  if(argc < 2 && argc > 5){
+    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt> <entryFrac-Opt> <doRooResponse-opt>" << std::endl;
     return 1;
   }
   
@@ -1437,6 +1448,7 @@ int main(int argc, char* argv[])
   if(argc == 2) retVal += makeJetResponseTree(argv[1]);
   else if(argc == 3) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]));
   else if(argc == 4) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]));
+  else if(argc == 5) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]), std::stoi(argv[4]));
 
   std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;

@@ -19,7 +19,7 @@ else
     exit 1
 fi
 
-jobNumber=20
+jobNumber=16
 if [[ -d /home/cfmcginn ]]
 then
     jobNumber=12
@@ -31,8 +31,27 @@ TIMESTART=`date +%H%M%S`
 mkdir -p logs
 mkdir -p logs/$DATE
 
+filesToProcess=()
+counts=$(ls paths/*SPLIT*.txt | wc -l)
+if [[ $counts -ge 1 ]]
+then
+    for i in paths/*SPLIT*.txt
+    do
+	filesToProcess+=($i)
+    done
+fi    
 
-for i in paths/*/*SPLIT*.txt
+counts=$(ls paths/*/*SPLIT*.txt | wc -l)
+if [[ $counts -ge 1 ]]
+then
+    for i in paths/*/*SPLIT*.txt
+    do
+	filesToProcess+=($i)
+    done
+fi
+
+
+for i in "${filesToProcess[@]}"
 do
     pbpbBool=1
     if [[ $i == *"akCs"* ]]
@@ -46,7 +65,8 @@ do
 	logName=${logName#*/}
     done
 
-    ./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/response_$logName.log &
+    echo "./bin/makeJetResponseTree.exe $i $pbpbBool 1.0 >& logs/$DATE/response_$logName.log &"
+    exit 1
 
     counts=$(ps | grep makeJet | wc -l)
     while [[ $counts -ge $jobNumber ]]
@@ -58,12 +78,20 @@ done
 
 wait
 
+DATEEND=`date +%Y%m%d`
+
 rVals=(ak3 ak4 ak6 ak8 ak10 akCs3 akCs4 akCs6 akCs8 akCs10)
 for r in "${rVals[@]}"
 do
     files=""
 
     count=$(ls output/$DATE/*$r*SPLIT*.root | wc -l)
+    if [[ -d output/$DATEEND ]]
+    then
+	counts2=$(ls output/$DATEEND/*$r*SPLIT*.root | wc -l)
+	counts=$((counts + $counts2))
+    fi
+
 
     if [[ $count -eq 0 ]]
     then
@@ -75,7 +103,21 @@ do
 	files=$files$i,
     done
     
+    if [[ -d output/$DATEEND ]]
+    then
+	for i in output/$DATEEND/*$r*SPLIT*.root
+	do
+	    files=$files$i,
+	done	
+    fi
+
     ./bin/combineResponse.exe $files $r >& logs/$DATE/combineResponse_$r.log &
+    jobCounts=$(ps | grep combineR | wc -l)
+    if [[ $jobCounts -ge 5 ]]
+    then
+	sleep 10
+	jobCounts=$(ps | grep combineR | wc -l)
+    fi
 done
 
 wait
@@ -84,5 +126,7 @@ TIMEEND=`date +%H%M%S`
 
 echo "Time start: $TIMESTART"
 echo "Time end: $TIMEEND"
+
+echo "WARNING: DATE START \'$DATE\' not same as DATE END \'$DATEEND\'"
 
 echo "bash/runSplitResponse.sh Complete!"

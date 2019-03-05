@@ -20,8 +20,10 @@ else
 fi
 
 
-dateStrPP=20190129
-dateStrPbPb=20190129
+dateStrPPMC=20190301
+dateStrPbPbMC=20190301
+dateStrPPData=20190301
+dateStrPbPbData=20190301
 
 DATE=`date +%Y%m%d`
 
@@ -31,15 +33,15 @@ mkdir -p logs/$DATE
 ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
 pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
 
-PPDataFilePre=output/"$dateStrPP"/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_
-PPDataFilePost=JetAnalyzer_"$dateStrPP".root
-PPResFilePre=output/"$dateStrPP"/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_
-PPResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPP".root
+PPDataFilePre=output/"$dateStrPPData"/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_
+PPDataFilePost=JetAnalyzer_"$dateStrPPData".root
+PPResFilePre=output/"$dateStrPPMC"/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_
+PPResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPPMC".root
 
-PbPbDataFilePre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR__Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_ProcessRawData_
-PbPbDataFilePost=JetAnalyzer_"$dateStrPbPb".root
-PbPbResFilePre=output/"$dateStrPbPb"/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_
-PbPbResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPbPb".root
+PbPbDataFilePre=output/"$dateStrPbPbData"/HiForestAOD_HIHardProbes_HLTJet100_AllR__Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_ProcessRawData_
+PbPbDataFilePost=JetAnalyzer_"$dateStrPbPbData".root
+PbPbResFilePre=output/"$dateStrPbPbMC"/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_
+PbPbResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPbPbMC".root
 
 for i in "${ppVals[@]}"
 do

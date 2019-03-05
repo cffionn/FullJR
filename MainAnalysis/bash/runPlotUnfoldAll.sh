@@ -19,8 +19,8 @@ else
     exit 1
 fi
 
-dateStrPP=20190129
-dateStrPbPb=20190129
+dateStrPP=20190301
+dateStrPbPb=20190301
 
 DATE=`date +%Y%m%d`
 
@@ -29,14 +29,16 @@ mkdir -p logs/$DATE
 
 #pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow CombinedAlgos)
 #ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF CombinedAlgos)
-pbpbVals=(akCs3PU3PFFlow)
-ppVals=(ak3PF)
+pbpbVals=(akCs4PU3PFFlow)
+ppVals=(ak4PF)
 
 fileOutPbPbPre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR_Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_UnfoldRawData_NSuperBayes0_
 fileOutPbPbPost=_"$dateStrPbPb".root
 
 fileOutPPPre=output/"$dateStrPP"/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_UnfoldRawData_NSuperBayes0_
 fileOutPPPost=_"$dateStrPP".root
+
+atlasFile=output/HEPData-ins1673184-v1-root.root
 
 pos=0
 for i in "${pbpbVals[@]}"
@@ -50,7 +52,7 @@ do
     then
 	if [[ -f $fileNamePbPb ]]
 	then
-	    echo "./bin/plotUnfoldedAll.exe $fileNamePP $fileNamePbPb >& logs/$DATE/plotUnfoldAll_${ppVals[$pos]}_$i.log &"
+	    echo "./bin/plotUnfoldedAll.exe $fileNamePP $fileNamePbPb $atlasFile >& logs/$DATE/plotUnfoldAll_${ppVals[$pos]}_$i.log &"
 	else
 	    echo " $fileNamePbPb not found, continuing on $i, ${ppVals[$pos]}"
 	fi

@@ -20,8 +20,8 @@ else
 fi
 
 
-dateStrPP=20190129
-dateStrPbPb=20190129
+dateStrPP=20190301
+dateStrPbPb=20190301
 
 DATE=`date +%Y%m%d`
 
@@ -36,7 +36,9 @@ PbPbDataFile=/data/cmcginn/Forests/PbPb2015Data/HIHardProbes/HiForestAOD_HIHardP
 PbPbMCFilePre=output/"$dateStrPbPb"/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_
 PbPbMCFilePost=_FracNEntries1p00_JetResponse_"$dateStrPbPb".root
 
-PPDataFile=/data/cmcginn/Forests/pp2015Data/HIHardProbes/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20180627_11Lumi_180627_122059_355_OutOf355_MERGED.root
+#BAD JSON
+#PPDataFile=/data/cmcginn/Forests/pp2015Data/HIHardProbes/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20180627_11Lumi_180627_122059_355_OutOf355_MERGED.root
+PPDataFile=/data/cmcginn/Forests/pp2015Data/HIHardProbes/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20190220_11Lumi_190220_221659_561_OutOf561_MERGED.root
 PPMCFilePre=output/"$dateStrPP"/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_
 PPMCFilePost=_FracNEntries1p00_JetResponse_"$dateStrPP".root
 
@@ -74,6 +76,7 @@ do
 
     if [[ -f $fileNamePbPb ]]
     then
+	dummyVal=0
 	./bin/processRawData.exe $PbPbDataFile $fileNamePbPb 0 ${jetsPbPb[$pos]} >& logs/$DATE/processPbPb_${jetsPbPb[$pos]}.log &
     else
 	echo " $fileNamePbPb is not found, continue on ${jetsPbPb[$pos]}"
