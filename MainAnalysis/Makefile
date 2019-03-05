@@ -21,7 +21,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe #bin/plotUnfoldedRAA.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe bin/validateSplit.exe #bin/plotUnfoldedRAA.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -112,6 +112,9 @@ bin/splitFiles.exe: src/splitFiles.C
 
 bin/unfoldTest.exe: src/unfoldTest.C
 	$(CXX) $(CXXFLAGS) src/unfoldTest.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldTest.exe
+
+bin/validateSplit.exe: src/validateSplit.C
+	$(CXX) $(CXXFLAGS) src/validateSplit.C $(ROOT) $(INCLUDE) -o bin/validateSplit.exe
 
 
 clean:
