@@ -12,6 +12,7 @@
 #include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TLatex.h"
 #include "TMath.h"
 #include "TNamed.h"
 #include "TRandom3.h"
@@ -157,11 +158,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   std::cout << "isPP: " << isPP << std::endl;
 
   TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList[0]).c_str(), "READ");
-  std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");
+  std::vector<std::string> responseTrees = returnRootFileContentsList(inFile_p, "TTree", "JetAna");  
   
-  
-  if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-
   pos = 0;
   while(responseTrees.size() > pos){
     //For testing, uncomment to exclude all but R=0.4 trees
@@ -186,7 +184,6 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     }
   }
   
-
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   inFile_p->Close();

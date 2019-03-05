@@ -17,6 +17,9 @@
 #include "src/RooUnfoldBayes.h"
 #include "src/RooUnfoldResponse.h"
 
+//Local dependencies
+#include "MainAnalysis/include/macroHistToSubsetHist.h"
+
 //Non-local dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/histDefUtility.h"
@@ -63,12 +66,14 @@ void oldToNewPrior(TH1D* distToUnfold_p, TH1D* reco_p, TH2D* response_p, TH1D* n
       scale += response_p->GetBinContent(bIX+1, bIY+1);
     }
 
-    scale = newPrior_p->GetBinContent(bIY+1)/scale;
-
-    for(Int_t bIX = 0; bIX < response_p->GetXaxis()->GetNbins(); ++bIX){
-      response_p->SetBinContent(bIX+1, bIY+1, response_p->GetBinContent(bIX+1, bIY+1)*scale);
-      response_p->SetBinError(bIX+1, bIY+1, response_p->GetBinError(bIX+1, bIY+1)*scale);
-    }    
+    if(scale > 0.){
+      scale = newPrior_p->GetBinContent(bIY+1)/scale;
+      
+      for(Int_t bIX = 0; bIX < response_p->GetXaxis()->GetNbins(); ++bIX){
+	response_p->SetBinContent(bIX+1, bIY+1, response_p->GetBinContent(bIX+1, bIY+1)*scale);
+	response_p->SetBinError(bIX+1, bIY+1, response_p->GetBinError(bIX+1, bIY+1)*scale);
+      }
+    }
   }
 
   for(Int_t bIX = 0; bIX < response_p->GetXaxis()->GetNbins(); ++bIX){
@@ -78,10 +83,12 @@ void oldToNewPrior(TH1D* distToUnfold_p, TH1D* reco_p, TH2D* response_p, TH1D* n
       scale += response_p->GetBinContent(bIX+1, bIY+1);
     }
 
-    Double_t val = reco_p->GetBinContent(bIX+1);
-    Double_t err = reco_p->GetBinError(bIX+1);
-    reco_p->SetBinContent(bIX+1, scale);
-    reco_p->SetBinError(bIX+1, err*scale/val);
+    if(scale > 0.){
+      Double_t val = reco_p->GetBinContent(bIX+1);
+      Double_t err = reco_p->GetBinError(bIX+1);
+      reco_p->SetBinContent(bIX+1, scale);
+      reco_p->SetBinError(bIX+1, err*scale/val);
+    }
   }
 
   return;
@@ -100,33 +107,33 @@ int unfoldTest(const std::string inFileName)
   const Int_t styles[nStyles] = {24, 25, 27, 28, 46};
   const Int_t nBayes = 5;
   
-  const std::string responseStr = "response_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_RecoGenAsymm_h";
-  const std::string responsePriorStr = "response_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorFlat_RecoGenAsymm_h";
+  const std::string responseStr = "ak3PFJetAnalyzer/response_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_RecoGenAsymm_h";
+  const std::string responsePriorStr = "ak3PFJetAnalyzer/response_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorDown1PowerPthat_RecoGenAsymm_h";
 
-  const std::string genStr = "genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodReco_h";
-  const std::string recoStr = "recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodGen_h";
+  const std::string genStr = "ak3PFJetAnalyzer/genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodReco_h";
+  const std::string recoStr = "ak3PFJetAnalyzer/recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodGen_h";
 
-  const std::string genPriorStr = "genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorFlat_GoodReco_h";
-  const std::string recoPriorStr = "recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorFlat_GoodGen_h";
+  const std::string genPriorStr = "ak3PFJetAnalyzer/genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorDown1PowerPthat_GoodReco_h";
+  const std::string recoPriorStr = "ak3PFJetAnalyzer/recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_PriorDown1PowerPthat_GoodGen_h";
 
-  const std::string genParaStr = "genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodReco_h";
-  const std::string recoParaStr = "recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_RecoTrunc_h";
+  const std::string genParaStr = "ak3PFJetAnalyzer/genJtPt_SmallBins_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodReco_ParaFills_h";
+  const std::string recoParaStr = "ak3PFJetAnalyzer/recoJtPt_ak3PFJetAnalyzer_PP_Cent0to10_LightMUAndCHID_ResponseMod0p10_AbsEta0p0to2p0_GoodGen_ParaFills_h";
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
 
   TH2D* response_p = (TH2D*)inFile_p->Get(responseStr.c_str());
   TH2D* responsePrior_p = (TH2D*)inFile_p->Get(responsePriorStr.c_str());
 
-  TH1D* gen_p = (TH1D*)inFile_p->Get(genStr.c_str());
+  //  TH1D* gen_p = (TH1D*)inFile_p->Get(genStr.c_str());
   TH1D* genPrior_p = (TH1D*)inFile_p->Get(genPriorStr.c_str());
 
-  TH1D* reco_p = (TH1D*)inFile_p->Get(recoStr.c_str());
+  //  TH1D* reco_p = (TH1D*)inFile_p->Get(recoStr.c_str());
   TH1D* recoPrior_p = (TH1D*)inFile_p->Get(recoPriorStr.c_str());
 
   TH1D* genPara_p = (TH1D*)inFile_p->Get(genParaStr.c_str());
   TH1D* recoPara_p = (TH1D*)inFile_p->Get(recoParaStr.c_str());
   
-  const Int_t nPads = 10;
+  const Int_t nPads = 11;
   const Int_t nXWidths = 4;
   const Int_t nYWidths = 2;
   TCanvas* canv_p = new TCanvas("canv_p", "", 400*nXWidths, 400*nYWidths);
@@ -137,15 +144,15 @@ int unfoldTest(const std::string inFileName)
 
   TPad* pads_p[nPads];
 
-  const Double_t xLow[nPads] = {0.0, 0.25, 0.5, 0.75, 0.0, 0.25, 0.5, 0.75, 0.0, 0.25};
-  const Double_t xUp[nPads] = {0.25, 0.5, 0.75, 1.0, 0.25, 0.5, 0.75, 1.0, 0.25, 0.5};
-  const Double_t yLow[nPads] = {0.7, 0.7 , 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5};
-  const Double_t yUp[nPads] = {1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5, 0.5, 0.7, 0.7};
+  const Double_t xLow[nPads] = {0.0, 0.25, 0.5, 0.75, 0.0, 0.25, 0.5, 0.75, 0.0, 0.25, 0.75};
+  const Double_t xUp[nPads] = {0.25, 0.5, 0.75, 1.0, 0.25, 0.5, 0.75, 1.0, 0.25, 0.5, 1.0};
+  const Double_t yLow[nPads] = {0.7, 0.7 , 0.5, 0.5, 0.0, 0.0, 0.0, 0.2, 0.5, 0.5, 0.0};
+  const Double_t yUp[nPads] = {1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5, 0.5, 0.7, 0.7, 0.2};
 
-  const Double_t lMargin[nPads] = {0.1, 0.1, 0.14, 0.14, 0.14, 0.14, 0.14, 0.1, 0.1, 0.1};
-  const Double_t rMargin[nPads] = {0.01, 0.01, 0.14, 0.14, 0.14, 0.14, 0.14, 0.01, 0.01, 0.01};
-  const Double_t tMargin[nPads] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
-  const Double_t bMargin[nPads] = {0.01, 0.01, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2};
+  const Double_t lMargin[nPads] = {0.1, 0.1, 0.14, 0.14, 0.14, 0.14, 0.14, 0.1, 0.1, 0.1, 0.1};
+  const Double_t rMargin[nPads] = {0.01, 0.01, 0.14, 0.14, 0.14, 0.14, 0.14, 0.01, 0.01, 0.01, 0.01};
+  const Double_t tMargin[nPads] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+  const Double_t bMargin[nPads] = {0.01, 0.01, 0.1, 0.1, 0.1, 0.1, 0.1, 0.01, 0.2, 0.2, 0.2};
 
   for(unsigned int pI = 0; pI < nPads; ++pI){        
     std::cout << pI << ": " << xLow[pI] << ", " << xUp[pI] << ", " << yLow[pI] << ", " << yUp[pI] << std::endl;
@@ -204,6 +211,7 @@ int unfoldTest(const std::string inFileName)
   setLabels(recoPara_p);
   recoPara_p->DrawCopy("HIST E1");
   genPara_p->DrawCopy("HIST E1 P SAME");
+
   gStyle->SetOptStat(0);
   gPad->SetLogy();
   gPad->SetLogx();
@@ -215,15 +223,57 @@ int unfoldTest(const std::string inFileName)
   gStyle->SetOptStat(0);
   gPad->SetLogy();
   gPad->SetLogx();
-    
+
+  const Int_t nBins = 4;
+  const Double_t bins[nBins+1] = {200, 300, 400, 600, 1000};
+  TH1D* genReduced_h = new TH1D("genReduced_h", ";Jet p_{T} GeV/c;Counts", nBins, bins);
+  if(!macroHistToSubsetHist(genPara_p, genReduced_h, true)) return 1;
+
+  genReduced_h->SetMarkerStyle(20);
+  genReduced_h->SetMarkerSize(1);
+  genReduced_h->SetMarkerColor(1);
+  genReduced_h->SetLineColor(1);
+
+  genReduced_h->Print("ALL");
+  
+  canv_p->cd();
+  pads_p[7]->cd();
+
+  setLabels(genReduced_h);
+  centerTitles(genReduced_h);
+  genReduced_h->SetMaximum(maxVal);
+  genReduced_h->SetMinimum(minVal);
+  genReduced_h->DrawCopy("HIST E1 P");
+  gStyle->SetOptStat(0);
+  gPad->SetLogy();
+  gPad->SetLogx();
+  
+  
   for(Int_t bI = 0; bI < nBayes; ++bI){
-    TH1D* preGenClone_p = (TH1D*)genPrior_p->Clone((std::string(gen_p->GetName()) + "_PRECLONE").c_str());
-    TH1D* preRecoClone_p = (TH1D*)recoPrior_p->Clone((std::string(reco_p->GetName()) + "_PRECLONE").c_str());
+    Int_t bayesVal = bI;
+    //    if(bI == nBayes-1) bayesVal = 100;
+      
+    TH1D* preGenClone_p = (TH1D*)genPrior_p->Clone((std::string(genPrior_p->GetName()) + "_PRECLONE").c_str());
+    TH1D* preRecoClone_p = (TH1D*)recoPrior_p->Clone((std::string(recoPrior_p->GetName()) + "_PRECLONE").c_str());
     TH2D* preResponseClone_p = (TH2D*)responsePrior_p->Clone((std::string(responsePrior_p->GetName()) + "_PRECLONE").c_str());
     TH1D* preRecoToUnfoldClone_p = (TH1D*)recoPara_p->Clone((std::string(recoPara_p->GetName()) + "_PRECLONE").c_str());
+
+    std::cout << "Check integrals: " << preGenClone_p->Integral() << ", " << preRecoClone_p->Integral() << ", " << preResponseClone_p->Integral() << std::endl;
+
+    preGenClone_p->Scale(preRecoToUnfoldClone_p->Integral()/preGenClone_p->Integral());
+    preRecoClone_p->Scale(preRecoToUnfoldClone_p->Integral()/preRecoClone_p->Integral());
+    preResponseClone_p->Scale(preRecoToUnfoldClone_p->Integral()/preResponseClone_p->Integral());
+
+    preGenClone_p->Scale(1./preGenClone_p->Integral());
+    preRecoClone_p->Scale(1./preRecoClone_p->Integral());
+    preResponseClone_p->Scale(1./preResponseClone_p->Integral());
+
+    std::cout << "Check integrals: " << preGenClone_p->Integral() << ", " << preRecoClone_p->Integral() << ", " << preResponseClone_p->Integral() << std::endl;
+
     RooUnfoldResponse* preRooRes_p = new RooUnfoldResponse(preRecoClone_p, preGenClone_p, preResponseClone_p);
 
-    if(bI == 0){
+    
+    if(bI == nBayes-1){
       canv_p->cd();
       pads_p[4]->cd();
       preResponseClone_p->SetMaximum(100);
@@ -234,17 +284,18 @@ int unfoldTest(const std::string inFileName)
       gPad->SetLogy();
       gPad->SetLogz();
     }    
+
     
-    RooUnfoldBayes preBayes(preRooRes_p, preRecoToUnfoldClone_p, 2, false, "name");
+    RooUnfoldBayes preBayes(preRooRes_p, preRecoToUnfoldClone_p, 3, false, "name");
     preBayes.SetVerbose(-1);
     TH1D* preUnfold_h = (TH1D*)preBayes.Hreco(RooUnfold::kCovToy);      
     
     //    TH1D* postGenClone_p = (TH1D*)gen_p->Clone((std::string(gen_p->GetName()) + "_POSTCLONE").c_str());
-    TH1D* postGenClone_p = (TH1D*)preUnfold_h->Clone((std::string(gen_p->GetName()) + "_POSTCLONE").c_str());
-    TH1D* postRecoClone_p = (TH1D*)recoPrior_p->Clone((std::string(reco_p->GetName()) + "_POSTCLONE").c_str());
+    TH1D* postGenClone_p = (TH1D*)preUnfold_h->Clone((std::string(preUnfold_h->GetName()) + "_POSTCLONE").c_str());
+    TH1D* postRecoClone_p = (TH1D*)recoPrior_p->Clone((std::string(recoPrior_p->GetName()) + "_POSTCLONE").c_str());
     TH2D* postResponseClone_p = (TH2D*)responsePrior_p->Clone((std::string(responsePrior_p->GetName()) + "_POSTCLONE").c_str());
     TH1D* postRecoToUnfoldClone_p = (TH1D*)recoPara_p->Clone((std::string(recoPara_p->GetName()) + "_POSTCLONE").c_str());
-
+    
     std::cout << "TH2 DIMENSIONS: " << std::endl;
     std::cout << "X: ";
     for(Int_t bIX = 0; bIX < postResponseClone_p->GetXaxis()->GetNbins(); ++bIX){
@@ -259,26 +310,39 @@ int unfoldTest(const std::string inFileName)
     std::cout << postResponseClone_p->GetYaxis()->GetBinLowEdge(postResponseClone_p->GetYaxis()->GetNbins()+1) << std::endl;
 
     oldToNewPrior(postRecoToUnfoldClone_p, postRecoClone_p, postResponseClone_p, postGenClone_p);
-    
-    if(bI == 4){
-      canv_p->cd();
-      pads_p[5]->cd();
-      postResponseClone_p->SetMaximum(100);
-      postResponseClone_p->SetMinimum(0.00001);
-      setLabels(postResponseClone_p);
-      postResponseClone_p->DrawCopy("COLZ");
-      gPad->SetLogx();
-      gPad->SetLogy();
-      gPad->SetLogz();
-    }
 
     RooUnfoldResponse* postRooRes_p = new RooUnfoldResponse(postRecoClone_p, postGenClone_p, postResponseClone_p);
          
-    RooUnfoldBayes bayes(postRooRes_p, postRecoToUnfoldClone_p, bI+1, false, "name");
+    RooUnfoldBayes bayes(postRooRes_p, postRecoToUnfoldClone_p, bayesVal+1, false, "name");
     bayes.SetVerbose(-1);
 
     TH1D* unfold_h = (TH1D*)bayes.Hreco(RooUnfold::kCovToy);
     TH1D* unfoldClone_h = (TH1D*)unfold_h->Clone((std::string(unfold_h->GetName()) + "_CLONE").c_str());
+
+    TH1D* unfoldReduced_h = new TH1D("unfoldReduced_h", ";Jet p_{T} GeV/c;Counts", nBins, bins);
+    if(!macroHistToSubsetHist(unfold_h, unfoldReduced_h, true)) return 1;
+
+
+    canv_p->cd();
+    pads_p[7]->cd();
+
+    unfoldReduced_h->SetMarkerSize(1);
+    unfoldReduced_h->SetMarkerStyle(styles[bI%nStyles]);
+    unfoldReduced_h->SetMarkerColor(kPal.getColor(bI%nBayes));
+    unfoldReduced_h->SetLineColor(kPal.getColor(bI%nBayes));
+    unfoldReduced_h->DrawCopy("HIST E1 P SAME");
+
+    canv_p->cd();
+    pads_p[10]->cd();
+    unfoldReduced_h->Divide(genReduced_h);
+    unfoldReduced_h->SetMaximum(1.5);
+    unfoldReduced_h->SetMinimum(0.5);
+    setLabels(unfoldReduced_h);
+    centerTitles(unfoldReduced_h);
+    
+    if(bI == 0) unfoldReduced_h->DrawCopy("HiST E1 P");
+    else unfoldReduced_h->DrawCopy("HiST E1 P SAME");
+    gPad->SetLogx();
     
     canv_p->cd();
     pads_p[0]->cd();
@@ -299,7 +363,6 @@ int unfoldTest(const std::string inFileName)
       unfold_h->SetMinimum(0.5);
       centerTitles(unfold_h);
       unfold_h->SetTitle("");
-      unfold_h->Print("ALL");
       unfold_h->DrawCopy("HIST E1 P");
       gPad->SetLogx();
     }
@@ -331,9 +394,23 @@ int unfoldTest(const std::string inFileName)
     gPad->SetLogx();
 
 
-    if(bI == 4){
+    if(bI == nBayes-1){
+      canv_p->cd();
+      pads_p[5]->cd();      
+
+      postResponseClone_p->SetMaximum(100);
+      postResponseClone_p->SetMinimum(0.00001);
+      postResponseClone_p->DrawCopy("COLZ");
+      gPad->SetLogx();
+      gPad->SetLogy();
+      gPad->SetLogz();
+
       canv_p->cd();
       pads_p[6]->cd();      
+
+      postResponseClone_p->Scale(1./postResponseClone_p->Integral());
+      response_p->Scale(1./response_p->Integral());
+      
       postResponseClone_p->Divide(response_p);
       postResponseClone_p->SetMaximum(2.);
       postResponseClone_p->SetMinimum(0);
@@ -342,10 +419,15 @@ int unfoldTest(const std::string inFileName)
       gPad->SetLogy();
     }
 
+
+    
+
+    
     delete refold_h;
     delete unfold_h;
     delete unfoldClone_h;
-
+    delete unfoldReduced_h;
+    
     delete postRooRes_p;
     
     delete postResponseClone_p;
@@ -361,6 +443,8 @@ int unfoldTest(const std::string inFileName)
     delete preGenClone_p;
     delete preRecoClone_p;
   }
+
+  delete genReduced_h;
 
   canv_p->SaveAs("temp.pdf");
 

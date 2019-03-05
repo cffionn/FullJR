@@ -22,12 +22,12 @@ class smallOrLargeR
   static const int nRecoJtPtBinsSmallRCent50to90 = 11;
   std::vector<double> recoJtPtBinsSmallR = {150., 175., 200., 225, 250., 275, 300., 350., 400., 450., 500., 600., 800., 1000.};
 
-  static const int nGenJtPtSmallBinsSmallRCent0to10 = 16;
-  static const int nGenJtPtSmallBinsSmallRCent10to30 = 15;
-  static const int nGenJtPtSmallBinsSmallRCent30to50 = 14;
-  static const int nGenJtPtSmallBinsSmallRCent50to90 = 14;
-  std::vector<double> genJtPtSmallBinsSmallR = {100., 150., 175., 200., 225., 250., 275., 300., 350., 400., 450., 500., 600., 800., 1000., 1200., 1500.};
-
+  static const int nGenJtPtSmallBinsSmallRCent0to10 = 15;
+  static const int nGenJtPtSmallBinsSmallRCent10to30 = 14;
+  static const int nGenJtPtSmallBinsSmallRCent30to50 = 13;
+  static const int nGenJtPtSmallBinsSmallRCent50to90 = 13;
+  std::vector<double> genJtPtSmallBinsSmallR = {100., 150., 175., 200., 225., 250., 275., 300., 350., 400., 450., 500., 600., 800., 1000., 1500.};
+  
   static const int nGenJtPtLargeBinsSmallRCent0to10 = 6;
   static const int nGenJtPtLargeBinsSmallRCent10to30 = 5;
   static const int nGenJtPtLargeBinsSmallRCent30to50 = 4;
@@ -40,11 +40,11 @@ class smallOrLargeR
   static const int nRecoJtPtBinsLargeRCent50to90 = 5;
   std::vector<double> recoJtPtBinsLargeR = {250., 300., 350., 400., 500., 600., 800, 1000.};
 
-  static const int nGenJtPtSmallBinsLargeRCent0to10 = 10;
-  static const int nGenJtPtSmallBinsLargeRCent10to30 = 9;
-  static const int nGenJtPtSmallBinsLargeRCent30to50 = 8;
-  static const int nGenJtPtSmallBinsLargeRCent50to90 = 8;
-  std::vector<double> genJtPtSmallBinsLargeR = {200., 250., 300., 350., 400., 500., 600., 800., 1000., 1200., 1500.};
+  static const int nGenJtPtSmallBinsLargeRCent0to10 = 9;
+  static const int nGenJtPtSmallBinsLargeRCent10to30 = 8;
+  static const int nGenJtPtSmallBinsLargeRCent30to50 = 7;
+  static const int nGenJtPtSmallBinsLargeRCent50to90 = 7;
+  std::vector<double> genJtPtSmallBinsLargeR = {200., 250., 300., 350., 400., 500., 600., 800., 1000., 1500.};
 
   static const int nGenJtPtLargeBinsLargeRCent0to10 = 4;
   static const int nGenJtPtLargeBinsLargeRCent10to30 = 3;

@@ -7,7 +7,7 @@
 #include "TMath.h"
 #include "TRandom3.h"
 
-bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p)
+bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 = false)
 {
   std::vector<double> macroBins, subsetBins;
 
@@ -74,15 +74,18 @@ bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p)
   else{
     for(unsigned int sI = 0; sI < subsetBins.size(); ++sI){
       Double_t val = 0;
+      Double_t err = 0;
       
       for(Int_t bIX = 0; bIX < macroHist_p->GetNbinsX(); ++bIX){
 	if(subsetBins[sI] <= macroHist_p->GetBinCenter(bIX+1) && macroHist_p->GetBinCenter(bIX+1) < subsetBins[sI+1]){
 	  val += macroHist_p->GetBinContent(bIX+1);
+	  err = TMath::Sqrt(err*err + macroHist_p->GetBinError(bIX+1)*macroHist_p->GetBinError(bIX+1));
 	}
       }
 
       subsetHist_p->SetBinContent(sI+1, val);
-      subsetHist_p->SetBinError(sI+1, TMath::Sqrt(val));
+      if(doSumW2) subsetHist_p->SetBinError(sI+1, err);
+      else subsetHist_p->SetBinError(sI+1, TMath::Sqrt(val));
     }
 
   }
