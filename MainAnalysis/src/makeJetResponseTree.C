@@ -401,8 +401,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   const Double_t jtPfCEFCutHi[nID] = {1.0, 1.0, 1.0, 0.99, 0.90};
 
 
-  const Int_t nSyst = 14;
-  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorFlat", "PriorUp1PowerPthat", "PriorDown1PowerPthat", "PriorNoWeight"};
+  const Int_t nSyst = 12;
+  const std::string systStr[nSyst] = {"", "JECUpMC", "JECDownMC", "JECUpData", "JECDownData", "JECUpUE", "JECDownUE", "JERMC", "JERData", "Fake", "PriorUp1PowerPthat", "PriorDown1PowerPthat"};
   Int_t priorFlatPos = -1;
   for(Int_t sI = 0; sI < nSyst; ++sI){
     if(isStrSame(systStr[sI], "PriorFlat")){
@@ -1083,11 +1083,12 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      }
 	      else if(isStrSame(systStr[sI], "JERMC")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarMC;
 	      else if(isStrSame(systStr[sI], "JERData")) jtPtFillVal[sI] += (jtPtFillVal[sI] - refpt_[tI][jI])*jerVarData[mI];
-	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] *= flatWeight.getJtWeight(algoName, hiBin_/2, refpt_[tI][jI], jteta_[tI][jI]);
 	      else if(isStrSame(systStr[sI], "PriorUp1PowerPthat")) fullWeight2[sI] *= pthat_/pthatLow;
 	      else if(isStrSame(systStr[sI], "PriorDown1PowerPthat")) fullWeight2[sI] *= pthatLow/pthat_;
+	      /*
+	      else if(isStrSame(systStr[sI], "PriorFlat") && refpt_[tI][jI] > 0) fullWeight2[sI] *= flatWeight.getJtWeight(algoName, hiBin_/2, refpt_[tI][jI], jteta_[tI][jI]);
 	      else if(isStrSame(systStr[sI], "PriorNoWeight") && refpt_[tI][jI] > 0) fullWeight2[sI] /= pthatWeight_;
-	    
+	      */
 	      if(jtPtFillVal[sI] > minRecoJtPt) oneRecoIsGood = true;
 	    }
 	  
