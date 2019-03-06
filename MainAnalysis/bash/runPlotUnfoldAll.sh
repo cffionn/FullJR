@@ -19,8 +19,8 @@ else
     exit 1
 fi
 
-dateStrPP=20190301
-dateStrPbPb=20190301
+dateStrPP=20190306
+dateStrPbPb=20190306
 
 DATE=`date +%Y%m%d`
 
@@ -29,13 +29,13 @@ mkdir -p logs/$DATE
 
 #pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow CombinedAlgos)
 #ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF CombinedAlgos)
-pbpbVals=(akCs4PU3PFFlow)
-ppVals=(ak4PF)
+pbpbVals=(akCs8PU3PFFlow)
+ppVals=(ak8PF)
 
-fileOutPbPbPre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR_Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_UnfoldRawData_NSuperBayes0_
+fileOutPbPbPre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR_PtCut140_AbsEta3_20180626_21LumiPer_180626_152510_1050_OutOf1050_MERGED_UnfoldRawData_NSuperBayes0_
 fileOutPbPbPost=_"$dateStrPbPb".root
 
-fileOutPPPre=output/"$dateStrPP"/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_UnfoldRawData_NSuperBayes0_
+fileOutPPPre=output/"$dateStrPP"/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20190220_11Lumi_190220_221659_561_OutOf561_MERGED_UnfoldRawData_NSuperBayes0_
 fileOutPPPost=_"$dateStrPP".root
 
 atlasFile=output/HEPData-ins1673184-v1-root.root

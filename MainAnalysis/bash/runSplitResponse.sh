@@ -80,7 +80,8 @@ wait
 DATEEND=`date +%Y%m%d`
 
 #rVals=(ak3 ak4 ak6 ak8 ak10 akCs3 akCs4 akCs6 akCs8 akCs10)
-rVals=(ak3)
+rVals=(ak3 ak4 ak6 akCs3 akCs4 akCs6)
+#rVals=(ak8 akCs8 ak10 akCs10)
 rPaths=()
 
 for r in "${rVals[@]}"

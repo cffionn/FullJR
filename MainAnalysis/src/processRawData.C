@@ -342,18 +342,16 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
 
+  /*
   std::string outFileName2 = inResponseName;
   while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
   if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
-
+  */
   checkMakeDir("output");
   checkMakeDir("output/" + dateStr);
   
-  const Int_t sizeToTruncName = 40;
-  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
-  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-  outFileName = "output/" + dateStr + "/" + outFileName + "_" + outFileName2 + "_ProcessRawData_";
+  outFileName = "output/" + dateStr + "/" + outFileName + "_ProcessRawData_";
   if(tagStr.size() != 0) outFileName = outFileName + tagStr + "_";
   outFileName = outFileName + dateStr + ".root";
 

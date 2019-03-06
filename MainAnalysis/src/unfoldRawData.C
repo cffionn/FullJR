@@ -364,26 +364,18 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
   else if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
 
-  std::string outFileName2 = inResponseName;
-  while(outFileName2.find("/") != std::string::npos){outFileName2.replace(0, outFileName2.find("/")+1, "");}
-  if(outFileName2.find(".txt") != std::string::npos) outFileName2.replace(outFileName2.find(".txt"), std::string(".txt").size(), "");
-  else if(outFileName2.find(".root") != std::string::npos) outFileName2.replace(outFileName2.find(".root"), std::string(".root").size(), "");
-
   std::string debugStr = "";
   if(doLocalDebug || doGlobalDebug) debugStr = "DEBUG_";
 
   std::string selectJtAlgoStr = selectJtAlgo;
   if(selectJtAlgoStr.size() != 0) selectJtAlgoStr = selectJtAlgoStr + "_";
 
-  const Int_t sizeToTruncName = 40;
-  while(outFileName.size() > sizeToTruncName){outFileName = outFileName.substr(0,outFileName.size()-1);}
-  while(outFileName2.size() > sizeToTruncName){outFileName2 = outFileName2.substr(0,outFileName2.size()-1);}
-
   const Int_t nSuperBayes = 0;
   checkMakeDir("output");
   checkMakeDir("output/" + dateStr);
 
-  outFileName = "output/" + dateStr + "/" + outFileName + "_" + outFileName2 + "_UnfoldRawData_NSuperBayes" + std::to_string(nSuperBayes) + "_" + selectJtAlgoStr + debugStr + dateStr + ".root";
+  outFileName = outFileName.substr(0, outFileName.find("ProcessRawData"));
+  outFileName = "output/" + dateStr + "/" + outFileName + "_UnfoldRawData_NSuperBayes" + std::to_string(nSuperBayes) + "_" + selectJtAlgoStr + debugStr + dateStr + ".root";
 
   while(outFileName.find("__") != std::string::npos){outFileName.replace(outFileName.find("__"), 2, "_");}
 
@@ -503,7 +495,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
   responseFile_p = new TFile(inResponseName.c_str(), "READ");
-  //  TH2D* response_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst][nSmallLargeBins];
+  TH2D* response_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst][nSmallLargeBins];
   RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst][nSmallLargeBins];
   
   TH1D* recoJtPt_GoodGen_h[nMaxDataJet][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nMaxSyst];
@@ -528,23 +520,19 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 	    for(Int_t sI = 0; sI < nSyst; ++sI){
 	      std::string tempSystStr = "_" + systStr[sI] + "_";
 	      while(tempSystStr.find("__") != std::string::npos){tempSystStr.replace(tempSystStr.find("__"), 2, "_");}
-	     
+	      
 	      recoJtPt_GoodGen_h[jI][cI][iI][mI][aI][sI] = (TH1D*)responseFile_p->Get((tempStr + "/recoJtPt_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "GoodGen_h").c_str());
 
 	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-		//		response_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI] = (TH2D*)responseFile_p->Get((tempStr + "/response_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
-
-		if(jI == 0 && cI == 0 && iI == 0 && mI == 0 && aI == 0 && sI == 0 && binsI == 0){
-		  std::cout << "NAME: " << tempStr + "/rooResponse_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h" << std::endl;
-		}
-	      
-		rooResponse_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
-	      
-		if(jI == 0 && cI == 0 && iI == 0 && mI == 0 && aI == 0 && sI == 0 && binsI == 0){
-		  std::cout << rooResponse_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI]->GetName() << std::endl;
-		}
+		response_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI] = (TH2D*)responseFile_p->Get((tempStr + "/response_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());	     	      
 
 		genJtPt_GoodReco_h[jI][cI][iI][mI][aI][sI][binsI] = (TH1D*)responseFile_p->Get((tempStr + "/genJtPt_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "GoodReco_h").c_str());
+
+		rooResponse_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI] = new RooUnfoldResponse(recoJtPt_GoodGen_h[jI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[jI][cI][iI][mI][aI][sI][binsI], response_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI], ("rooResponse_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str(), "");
+		//		rooResponse_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI]->Setup(recoJtPt_GoodGen_h[jI][cI][iI][mI][aI][sI], genJtPt_GoodReco_h[jI][cI][iI][mI][aI][sI][binsI]);
+
+		//rooResponse_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI] = (RooUnfoldResponse*)responseFile_p->Get((tempStr + "/rooResponse_" + smallLargeBinsStr[binsI] + "_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSystStr + "RecoGenAsymm_h").c_str());
+
 	      }
 	    }
 	  }

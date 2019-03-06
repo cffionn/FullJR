@@ -20,34 +20,39 @@ else
 fi
 
 
-dateStrPPMC=20190301
-dateStrPbPbMC=20190301
-dateStrPPData=20190301
-dateStrPbPbData=20190301
+dateStrPPMC=20190306
+dateStrPbPbMC=20190306
+dateStrPPData=20190306
+dateStrPbPbData=20190306
 
 DATE=`date +%Y%m%d`
 
 mkdir -p logs
 mkdir -p logs/$DATE
 
-ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
-pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
+#ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
+#pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
 
-PPDataFilePre=output/"$dateStrPPData"/HiForestAOD_HighPtJet80_HLTJet80_LargeRO_Pythia6_Dijet_pp502_MCDijet_20180712_Exc_ProcessRawData_
+ppVals=(ak8PF ak10PF)
+pbpbVals=(akCs8PU3PFFlow akCs10PU3PFFlow)
+
+PPDataFilePre=output/"$dateStrPPData"/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20190220_11Lumi_190220_221659_561_OutOf561_MERGED_ProcessRawData_
 PPDataFilePost=JetAnalyzer_"$dateStrPPData".root
-PPResFilePre=output/"$dateStrPPMC"/Pythia6_Dijet_pp502_MCDijet_20180712_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180712_SVM_
-PPResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPPMC".root
+PPResFilePre=output/"$dateStrPPMC"/combinedResponse_
+PPResFilePost=_"$dateStrPPMC".root
 
-PbPbDataFilePre=output/"$dateStrPbPbData"/HiForestAOD_HIHardProbes_HLTJet100_AllR__Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbP_ProcessRawData_
+PbPbDataFilePre=output/"$dateStrPbPbData"/HiForestAOD_HIHardProbes_HLTJet100_AllR_PtCut140_AbsEta3_20180626_21LumiPer_180626_152510_1050_OutOf1050_MERGED_ProcessRawData_
 PbPbDataFilePost=JetAnalyzer_"$dateStrPbPbData".root
-PbPbResFilePre=output/"$dateStrPbPbMC"/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_
-PbPbResFilePost=JetAnalyzer_FracNEntries1p00_JetResponse_"$dateStrPbPbMC".root
+PbPbResFilePre=output/"$dateStrPbPbMC"/combinedResponse_
+PbPbResFilePost=_"$dateStrPbPbMC".root
 
 for i in "${ppVals[@]}"
 do
     echo "Processing $i..."
+    jetTrunc=${i%PF*}
+
     fileNameData=$PPDataFilePre$i$PPDataFilePost
-    fileNameMC=$PPResFilePre$i$PPResFilePost
+    fileNameMC=$PPResFilePre$jetTrunc$PPResFilePost
 
     if [[ -f $fileNameData ]]
     then
@@ -65,14 +70,18 @@ done
 for i in "${pbpbVals[@]}"
 do
     echo "Processing $i..."
+    jetTrunc=${i%PU*}
+
+    echo $jetTrunc
+
     fileNameData=$PbPbDataFilePre$i$PbPbDataFilePost
-    fileNameMC=$PbPbResFilePre$i$PbPbResFilePost
+    fileNameMC=$PbPbResFilePre$jetTrunc$PbPbResFilePost
 
     if [[ -f $fileNameData ]]
     then
         if [[ -f $fileNameMC ]]
         then
-	    ./bin/unfoldRawData.exe $PbPbDataFilePre$i$PbPbDataFilePost $PbPbResFilePre$i$PbPbResFilePost $i >& logs/$DATE/unfoldPbPb_$i.log &
+	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i >& logs/$DATE/unfoldPbPb_$i.log &
 	else
             echo " Missing $fileNameMC, continue on $i"
         fi
