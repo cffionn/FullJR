@@ -331,8 +331,8 @@ void drawAllLabels(TCanvas* canv_p, TH1D* hist_p, TLatex* label_p, const Int_t n
   for(Int_t xI = 0; xI < nXVals; ++xI){
     if(xVals[xI] < hist_p->GetBinLowEdge(1)) continue;
     if(xVals[xI] >= hist_p->GetBinLowEdge(hist_p->GetNbinsX()+1)) continue;
-    
-    label_p->DrawLatex(labelAid.getXRelFromAbs(xVals[xI], false), canv_p->GetBottomMargin()-0.035, std::to_string(xVals[xI]).c_str());
+
+    label_p->DrawLatex(labelAid.getXRelFromAbs(xVals[xI], canv_p->GetLogx()), canv_p->GetBottomMargin()-0.035, std::to_string(xVals[xI]).c_str());
   }
   label_p->DrawLatex(canv_p->GetLeftMargin()+0.04, 1.0-canv_p->GetTopMargin()-0.05, "#bf{CMS}");
   label_p->DrawLatex(canv_p->GetLeftMargin(), 1.0-canv_p->GetTopMargin()+0.02, "#sqrt{s_{NN}} = 5.02 TeV, PbPb 404 #mub^{-1}, pp 27.4 pb^{-1}");
@@ -1210,8 +1210,8 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    canv_p->cd();
 	    defaultPlotSet(histVectPbPbClones[0], centBinsStr[0]);
 	    histVectPbPbClones[0]->DrawCopy("HIST E1 P");	  
-	    canvNDCToXY labelAid(canv_p, histVectPbPbClones[0]);
 	    gPad->SetLogx();
+	    canvNDCToXY labelAid(canv_p, histVectPbPbClones[0]);
 	    
 	    drawSyst(canv_p, histVectPbPbClones[0], reducedSystSumPbPb[0], histVectPbPbClones[0]->GetBinLowEdge(1), histVectPbPbClones[0]->GetBinLowEdge(histVectPbPbClones[0]->GetNbinsX()+1));
 	    histVectPbPbClones[0]->DrawCopy("HIST E1 P SAME");
@@ -1229,7 +1229,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      leg_p->AddEntry(histVectPbPbClones[pos], centStr.c_str(), "F P L");
 	    }
 	    
-	    //	    drawAllLabels(canv_p, histVectPPClones[0], label_p, nXVals, xVals, rValStr[jI], jtAbsEtaBinsStr[aI]);
+	    drawAllLabels(canv_p, histVectPPClones[0], label_p, nXVals, xVals, rValStr[jI], jtAbsEtaBinsStr[aI]);
 	  	    
 	    leg_p->Draw("SAME");
 	    gPad->RedrawAxis();
@@ -1367,8 +1367,8 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    canv_p->cd();
 	    defaultPlotSet(histVectPbPbClones[0], centBinsStr[0]);
 	    histVectPbPbClones[0]->DrawCopy("HIST E1 P");	  
-	    canvNDCToXY labelAid(canv_p, histVectPbPbClones[0]);
 	    gPad->SetLogx();	    
+	    canvNDCToXY labelAid(canv_p, histVectPbPbClones[0]);
 	    drawSyst(canv_p, histVectPbPbClones[0], reducedSystSumPbPb[0], histVectPbPbClones[0]->GetBinLowEdge(1), histVectPbPbClones[0]->GetBinLowEdge(histVectPbPbClones[0]->GetNbinsX()+1));
 	    histVectPbPbClones[0]->DrawCopy("HIST E1 P SAME");	  
   	    	    

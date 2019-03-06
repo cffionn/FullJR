@@ -29,8 +29,8 @@ mkdir -p logs/$DATE
 
 #pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow CombinedAlgos)
 #ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF CombinedAlgos)
-pbpbVals=(akCs8PU3PFFlow)
-ppVals=(ak8PF)
+pbpbVals=(akCs4PU3PFFlow)
+ppVals=(ak4PF)
 
 fileOutPbPbPre=output/"$dateStrPbPb"/HiForestAOD_HIHardProbes_HLTJet100_AllR_PtCut140_AbsEta3_20180626_21LumiPer_180626_152510_1050_OutOf1050_MERGED_UnfoldRawData_NSuperBayes0_
 fileOutPbPbPost=_"$dateStrPbPb".root
