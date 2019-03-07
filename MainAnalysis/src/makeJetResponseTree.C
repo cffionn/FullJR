@@ -51,7 +51,7 @@ std::string to_string_with_precision(const T a_value, const int n)
   return out.str();
 }
 
-int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1., const bool doRooResponse = false)
+int makeJetResponseTree(const std::string inName, bool isPP = false, double inEntryFrac = 1., const bool doRooResponse = false, const bool doSystReduced = false)
 {
   if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -410,7 +410,9 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
       break;
     }
   }
-  
+
+  Int_t nSystReduced = nSyst;
+  if(doSystReduced) nSystReduced = 3;
   /*
   const Int_t nSyst = 1;
   const std::string systStr[nSyst] = {""};
@@ -502,8 +504,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetJtPfCEFCutHi(nID, jtPfCEFCutHi);
   cutProp.SetJtPfMinMult(nID, jtPfMinMult);
   cutProp.SetJtPfMinChgMult(nID, jtPfMinChgMult);
-  cutProp.SetNSyst(nSyst);
-  cutProp.SetSystStr(nSyst, systStr);
+  cutProp.SetNSyst(nSystReduced);
+  cutProp.SetSystStr(nSystReduced, systStr);
 
   const std::string flatWeightNamePbPb = "MainAnalysis/tables/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_FlatGenJetResponse_20180828_9.root";
 
@@ -663,7 +665,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      genJtPt_CheckPriorFlat_h[dI][cI][iI][mI][aI][binsI] = new TH1D(("rooResponse_" + smallLargeBinsStr[binsI] + "_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_CheckPriorFlat_h").c_str(), ";Gen. p_{T} (Weighted Flat);Counts (Weighted)", nGenJtPtBins[dI][cI][binsI], genJtPtBins[dI][cI][binsI]);
 	    }
 	    
-	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	    for(Int_t sI = 0; sI < nSystReduced; ++sI){
 	      std::string tempSysStr =  "_" + systStr[sI] + "_";	 
 	      while(tempSysStr.find("__") != std::string::npos){tempSysStr.replace(tempSysStr.find("__"), 2, "_");}
 
@@ -1065,7 +1067,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    
 	    bool oneRecoIsGood = false;
 	    
-	    for(Int_t sI = 0; sI < nSyst; ++sI){	  
+	    for(Int_t sI = 0; sI < nSystReduced; ++sI){	  
 	      jtPtFillVal[sI] = jtpt_[tI][jI] + (jtpt_[tI][jI] - refpt_[tI][jI])*responseMod[mI];
 	      fullWeight2[sI] = fullWeight_;
 	      
@@ -1105,7 +1107,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      std::vector<Int_t> goodRecoPos;
 	      std::vector<Int_t> goodRecoTruncPos;
 
-	      for(Int_t sI = 0; sI < nSyst; ++sI){
+	      for(Int_t sI = 0; sI < nSystReduced; ++sI){
 		if(jtPtFillVal[sI] >= genJtPtBins[tI][cent][0][0] && jtPtFillVal[sI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]) goodRecoPos.push_back(sI);
 		if(jtPtFillVal[sI] >= recoJtPtBins[tI][cent][0] && jtPtFillVal[sI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]) goodRecoTruncPos.push_back(sI);
 	      }
@@ -1271,7 +1273,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      genJtPt_All_h[dI][cI][iI][mI][aI][binsI]->Write("", TObject::kOverwrite);
 	    }
 
-	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	    for(Int_t sI = 0; sI < nSystReduced; ++sI){
 	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 
@@ -1346,7 +1348,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      delete genJtPt_All_h[dI][cI][iI][mI][aI][binsI];
 	    }
 
-	    for(Int_t sI = 0; sI < nSyst; ++sI){
+	    for(Int_t sI = 0; sI < nSystReduced; ++sI){
 	      delete recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI];
 	      delete recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI];
 
@@ -1437,8 +1439,8 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
 int main(int argc, char* argv[])
 {
-  if(argc < 2 && argc > 5){
-    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt> <entryFrac-Opt> <doRooResponse-opt>" << std::endl;
+  if(argc < 2 && argc > 6){
+    std::cout << "Usage ./bin/makeJetResponseTree.exe <inName> <isPP-Opt> <entryFrac-Opt> <doRooResponse-opt> <doSystReduced-opt>" << std::endl;
     return 1;
   }
   
@@ -1447,6 +1449,7 @@ int main(int argc, char* argv[])
   else if(argc == 3) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]));
   else if(argc == 4) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]));
   else if(argc == 5) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]), std::stoi(argv[4]));
+  else if(argc == 6) retVal += makeJetResponseTree(argv[1], std::stoi(argv[2]), std::stod(argv[3]), std::stoi(argv[4]), std::stoi(argv[5]));
 
   std::cout << "Job complete. Return " << retVal << "." << std::endl;
   return retVal;
