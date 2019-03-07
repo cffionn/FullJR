@@ -18,7 +18,10 @@
 //Non-local (Utility, etc.) dependencies
 #include "Utility/include/checkMakeDir.h"
 #include "Utility/include/getLinBins.h"
+#include "Utility/include/getLogBins.h"
 #include "Utility/include/histDefUtility.h"
+#include "Utility/include/kirchnerPalette.h"
+#include "Utility/include/lumiAndTAAUtil.h"
 #include "Utility/include/plotUtilities.h"
 #include "Utility/include/vanGoghPalette.h"
 
@@ -322,7 +325,6 @@ std::vector<double> getSyst(const std::string dirStr, TH1D* nominal_p, std::vect
       for(Int_t bIX = 0; bIX < nBins; ++bIX){
 	std::string binLowStr = prettyString(tempHist_p->GetBinLowEdge(bIX+1), 1, false);
 	std::string binHiStr = prettyString(tempHist_p->GetBinLowEdge(bIX+2), 1, false);
-	std::cout << " " << bIX << ", " << binLowStr << "-" << binHiStr << ": " << tempHist_p->GetBinContent(bIX+1) << ", " << systVect.at(bIX)/nomValVect.at(bIX) << std::endl;
       }
     }
 
@@ -391,6 +393,7 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
 
   Int_t binFillPos = 0;
   for(Int_t bIX = 0; bIX < nominal_p->GetNbinsX(); ++bIX){
+    std::cout << bIX << std::endl;
     Double_t binCenter = nominal_p->GetBinCenter(bIX+1);
     Double_t binLowEdge = nominal_p->GetBinLowEdge(bIX+1);
     Double_t binHiEdge = nominal_p->GetBinLowEdge(bIX+2);
@@ -402,6 +405,48 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
     tempBox_p->DrawBox(binLowEdge, binContent - syst_.at(binFillPos), binHiEdge, binContent + syst_.at(binFillPos));
     ++binFillPos;
   }
+
+  delete tempBox_p;
+
+  return;
+}
+
+
+void drawLumiOrTAA(TCanvas* canv_p, TH1D* hist_p, Double_t min, Double_t max, std::vector<double> syst, std::string lumiOrTAA, std::string centStr)
+{
+
+  kirchnerPalette kPalette;
+
+  const Int_t nBins = 200;
+  Double_t bins[nBins+1];
+  if(canv_p->GetLogx()) getLogBins(min, max, nBins, bins);
+  else getLinBins(min, max, nBins, bins);
+  
+  TBox* tempBox_p = new TBox();
+  if(lumiOrTAA.find("Lumi") != std::string::npos){
+    tempBox_p->SetFillColorAlpha(kPalette.getColor(getColorPosFromCent("", true)), .25);
+    tempBox_p->DrawBox(bins[6], 1 - syst[0], bins[24], 1 + syst[0]);
+  }
+  else if(lumiOrTAA.find("TAA") != std::string::npos){
+    if(centStr.find("50to90") != std::string::npos){
+      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
+      tempBox_p->DrawBox(bins[26], 1 - syst[0], bins[44], 1 + syst[0]);
+    }
+    else if(centStr.find("30to50") != std::string::npos){
+      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
+      tempBox_p->DrawBox(bins[46], 1 - syst[0], bins[64], 1 + syst[0]);
+    }
+    else if(centStr.find("10to30") != std::string::npos){
+      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
+      tempBox_p->DrawBox(bins[66], 1 - syst[0], bins[84], 1 + syst[0]);
+    }
+    else if(centStr.find("0to10") != std::string::npos){
+      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
+      tempBox_p->DrawBox(bins[86], 1 - syst[0], bins[104], 1 + syst[0]);
+    }
+  }
+
+  delete tempBox_p;
 
   return;
 }

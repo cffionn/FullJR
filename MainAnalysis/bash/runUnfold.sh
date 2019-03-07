@@ -30,11 +30,8 @@ DATE=`date +%Y%m%d`
 mkdir -p logs
 mkdir -p logs/$DATE
 
-#ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
-#pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
-
-ppVals=(ak8PF ak10PF)
-pbpbVals=(akCs8PU3PFFlow akCs10PU3PFFlow)
+ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
+pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
 
 PPDataFilePre=output/"$dateStrPPData"/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20190220_11Lumi_190220_221659_561_OutOf561_MERGED_ProcessRawData_
 PPDataFilePost=JetAnalyzer_"$dateStrPPData".root

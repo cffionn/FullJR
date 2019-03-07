@@ -16,6 +16,44 @@ class smallOrLargeR
   static const int nLargeR = 4;
   std::vector<int> largeRVals = {7, 8, 9, 10};
 
+  static const int nRecoJtPtBinsSmallRCent0to10 = 8;
+  static const int nRecoJtPtBinsSmallRCent10to30 = 7;
+  static const int nRecoJtPtBinsSmallRCent30to50 = 6;
+  static const int nRecoJtPtBinsSmallRCent50to90 = 6;
+  std::vector<double> recoJtPtBinsSmallR = {165., 200., 255, 310., 370, 435, 500, 600, 1000};
+
+  static const int nGenJtPtSmallBinsSmallRCent0to10 = 11;
+  static const int nGenJtPtSmallBinsSmallRCent10to30 = 10;
+  static const int nGenJtPtSmallBinsSmallRCent30to50 = 9;
+  static const int nGenJtPtSmallBinsSmallRCent50to90 = 9;
+  std::vector<double> genJtPtSmallBinsSmallR = {100, 130, 165., 200., 255, 310., 370, 435, 500, 600, 1000, 1500};
+  
+  static const int nGenJtPtLargeBinsSmallRCent0to10 = 7;
+  static const int nGenJtPtLargeBinsSmallRCent10to30 = 6;
+  static const int nGenJtPtLargeBinsSmallRCent30to50 = 5;
+  static const int nGenJtPtLargeBinsSmallRCent50to90 = 5;
+  std::vector<double> genJtPtLargeBinsSmallR = {100, 165., 200., 310., 435, 600, 1000, 1500};
+
+  static const int nRecoJtPtBinsLargeRCent0to10 = 6;
+  static const int nRecoJtPtBinsLargeRCent10to30 = 5;
+  static const int nRecoJtPtBinsLargeRCent30to50 = 4;
+  static const int nRecoJtPtBinsLargeRCent50to90 = 4;
+  std::vector<double> recoJtPtBinsLargeR = {255, 310., 370, 435, 500, 600, 1000};
+
+  static const int nGenJtPtSmallBinsLargeRCent0to10 = 8;
+  static const int nGenJtPtSmallBinsLargeRCent10to30 = 7;
+  static const int nGenJtPtSmallBinsLargeRCent30to50 = 6;
+  static const int nGenJtPtSmallBinsLargeRCent50to90 = 6;
+  std::vector<double> genJtPtSmallBinsLargeR = {200., 255, 310., 370, 435, 500, 600, 1000, 1500};
+
+  static const int nGenJtPtLargeBinsLargeRCent0to10 = 5;
+  static const int nGenJtPtLargeBinsLargeRCent10to30 = 4;
+  static const int nGenJtPtLargeBinsLargeRCent30to50 = 3;
+  static const int nGenJtPtLargeBinsLargeRCent50to90 = 3
+  std::vector<double> genJtPtLargeBinsLargeR = {200., 310., 435, 600, 1000, 1500};
+
+
+  /*
   static const int nRecoJtPtBinsSmallRCent0to10 = 13;
   static const int nRecoJtPtBinsSmallRCent10to30 = 12;
   static const int nRecoJtPtBinsSmallRCent30to50 = 11;
@@ -32,8 +70,8 @@ class smallOrLargeR
   static const int nGenJtPtLargeBinsSmallRCent10to30 = 5;
   static const int nGenJtPtLargeBinsSmallRCent30to50 = 4;
   static const int nGenJtPtLargeBinsSmallRCent50to90 = 4;
-  std::vector<double> genJtPtLargeBinsSmallR = {100., 200., 300., 400, 600., 1000., 1500.};
-
+  std::vector<double> genJtPtLargeBinsSmallR = {100., 200., 300., 400, 600., 1000., 1500.}
+;plo
   static const int nRecoJtPtBinsLargeRCent0to10 = 7;
   static const int nRecoJtPtBinsLargeRCent10to30 = 6;
   static const int nRecoJtPtBinsLargeRCent30to50 = 5;
@@ -51,7 +89,7 @@ class smallOrLargeR
   static const int nGenJtPtLargeBinsLargeRCent30to50 = 2;
   static const int nGenJtPtLargeBinsLargeRCent50to90 = 2;
   std::vector<double> genJtPtLargeBinsLargeR = {200., 300., 600., 1000., 1500.};
-
+  */
   smallOrLargeR();
 
   int GetNSmallR(){return nSmallR;}

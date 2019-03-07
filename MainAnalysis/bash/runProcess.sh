@@ -29,11 +29,11 @@ mkdir -p logs
 mkdir -p logs/$DATE
 
 
-#jetsPP=(ak3PFJetAnalyzer ak4PFJetAnalyzer ak6PFJetAnalyzer ak8PFJetAnalyzer ak10PFJetAnalyzer)
-#jetsPbPb=(akCs3PU3PFFlowJetAnalyzer akCs4PU3PFFlowJetAnalyzer akCs6PU3PFFlowJetAnalyzer akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
+jetsPP=(ak3PFJetAnalyzer ak4PFJetAnalyzer ak6PFJetAnalyzer ak8PFJetAnalyzer ak10PFJetAnalyzer)
+jetsPbPb=(akCs3PU3PFFlowJetAnalyzer akCs4PU3PFFlowJetAnalyzer akCs6PU3PFFlowJetAnalyzer akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
 
-jetsPP=(ak8PFJetAnalyzer ak10PFJetAnalyzer)
-jetsPbPb=(akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
+#jetsPP=(ak8PFJetAnalyzer ak10PFJetAnalyzer)
+#jetsPbPb=(akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
 
 PbPbDataFile=/data/cmcginn/Forests/PbPb2015Data/HIHardProbes/HiForestAOD_HIHardProbes_HLTJet100_AllR_PtCut140_AbsEta3_20180626_21LumiPer_180626_152510_1050_OutOf1050_MERGED.root
 PbPbMCFilePre=output/"$dateStrPbPb"/combinedResponse_
