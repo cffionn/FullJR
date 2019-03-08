@@ -49,7 +49,7 @@ class smallOrLargeR
   static const int nGenJtPtLargeBinsLargeRCent0to10 = 5;
   static const int nGenJtPtLargeBinsLargeRCent10to30 = 4;
   static const int nGenJtPtLargeBinsLargeRCent30to50 = 3;
-  static const int nGenJtPtLargeBinsLargeRCent50to90 = 3
+  static const int nGenJtPtLargeBinsLargeRCent50to90 = 3;
   std::vector<double> genJtPtLargeBinsLargeR = {200., 310., 435, 600, 1000, 1500};
 
 

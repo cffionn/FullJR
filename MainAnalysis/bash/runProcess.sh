@@ -20,8 +20,8 @@ else
 fi
 
 
-dateStrPP=20190306
-dateStrPbPb=20190306
+dateStrPP=20190308
+dateStrPbPb=20190308
 
 DATE=`date +%Y%m%d`
 

@@ -412,7 +412,7 @@ void drawSyst(TCanvas* canv_p, TH1D* nominal_p, std::vector<double> syst_, Doubl
 }
 
 
-void drawLumiOrTAA(TCanvas* canv_p, TH1D* hist_p, Double_t min, Double_t max, std::vector<double> syst, std::string lumiOrTAA, std::string centStr)
+void drawLumiOrTAA(TCanvas* canv_p, TH1D* hist_p, Double_t min, Double_t max, std::vector<double> syst, std::string lumiOrTAA, int pos = -1)
 {
 
   kirchnerPalette kPalette;
@@ -428,22 +428,9 @@ void drawLumiOrTAA(TCanvas* canv_p, TH1D* hist_p, Double_t min, Double_t max, st
     tempBox_p->DrawBox(bins[6], 1 - syst[0], bins[24], 1 + syst[0]);
   }
   else if(lumiOrTAA.find("TAA") != std::string::npos){
-    if(centStr.find("50to90") != std::string::npos){
-      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
-      tempBox_p->DrawBox(bins[26], 1 - syst[0], bins[44], 1 + syst[0]);
-    }
-    else if(centStr.find("30to50") != std::string::npos){
-      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
-      tempBox_p->DrawBox(bins[46], 1 - syst[0], bins[64], 1 + syst[0]);
-    }
-    else if(centStr.find("10to30") != std::string::npos){
-      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
-      tempBox_p->DrawBox(bins[66], 1 - syst[0], bins[84], 1 + syst[0]);
-    }
-    else if(centStr.find("0to10") != std::string::npos){
-      tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
-      tempBox_p->DrawBox(bins[86], 1 - syst[0], bins[104], 1 + syst[0]);
-    }
+    tempBox_p->SetFillColorAlpha(hist_p->GetMarkerColor(), .25);
+    tempBox_p->DrawBox(bins[26 + pos*20], 1 - syst[0], bins[44 + pos*20], 1 + syst[0]);
+    std::cout << hist_p->GetName() << ", " << pos << std::endl;
   }
 
   delete tempBox_p;
