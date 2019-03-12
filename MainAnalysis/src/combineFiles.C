@@ -178,6 +178,11 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
 
   std::cout << "Combining " << fileList.size() << " files..." << std::endl;
   
+  std::vector<std::string> jtAlgosStr;
+  std::vector<double> minJtPt;
+  std::vector<double> multiJtPt;
+  std::vector<int> recoTruncPos;
+
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
     std::cout << " " << fI << "/" << fileList.size() << ": " << fileList.at(fI) << std::endl;
     TFile* inFile_p = new TFile(fileList.at(fI).c_str(), "READ");
@@ -192,6 +197,29 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
     if(tempHistTag.size() != 0){
       combinedHistTag.insert(combinedHistTag.end(), tempHistTag.begin(), tempHistTag.end());
       combinedBestBayes.insert(combinedBestBayes.end(), tempHistBestBayes.begin(), tempHistBestBayes.end());
+    }
+
+    std::vector<std::string> tempAlgos = cutPropCurrent.GetJtAlgos();
+    std::vector<double> tempMinJtPt = cutPropCurrent.GetMinJtPtCut();
+    std::vector<double> tempMultiJtPt = cutPropCurrent.GetMultiJtPtCut();
+    std::vector<int> tempRecoTruncPos = cutPropCurrent.GetRecoTruncPos();
+
+    for(unsigned int algoI = 0; algoI < tempAlgos.size(); ++algoI){
+      bool isAlgoFound = false;
+
+      for(unsigned int jtI = 0; jtI < jtAlgosStr.size(); ++jtI){
+	if(isStrSame(jtAlgosStr[jtI], tempAlgos[algoI])){
+	  isAlgoFound = true;
+	  break;
+	}
+      }
+
+      if(!isAlgoFound){
+	jtAlgosStr.push_back(tempAlgos[algoI]);
+	minJtPt.push_back(tempMinJtPt[algoI]);
+	multiJtPt.push_back(tempMultiJtPt[algoI]);
+	recoTruncPos.push_back(tempRecoTruncPos[algoI]);
+      }
     }
 
     std::vector<std::string> classList;
@@ -253,7 +281,6 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
       }
     }
     
-
     if(!isSwap) pos++;
   }
 
@@ -416,6 +443,12 @@ int combineFiles(const std::string outFileName, std::vector<std::string> fileLis
   writingWatch.stop();
   
   std::cout << "Write time: " << writingWatch.totalWall() << std::endl;
+
+  prevProp.SetNJtAlgos(jtAlgosStr.size());
+  prevProp.SetJtAlgos(jtAlgosStr);
+  prevProp.SetMinJtPtCut(minJtPt);
+  prevProp.SetMultiJtPtCut(multiJtPt);
+  prevProp.SetRecoTruncPos(recoTruncPos);
 
   prevProp.SetNHistDim(combinedHistTag.size());
   prevProp.SetHistTag(combinedHistTag);

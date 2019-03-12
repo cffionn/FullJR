@@ -365,6 +365,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   TDirectory* dir_p[nMaxDataJet];
   TH1D* jtPtRaw_RecoGenSymm_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nSmallLargeBins];
   TH1D* jtPtRaw_RecoGenAsymm_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins];
+  TH1D* jtPtRaw_General_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins];
 
   TH1D* multijetAJ_All_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nMaxJtPtBins];
   TH1D* multijetAJ_Pass_h[nMaxDataJet][nMaxCentBins][nMaxID][nMaxJtAbsEtaBins][nMaxJtPtBins];
@@ -397,8 +398,14 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
   Double_t minRecoJtPt = 99999999.;
   Double_t minGenJtPt = 99999999.;
 
-  Int_t rValI[nDataJet];
-  bool isSmallR[nDataJet];
+  const Int_t nMaxGeneralBins = 300;
+  Int_t nGeneralBins[nMaxDataJet];
+  std::vector<double> generalBinsSmallRTemp = cutProp.GetGeneralBinsSmallR();
+  std::vector<double> generalBinsLargeRTemp = cutProp.GetGeneralBinsLargeR();
+  Double_t generalBins[nMaxDataJet][nMaxGeneralBins+1];
+
+  Int_t rValI[nMaxDataJet];
+  bool isSmallR[nMaxDataJet];
   Int_t nRecoJtPtBins[nMaxDataJet][nMaxCentBins];
   Int_t nGenJtPtSmallBins[nMaxDataJet][nMaxCentBins];
   Int_t nGenJtPtLargeBins[nMaxDataJet][nMaxCentBins];
@@ -415,6 +422,19 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 
     rValI[jI] = getRVal(tempStr);
     isSmallR[jI] = rReader.GetIsSmallR(rValI[jI]);
+
+    if(isSmallR[jI]){
+      nGeneralBins[jI] = cutProp.GetNGeneralBinsSmallR();
+      for(Int_t bI = 0; bI < nGeneralBins[jI]; ++bI){
+	generalBins[jI][bI] = generalBinsSmallRTemp[bI];
+      }
+    }
+    else{
+      nGeneralBins[jI] = cutProp.GetNGeneralBinsLargeR();
+      for(Int_t bI = 0; bI < nGeneralBins[jI]; ++bI){
+	generalBins[jI][bI] = generalBinsLargeRTemp[bI];
+      }
+    }
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
@@ -476,6 +496,8 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
    	  }
 	  
    	  jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_RecoGenAsymm_" + tempStr + "_" + centStr + "_" + idStr[idI] + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nRecoJtPtBins[jI][cI], recoJtPtBins[jI][cI]);
+
+   	  jtPtRaw_General_h[jI][cI][idI][aI] = new TH1D(("jtPtRaw_General_" + tempStr + "_" + centStr + "_" + idStr[idI] + "_" + jtAbsEtaStr + "_h").c_str(), ";Raw Jet p_{T};Counts", nGeneralBins[jI], generalBins[jI]);
 	  
 	  for(Int_t jIter = 0; jIter < nRecoJtPtBins[jI][cI]; ++jIter){
 	    if(jIter < nRecoJtPtBins[jI][cI]){
@@ -496,7 +518,7 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	    }
 	  }
 	  
-	  std::vector<TH1*> tempVect = {jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]};
+	  std::vector<TH1*> tempVect = {jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI], jtPtRaw_General_h[jI][cI][idI][aI]};
 	  setSumW2(tempVect);
 	  centerTitles(tempVect);
 	}
@@ -788,9 +810,12 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 		bool goodReco[nSmallLargeBins] = {(jtpt_[tI][jI] >= genJtPtBins[tI][cent][0][0] && jtpt_[tI][jI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]), (jtpt_[tI][jI] >= genJtPtBins[tI][cent][1][0] && jtpt_[tI][jI] < genJtPtBins[tI][cent][1][nGenJtPtBins[tI][cent][1]])};
 		bool goodRecoTrunc = (jtpt_[tI][jI] >= recoJtPtBins[tI][cent][0] && jtpt_[tI][jI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]);//since we do rDep binning keep same as goodreco for now
 	      
+		bool goodRecoGeneral = jtpt_[tI][jI] >= generalBins[tI][0] && jtpt_[tI][jI] < generalBins[tI][nGeneralBins[tI]];
+	      
 		if(goodReco[0]) jtPtRaw_RecoGenSymm_h[tI][cent][idPoses[idI]][jtAbsEtaPoses[aI]][0]->Fill(jtpt_[tI][jI]);
 		if(goodReco[1]) jtPtRaw_RecoGenSymm_h[tI][cent][idPoses[idI]][jtAbsEtaPoses[aI]][1]->Fill(jtpt_[tI][jI]);
 		if(goodRecoTrunc) jtPtRaw_RecoGenAsymm_h[tI][cent][idPoses[idI]][jtAbsEtaPoses[aI]]->Fill(jtpt_[tI][jI]);
+		if(goodRecoGeneral) jtPtRaw_General_h[tI][cent][idPoses[idI]][jtAbsEtaPoses[aI]]->Fill(jtpt_[tI][jI]);
 	      }
 
 	      if(tempLeadingPos_ == jI){
@@ -1417,6 +1442,9 @@ int processRawData(const std::string inDataFileName, const std::string inRespons
 	  
 	  jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
 	  delete jtPtRaw_RecoGenAsymm_h[jI][cI][idI][aI];
+
+	  jtPtRaw_General_h[jI][cI][idI][aI]->Write("", TObject::kOverwrite);
+	  delete jtPtRaw_General_h[jI][cI][idI][aI];
 
 	  for(Int_t jIter = 0; jIter < nRecoJtPtBins[jI][cI]; ++jIter){
 	    multijetAJ_All_h[jI][cI][idI][aI][jIter]->Write("", TObject::kOverwrite);

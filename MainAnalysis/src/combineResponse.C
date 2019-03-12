@@ -188,7 +188,10 @@ int combineResponse(std::string inFileNames, std::string tagStr)
     return 1;
   }
 
-  std::string outFileName = "output/" + dateStr + "/combinedResponse_" + tagStr + "_" + dateStr + ".root";
+  std::string outFileName = "output/" + dateStr + "/combinedResponse_" + tagStr + "_";
+  if(checkFile(outFileName + dateStr + ".root")) outFileName = outFileName + "UPDATED_";
+  outFileName = outFileName + dateStr + ".root";
+
   checkMakeDir("output");
   checkMakeDir("output/" + dateStr);  
 

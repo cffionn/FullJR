@@ -288,14 +288,18 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   while(outFileName.find("/") != std::string::npos){outFileName.replace(0, outFileName.find("/")+1, "");}
   if(outFileName.find(".root") != std::string::npos) outFileName.replace(outFileName.find(".root"), std::string(".root").size(), "");
   else if(outFileName.find(".txt") != std::string::npos) outFileName.replace(outFileName.find(".txt"), std::string(".txt").size(), "");
-  outFileName = "output/" + dateStr + "/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_" + dateStr + ".root";
+  outFileName = "output/" + dateStr + "/" + outFileName + "_FracNEntries" + prettyString(inEntryFrac, 2, true) + "_JetResponse_";
 
   if(inDir.find("/mnt") == std::string::npos){
     outFileName = inDir + "/" + outFileName;
+    if(checkFile(outFileName + dateStr + ".root")) outFileName = outFileName + "UPDATED_";
+    outFileName = outFileName + dateStr + ".root";
     checkMakeDir(inDir + "/output");
     checkMakeDir(inDir + "/output/" + dateStr);
   }
   else{
+    if(checkFile(outFileName + dateStr + ".root")) outFileName = outFileName + "UPDATED_";
+    outFileName = outFileName + dateStr + ".root";
     checkMakeDir("output");
     checkMakeDir("output/" + dateStr);
   }
@@ -338,7 +342,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   std::vector<double> genJtPtSmallBinsLargeR = rReader.GetGenJtPtSmallBinsLargeR();
   std::vector<double> genJtPtLargeBinsLargeR = rReader.GetGenJtPtLargeBinsLargeR();
 
-  const int nPtBinsMax = 50;
+  const int nPtBinsMax = 200;
   for(Int_t cI = 0; cI < nMaxCentBins; ++cI){
     if(nRecoJtPtBinsSmallR[cI] > nPtBinsMax){
       std::cout << "nRecoJtPtBinsSmallR in centrality " << centBinsLow[cI] << "-" << centBinsHi[cI] << "%" << " \'" << nRecoJtPtBinsSmallR[cI] << "\' is greater than nPtBinsMax \'" << nPtBinsMax << "\'. return 1" << std::endl;
@@ -375,7 +379,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
     bool isBigJt = responseTrees[jI].find("ak8") != std::string::npos || responseTrees[jI].find("ak10") != std::string::npos || responseTrees[jI].find("akCs8") != std::string::npos || responseTrees[jI].find("akCs10") != std::string::npos;
     if(isBigJt){
       multiJtPtCut[jI] = 100;
-      minJtPtCut[jI] = 200.;
+      minJtPtCut[jI] = 100.;
       recoTruncPos[jI] = bigJetRecoTrunc;
     }
   }
@@ -472,6 +476,11 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   cutProp.SetNGenJtPtSmallBinsLargeRCent50to90(nGenJtPtSmallBinsLargeR[3]);
   cutProp.SetNGenJtPtLargeBinsLargeRCent50to90(nGenJtPtLargeBinsLargeR[3]);
 
+  cutProp.SetNGeneralBinsSmallR(rReader.GetNGeneralBins(true));
+  cutProp.SetNGeneralBinsLargeR(rReader.GetNGeneralBins(false));
+  cutProp.SetGeneralBinsSmallR(rReader.GetGeneralBins(true));
+  cutProp.SetGeneralBinsLargeR(rReader.GetGeneralBins(false));
+
   cutProp.SetNJtAlgos(nTrees);
   cutProp.SetJtAlgos(responseTrees);
   cutProp.SetMinJtPtCut(minJtPtCut);
@@ -561,11 +570,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   Int_t nGenJtPtSmallBins[nMaxTrees][nMaxCentBins];
   Int_t nGenJtPtLargeBins[nMaxTrees][nMaxCentBins];
   Int_t nGenJtPtBins[nMaxTrees][nMaxCentBins][nSmallLargeBins];
+  Int_t nGeneralBins[nMaxTrees];
 
   Double_t recoJtPtBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
   Double_t genJtPtSmallBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
   Double_t genJtPtLargeBins[nMaxTrees][nMaxCentBins][nPtBinsMax+1];
   Double_t genJtPtBins[nMaxTrees][nMaxCentBins][nSmallLargeBins][nPtBinsMax+1];
+  Double_t generalBins[nMaxTrees][nPtBinsMax+1];
 
   Double_t minGenJtPt = 999999999;
   Double_t minRecoJtPt = 999999999;
@@ -573,6 +584,14 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   for(Int_t tI = 0; tI < nTrees; ++tI){
     std::string dirName = responseTrees[tI];
     dirName = dirName.substr(0, dirName.find("/"));
+
+    nGeneralBins[tI] = rReader.GetNGeneralBins(isSmallR[tI]);
+    rReader.GetGeneralBins(isSmallR[tI], nGeneralBins[tI], generalBins[tI]);
+
+    for(Int_t bIX = 0; bIX < nGeneralBins[tI]+1; ++bIX){
+      if(minRecoJtPt > generalBins[tI][bIX]) minRecoJtPt = generalBins[tI][bIX];
+      if(minGenJtPt > generalBins[tI][bIX]) minGenJtPt = generalBins[tI][bIX];
+    }
 
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
@@ -614,13 +633,19 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
   TH1D* recoJtPt_GoodGen_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH1D* recoJtPt_GoodGen_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
 
+  TH1D* recoJtPt_General_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+
   TH1D* genJtPt_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
   TH1D* genJtPt_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
   TH1D* genJtPt_All_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
   TH1D* genJtPt_GoodReco_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
   TH1D* genJtPt_GoodReco_ParaFills_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+  TH1D* genJtPt_General_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
   TH2D* response_RecoGenSymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
   TH2D* response_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
+
+  TH2D* response_General_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst];
+
   RooUnfoldResponse* rooResponse_RecoGenAsymm_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSyst][nSmallLargeBins];
   TH1D* genJtPt_CheckPriorFlat_h[nMaxTrees][nMaxCentBins][nID][nResponseMod][nJtAbsEtaBins][nSmallLargeBins];
 
@@ -673,7 +698,13 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 
 	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "GoodGen_ParaFills_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nRecoJtPtBins[dI][cI], recoJtPtBins[dI][cI]);
 
-	      std::vector<TH1*> tempVect = {recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]};
+	      recoJtPt_General_h[dI][cI][iI][mI][aI][sI] = new TH1D(("recoJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "General_h").c_str(), ";Reco. Jet p_{T};Counts (Weighted)", nGeneralBins[dI], generalBins[dI]);
+
+	      genJtPt_General_h[dI][cI][iI][mI][aI][sI] = new TH1D(("genJtPt_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "General_h").c_str(), ";Gen. Jet p_{T};Counts (Weighted)", nGeneralBins[dI], generalBins[dI]);
+
+	      response_General_h[dI][cI][iI][mI][aI][sI] = new TH2D(("response_" + dirName + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + tempSysStr + "General_h").c_str(), ";Reco. Jet p_{T};Gen. Jet p_{T}", nGeneralBins[dI], generalBins[dI], nGeneralBins[dI], generalBins[dI]);
+
+	      std::vector<TH1*> tempVect = {recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI], recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI], recoJtPt_General_h[dI][cI][iI][mI][aI][sI], genJtPt_General_h[dI][cI][iI][mI][aI][sI], response_General_h[dI][cI][iI][mI][aI][sI]};
 	      centerTitles(tempVect);
 	      setSumW2(tempVect);
 	      
@@ -696,7 +727,7 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 		centerTitles(tempVect);
 		setSumW2(tempVect);
 	      }
-	    }
+ 	    }	    
 	    
 	    std::vector<TH1*> tempVect = {recoJtPt_RecoTrunc_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_h[dI][cI][iI][mI][aI], recoJtPt_h[dI][cI][iI][mI][aI], recoJtPt_RecoTrunc_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_NoTruth_ParaFills_h[dI][cI][iI][mI][aI], recoJtPt_ParaFills_h[dI][cI][iI][mI][aI]};
 	    centerTitles(tempVect);
@@ -1099,17 +1130,21 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    if(!oneRecoIsGood) continue;
 
 	    jetLoop3.start();
-	  
+	 	  
 	    for(auto const & cent : centPos){
 	      jetLoop3Sub1.start();
 	      
 	      bool goodTruth = (refpt_[tI][jI] >= genJtPtBins[tI][cent][0][0] && refpt_[tI][jI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]] && refpt_[tI][jI] > minJtPtCut[tI]);  
+	      bool goodTruthGeneral = (refpt_[tI][jI] >= generalBins[tI][0] && refpt_[tI][jI] < generalBins[tI][nGeneralBins[tI]] && refpt_[tI][jI] > minJtPtCut[tI]);  
+
 	      std::vector<Int_t> goodRecoPos;
 	      std::vector<Int_t> goodRecoTruncPos;
+	      std::vector<Int_t> goodRecoGeneralPos;
 
 	      for(Int_t sI = 0; sI < nSystReduced; ++sI){
 		if(jtPtFillVal[sI] >= genJtPtBins[tI][cent][0][0] && jtPtFillVal[sI] < genJtPtBins[tI][cent][0][nGenJtPtBins[tI][cent][0]]) goodRecoPos.push_back(sI);
 		if(jtPtFillVal[sI] >= recoJtPtBins[tI][cent][0] && jtPtFillVal[sI] < recoJtPtBins[tI][cent][nRecoJtPtBins[tI][cent]]) goodRecoTruncPos.push_back(sI);
+		if(jtPtFillVal[sI] >= generalBins[tI][0] && jtPtFillVal[sI] < generalBins[tI][nGeneralBins[tI]]) goodRecoGeneralPos.push_back(sI);
 	      }
 
 	      jetLoop3Sub1.stop();
@@ -1132,6 +1167,20 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      jetLoop3Sub2.stop();
 	      jetLoop3Sub3.start();	      
 	      
+	      if(goodTruthGeneral){
+		for(unsigned int iI = 0; iI < passesID.size(); ++iI){
+		  if(!passesID[iI]) continue;
+		  for(unsigned int aI = 0; aI < jtAbsEtaPoses.size(); ++aI){
+	 
+		    for(unsigned int sI = 0; sI < goodRecoGeneralPos.size(); ++sI){
+		      genJtPt_General_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoGeneralPos[sI]]->Fill(refpt_[tI][jI], fullWeight2[goodRecoGeneralPos[sI]]);
+		      response_General_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoGeneralPos[sI]]->Fill(jtPtFillVal[goodRecoGeneralPos[sI]], refpt_[tI][jI], fullWeight2[goodRecoGeneralPos[sI]]);
+		      recoJtPt_General_h[tI][cent][iI][mI][jtAbsEtaPoses[aI]][goodRecoGeneralPos[sI]]->Fill(jtPtFillVal[goodRecoGeneralPos[sI]], fullWeight2[goodRecoGeneralPos[sI]]);
+		    }
+		  }
+		}
+	      }
+
 	      if(goodTruth){
 		for(unsigned int iI = 0; iI < passesID.size(); ++iI){
 		  if(!passesID[iI]) continue;
@@ -1277,6 +1326,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	      recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 	      recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
 
+	      recoJtPt_General_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
+	      genJtPt_General_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
+	      response_General_h[dI][cI][iI][mI][aI][sI]->Write("", TObject::kOverwrite);
+
 	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){	       
 		genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
 		genJtPt_GoodReco_ParaFills_h[dI][cI][iI][mI][aI][sI][binsI]->Write("", TObject::kOverwrite);
@@ -1351,6 +1404,10 @@ int makeJetResponseTree(const std::string inName, bool isPP = false, double inEn
 	    for(Int_t sI = 0; sI < nSystReduced; ++sI){
 	      delete recoJtPt_GoodGen_h[dI][cI][iI][mI][aI][sI];
 	      delete recoJtPt_GoodGen_ParaFills_h[dI][cI][iI][mI][aI][sI];
+
+	      delete recoJtPt_General_h[dI][cI][iI][mI][aI][sI];
+	      delete genJtPt_General_h[dI][cI][iI][mI][aI][sI];
+	      delete response_General_h[dI][cI][iI][mI][aI][sI];
 
 	      for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
 		delete genJtPt_GoodReco_h[dI][cI][iI][mI][aI][sI][binsI];

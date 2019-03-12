@@ -86,12 +86,18 @@ class cutPropagator
   int nGenJtPtSmallBinsLargeRCent50to90;
   int nGenJtPtLargeBinsLargeRCent50to90;
 
+  int nGeneralBinsSmallR;
+  int nGeneralBinsLargeR;
+
   std::vector<double> recoJtPtBinsSmallR;
   std::vector<double> genJtPtSmallBinsSmallR;
   std::vector<double> genJtPtLargeBinsSmallR;
   std::vector<double> recoJtPtBinsLargeR;
   std::vector<double> genJtPtSmallBinsLargeR;
   std::vector<double> genJtPtLargeBinsLargeR;
+
+  std::vector<double> generalBinsSmallR;
+  std::vector<double> generalBinsLargeR;
 
   int nJtAbsEtaBins;
   std::vector<double> jtAbsEtaBinsLow;
@@ -215,6 +221,12 @@ class cutPropagator
   bool CheckNGenJtPtSmallBinsLargeRCent50to90(cutPropagator inCutProp);
   bool CheckNGenJtPtLargeBinsLargeRCent50to90(int inNJtPtLargeBinsLargeR);
   bool CheckNGenJtPtLargeBinsLargeRCent50to90(cutPropagator inCutProp);
+  
+  bool CheckNGeneralBinsSmallR(int nGeneralBinsSmallR);
+  bool CheckNGeneralBinsSmallR(cutPropagator inCutProp);
+
+  bool CheckNGeneralBinsLargeR(int nGeneralBinsLargeR);
+  bool CheckNGeneralBinsLargeR(cutPropagator inCutProp);
 
   bool CheckNJtAbsEtaBins(int inNJtAbsEtaBins);
   bool CheckNJtAbsEtaBins(cutPropagator inCutProp);
@@ -233,6 +245,12 @@ class cutPropagator
   bool CheckGenJtPtSmallBinsLargeR(cutPropagator inCutProp);
   bool CheckGenJtPtLargeBinsLargeR(std::vector<double> inGenJtPtLargeBinsLargeR);
   bool CheckGenJtPtLargeBinsLargeR(cutPropagator inCutProp);
+
+  bool CheckGeneralBinsSmallR(std::vector<double> generalBinsSmallR);
+  bool CheckGeneralBinsSmallR(cutPropagator inCutProp);
+
+  bool CheckGeneralBinsLargeR(std::vector<double> generalBinsLargeR);
+  bool CheckGeneralBinsLargeR(cutPropagator inCutProp);
 
   bool CheckJtAbsEtaBinsLow(std::vector<double> inJtAbsEtaBinsLow);
   bool CheckJtAbsEtaBinsLow(cutPropagator inCutProp);
@@ -389,12 +407,18 @@ class cutPropagator
   int GetNGenJtPtSmallBinsLargeRCent50to90(){return nGenJtPtSmallBinsLargeRCent50to90;}
   int GetNGenJtPtLargeBinsLargeRCent50to90(){return nGenJtPtLargeBinsLargeRCent50to90;}
 
+  int GetNGeneralBinsSmallR(){return nGeneralBinsSmallR;}
+  int GetNGeneralBinsLargeR(){return nGeneralBinsLargeR;}
+
   std::vector<double> GetRecoJtPtBinsSmallR(){return recoJtPtBinsSmallR;}
   std::vector<double> GetGenJtPtSmallBinsSmallR(){return genJtPtSmallBinsSmallR;}
   std::vector<double> GetGenJtPtLargeBinsSmallR(){return genJtPtLargeBinsSmallR;}
   std::vector<double> GetRecoJtPtBinsLargeR(){return recoJtPtBinsLargeR;}
   std::vector<double> GetGenJtPtSmallBinsLargeR(){return genJtPtSmallBinsLargeR;}
   std::vector<double> GetGenJtPtLargeBinsLargeR(){return genJtPtLargeBinsLargeR;}
+
+  std::vector<double> GetGeneralBinsSmallR(){return generalBinsSmallR;}
+  std::vector<double> GetGeneralBinsLargeR(){return generalBinsLargeR;}
 
   int GetNJtAbsEtaBins(){return nJtAbsEtaBins;}
   std::vector<double> GetJtAbsEtaBinsLow(){return jtAbsEtaBinsLow;}
@@ -507,6 +531,9 @@ class cutPropagator
   void SetNGenJtPtSmallBinsLargeRCent50to90(int inNGenJtPtSmallBinsLargeRCent50to90){nGenJtPtSmallBinsLargeRCent50to90 = inNGenJtPtSmallBinsLargeRCent50to90; return;}
   void SetNGenJtPtLargeBinsLargeRCent50to90(int inNGenJtPtLargeBinsLargeRCent50to90){nGenJtPtLargeBinsLargeRCent50to90 = inNGenJtPtLargeBinsLargeRCent50to90; return;}
 
+  void SetNGeneralBinsSmallR(int inNGeneralBinsSmallR){nGeneralBinsSmallR = inNGeneralBinsSmallR; return;}
+  void SetNGeneralBinsLargeR(int inNGeneralBinsLargeR){nGeneralBinsLargeR = inNGeneralBinsLargeR; return;}
+
   void SetRecoJtPtBinsSmallR(std::vector<double> inRecoJtPtBinsSmallR){recoJtPtBinsSmallR = inRecoJtPtBinsSmallR; return;}
   void SetRecoJtPtBinsSmallR(int inN, const Double_t inRecoJtPtBinsSmallR[]);
   void SetGenJtPtSmallBinsSmallR(std::vector<double> inGenJtPtSmallBinsSmallR){genJtPtSmallBinsSmallR = inGenJtPtSmallBinsSmallR; return;}
@@ -520,6 +547,13 @@ class cutPropagator
   void SetGenJtPtSmallBinsLargeR(int inN, const Double_t inGenJtPtSmallBinsLargeR[]);
   void SetGenJtPtLargeBinsLargeR(std::vector<double> inGenJtPtLargeBinsLargeR){genJtPtLargeBinsLargeR = inGenJtPtLargeBinsLargeR; return;}
   void SetGenJtPtLargeBinsLargeR(int inN, const Double_t inGenJtPtLargeBinsLargeR[]);
+
+
+  void SetGeneralBinsSmallR(std::vector<double> inGeneralBinsSmallR){generalBinsSmallR = inGeneralBinsSmallR; return;}
+  void SetGeneralBinsSmallR(int inN, const Double_t inGeneralBinsSmallR[]);
+
+  void SetGeneralBinsLargeR(std::vector<double> inGeneralBinsLargeR){generalBinsLargeR = inGeneralBinsLargeR; return;}
+  void SetGeneralBinsLargeR(int inN, const Double_t inGeneralBinsLargeR[]);
 
   void SetNJtAbsEtaBins(int inNJtAbsEtaBins){nJtAbsEtaBins = inNJtAbsEtaBins; return;}
   void SetJtAbsEtaBinsLow(std::vector<double> inJtAbsEtaBinsLow){jtAbsEtaBinsLow = inJtAbsEtaBinsLow; return;}
@@ -660,12 +694,18 @@ void cutPropagator::Clean()
   nGenJtPtSmallBinsLargeRCent50to90 = -1;
   nGenJtPtLargeBinsLargeRCent50to90 = -1;
 
+  nGeneralBinsSmallR = -1;
+  nGeneralBinsLargeR = -1;
+
   recoJtPtBinsSmallR.clear();
   genJtPtSmallBinsSmallR.clear();
   genJtPtLargeBinsSmallR.clear();
   recoJtPtBinsLargeR.clear();
   genJtPtSmallBinsLargeR.clear();
   genJtPtLargeBinsLargeR.clear();
+
+  generalBinsSmallR.clear();
+  generalBinsLargeR.clear();
 
   nJtAbsEtaBins = -1;
   jtAbsEtaBinsLow.clear();
@@ -798,6 +838,8 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("nRecoJtPtBinsLargeRCent50to90", tempStr)) nRecoJtPtBinsLargeRCent50to90 = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nGenJtPtSmallBinsLargeRCent50to90", tempStr)) nGenJtPtSmallBinsLargeRCent50to90 = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nGenJtPtLargeBinsLargeRCent50to90", tempStr)) nGenJtPtLargeBinsLargeRCent50to90 = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("nGeneralBinsSmallR", tempStr)) nGeneralBinsSmallR = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());    
+    else if(isStrSame("nGeneralBinsLargeR", tempStr)) nGeneralBinsLargeR = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());    
     else if(isStrSame("nJtAbsEtaBins", tempStr)) nJtAbsEtaBins = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("inFileNames", tempStr)) inFileNames = StringToStringVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(tempStr.find("inFullFileNames_") != std::string::npos){
@@ -816,6 +858,8 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
     else if(isStrSame("recoJtPtBinsLargeR", tempStr)) recoJtPtBinsLargeR = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("genJtPtSmallBinsLargeR", tempStr)) genJtPtSmallBinsLargeR = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("genJtPtLargeBinsLargeR", tempStr)) genJtPtLargeBinsLargeR = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("generalBinsSmallR", tempStr)) generalBinsSmallR = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
+    else if(isStrSame("generalBinsLargeR", tempStr)) generalBinsLargeR = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jtAbsEtaBinsLow", tempStr)) jtAbsEtaBinsLow = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("jtAbsEtaBinsHi", tempStr)) jtAbsEtaBinsHi = StringToDoubleVect(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
     else if(isStrSame("nID", tempStr)) nID = std::stoi(((TNamed*)inFile_p->Get(cutDirTNameds.at(cI).c_str()))->GetTitle());
@@ -871,7 +915,6 @@ bool cutPropagator::GetAllVarFromFile(TFile* inFile_p)
       else if(cutDirTDir.at(dI).find("subDir") != std::string::npos){
 	inFullFileNames.push_back(std::string(tempName->GetTitle()));
       }
-
     }
 
   }
@@ -962,6 +1005,16 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   std::string genJtPtLargeBinsLargeRStr = "";
   for(unsigned int jI = 0; jI < genJtPtLargeBinsLargeR.size(); ++jI){
     genJtPtLargeBinsLargeRStr = genJtPtLargeBinsLargeRStr + std::to_string(genJtPtLargeBinsLargeR.at(jI)) + ",";
+  }
+
+  std::string generalBinsSmallRStr = "";
+  for(unsigned int jI = 0; jI < generalBinsSmallR.size(); ++jI){
+    generalBinsSmallRStr = generalBinsSmallRStr + std::to_string(generalBinsSmallR.at(jI)) + ",";
+  }
+
+  std::string generalBinsLargeRStr = "";
+  for(unsigned int jI = 0; jI < generalBinsLargeR.size(); ++jI){
+    generalBinsLargeRStr = generalBinsLargeRStr + std::to_string(generalBinsLargeR.at(jI)) + ",";
   }
 
   std::string jtAlgosStr = "";
@@ -1119,12 +1172,17 @@ bool cutPropagator::WriteAllVarToFile(TFile* inFile_p, TDirectory* inDir_p, TDir
   nameList.push_back(new TNamed("nGenJtPtSmallBinsLargeRCent50to90", std::to_string(nGenJtPtSmallBinsLargeRCent50to90).c_str()));
   nameList.push_back(new TNamed("nGenJtPtLargeBinsLargeRCent50to90", std::to_string(nGenJtPtLargeBinsLargeRCent50to90).c_str()));
 
+  nameList.push_back(new TNamed("nGeneralBinsSmallR", std::to_string(nGeneralBinsSmallR).c_str()));
+  nameList.push_back(new TNamed("nGeneralBinsLargeR", std::to_string(nGeneralBinsLargeR).c_str()));
+
   nameList.push_back(new TNamed("recoJtPtBinsSmallR", recoJtPtBinsSmallRStr.c_str()));
   nameList.push_back(new TNamed("genJtPtSmallBinsSmallR", genJtPtSmallBinsSmallRStr.c_str()));
   nameList.push_back(new TNamed("genJtPtLargeBinsSmallR", genJtPtLargeBinsSmallRStr.c_str()));
   nameList.push_back(new TNamed("recoJtPtBinsLargeR", recoJtPtBinsLargeRStr.c_str()));
   nameList.push_back(new TNamed("genJtPtSmallBinsLargeR", genJtPtSmallBinsLargeRStr.c_str()));
   nameList.push_back(new TNamed("genJtPtLargeBinsLargeR", genJtPtLargeBinsLargeRStr.c_str()));
+  nameList.push_back(new TNamed("generalBinsSmallR", generalBinsSmallRStr.c_str()));
+  nameList.push_back(new TNamed("generalBinsLargeR", generalBinsLargeRStr.c_str()));
 
   nameList.push_back(new TNamed("nJtAbsEtaBins", std::to_string(nJtAbsEtaBins).c_str()));
   nameList.push_back(new TNamed("jtAbsEtaBinsLow", jtAbsEtaBinsLowStr.c_str()));
@@ -1245,6 +1303,9 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(!CheckNGenJtPtSmallBinsLargeRCent50to90(inCutProp)) return false;
   if(!CheckNGenJtPtLargeBinsLargeRCent50to90(inCutProp)) return false;
 
+  if(!CheckNGeneralBinsSmallR(inCutProp)) return false;
+  if(!CheckNGeneralBinsLargeR(inCutProp)) return false;
+
   if(!CheckNJtAbsEtaBins(inCutProp)) return false;
   if(!CheckNID(inCutProp)) return false;
 
@@ -1254,6 +1315,9 @@ bool cutPropagator::CheckPropagatorsMatch(cutPropagator inCutProp, bool doBothMC
   if(!CheckRecoJtPtBinsLargeR(inCutProp)) return false;
   if(!CheckGenJtPtSmallBinsLargeR(inCutProp)) return false;
   if(!CheckGenJtPtLargeBinsLargeR(inCutProp)) return false;
+
+  if(!CheckGeneralBinsSmallR(inCutProp)) return false;
+  if(!CheckGeneralBinsLargeR(inCutProp)) return false;
 
   if(!CheckJtAbsEtaBinsLow(inCutProp)) return false;
   if(!CheckJtAbsEtaBinsHi(inCutProp)) return false;
@@ -1456,7 +1520,11 @@ bool cutPropagator::CheckNGenJtPtLargeBinsLargeRCent30to50(cutPropagator inCutPr
 bool cutPropagator::CheckNGenJtPtLargeBinsLargeRCent50to90(int inNGenJtPtLargeBinsLargeRCent50to90){return CheckNBins(inNGenJtPtLargeBinsLargeRCent50to90, nGenJtPtLargeBinsLargeRCent50to90, "nGenJtPtLargeBinsLargeRCent50to90");}
 bool cutPropagator::CheckNGenJtPtLargeBinsLargeRCent50to90(cutPropagator inCutProp){return CheckNGenJtPtLargeBinsLargeRCent50to90(inCutProp.GetNGenJtPtLargeBinsLargeRCent50to90());}
 
+bool cutPropagator::CheckNGeneralBinsSmallR(int inNGeneralBinsSmallR){return CheckNBins(inNGeneralBinsSmallR, nGeneralBinsSmallR, "nGeneralBinsSmallR");}
+bool cutPropagator::CheckNGeneralBinsSmallR(cutPropagator inCutProp){return CheckNGeneralBinsSmallR(inCutProp.GetNGeneralBinsSmallR());}
 
+bool cutPropagator::CheckNGeneralBinsLargeR(int inNGeneralBinsLargeR){return CheckNBins(inNGeneralBinsLargeR, nGeneralBinsLargeR, "nGeneralBinsLargeR");}
+bool cutPropagator::CheckNGeneralBinsLargeR(cutPropagator inCutProp){return CheckNGeneralBinsLargeR(inCutProp.GetNGeneralBinsLargeR());}
 
 
 bool cutPropagator::CheckNJtAbsEtaBins(int inNJtAbsEtaBins)
@@ -1524,6 +1592,24 @@ bool cutPropagator::CheckGenJtPtLargeBinsLargeR(std::vector<double> inGenJtPtLar
   return checkVal;
 }
 bool cutPropagator::CheckGenJtPtLargeBinsLargeR(cutPropagator inCutProp){return CheckGenJtPtLargeBinsLargeR(inCutProp.GetGenJtPtLargeBinsLargeR());}
+
+
+bool cutPropagator::CheckGeneralBinsSmallR(std::vector<double> inGeneralBinsSmallR)
+{
+  bool checkVal = CheckVectDouble(generalBinsSmallR, inGeneralBinsSmallR);
+  if(!checkVal) std::cout << "cutPropagator check failed on generalBinsSmallR" << std::endl;
+  return checkVal;
+}
+bool cutPropagator::CheckGeneralBinsSmallR(cutPropagator inCutProp){return CheckGeneralBinsSmallR(inCutProp.GetGeneralBinsSmallR());}
+
+bool cutPropagator::CheckGeneralBinsLargeR(std::vector<double> inGeneralBinsLargeR)
+{
+  bool checkVal = CheckVectDouble(generalBinsLargeR, inGeneralBinsLargeR);
+  if(!checkVal) std::cout << "cutPropagator check failed on generalBinsLargeR" << std::endl;
+  return checkVal;
+}
+bool cutPropagator::CheckGeneralBinsLargeR(cutPropagator inCutProp){return CheckGeneralBinsLargeR(inCutProp.GetGeneralBinsLargeR());}
+
 
 bool cutPropagator::CheckJtAbsEtaBinsLow(std::vector<double> inJtAbsEtaBinsLow)
 {
@@ -2010,6 +2096,24 @@ void cutPropagator::SetGenJtPtLargeBinsLargeR(int inN, const Double_t inGenJtPtL
 {
   for(int i = 0; i < inN; ++i){
     genJtPtLargeBinsLargeR.push_back(inGenJtPtLargeBinsLargeR[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetGeneralBinsSmallR(int inN, const Double_t inGeneralBinsSmallR[])
+{
+  for(int i = 0; i < inN; ++i){
+    generalBinsSmallR.push_back(inGeneralBinsSmallR[i]);
+  }
+
+  return;
+}
+
+void cutPropagator::SetGeneralBinsLargeR(int inN, const Double_t inGeneralBinsLargeR[])
+{
+  for(int i = 0; i < inN; ++i){
+    generalBinsLargeR.push_back(inGeneralBinsLargeR[i]);
   }
 
   return;

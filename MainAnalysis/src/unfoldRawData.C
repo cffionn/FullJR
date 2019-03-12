@@ -24,6 +24,7 @@
 #include "src/RooUnfoldResponse.h"
 
 //Local dependencies
+#include "MainAnalysis/include/canvNDCToXY.h"
 #include "MainAnalysis/include/cutPropagator.h"
 #include "MainAnalysis/include/smallOrLargeR.h"
 #include "MainAnalysis/include/texSlideCreator.h"
@@ -109,6 +110,8 @@ void getPearsTMatrix(RooUnfoldBayes* bayes_p, TH2D** covarianceToPlot)
 int unfoldRawData(const std::string inDataFileName, const std::string inResponseName, const std::string selectJtAlgo = "")
 {
   vanGoghPalette vg;
+  const Int_t nXVals = 5;
+  const Int_t xVals[nXVals] = {200, 400, 600, 800, 1000};
 
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
@@ -210,6 +213,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   std::vector<Int_t> centBinsHi = cutPropData.GetCentBinsHi();
 
   const Int_t nMaxJtPtBins = 50;
+  /*
   const Int_t nGenJtPtSmallBinsSmallRCent0to10 = cutPropData.GetNGenJtPtSmallBinsSmallRCent0to10();
   const Int_t nGenJtPtLargeBinsSmallRCent0to10 = cutPropData.GetNGenJtPtLargeBinsSmallRCent0to10();
   const Int_t nGenJtPtSmallBinsLargeRCent0to10 = cutPropData.GetNGenJtPtSmallBinsLargeRCent0to10();
@@ -229,6 +233,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   const Int_t nGenJtPtLargeBinsSmallRCent50to90 = cutPropData.GetNGenJtPtLargeBinsSmallRCent50to90();
   const Int_t nGenJtPtSmallBinsLargeRCent50to90 = cutPropData.GetNGenJtPtSmallBinsLargeRCent50to90();
   const Int_t nGenJtPtLargeBinsLargeRCent50to90 = cutPropData.GetNGenJtPtLargeBinsLargeRCent50to90();
+  */
 
   std::vector<Double_t> genJtPtSmallBinsSmallRTemp = cutPropData.GetGenJtPtSmallBinsSmallR();
   std::vector<Double_t> genJtPtLargeBinsSmallRTemp = cutPropData.GetGenJtPtLargeBinsSmallR();
@@ -322,7 +327,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   }
 
 
+  
   smallOrLargeR rReader;
+  /*
   if(!rReader.CheckNGenJtPtSmallBinsSmallRCent0to10(nGenJtPtSmallBinsSmallRCent0to10)) return 1;
   if(!rReader.CheckNGenJtPtSmallBinsLargeRCent0to10(nGenJtPtSmallBinsLargeRCent0to10)) return 1;
   if(!rReader.CheckNGenJtPtLargeBinsSmallRCent0to10(nGenJtPtLargeBinsSmallRCent0to10)) return 1;
@@ -347,6 +354,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
   if(!rReader.CheckGenJtPtSmallBinsLargeR(genJtPtSmallBinsLargeRTemp)) return 1;
   if(!rReader.CheckGenJtPtLargeBinsSmallR(genJtPtLargeBinsSmallRTemp)) return 1;
   if(!rReader.CheckGenJtPtLargeBinsLargeR(genJtPtLargeBinsLargeRTemp)) return 1;
+  */
 
   const Int_t nSmallLargeBins = 2;
   std::string smallLargeBinsStr[nSmallLargeBins] = {"SmallBins", "LargeBins"};
@@ -631,17 +639,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		
 		if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 		
-		if(highLight){
-		  std::cout << "DOING PRE-HIGHLIGHT" << std::endl;
-		  std::cout << " Print initTrue: " << std::endl;
-		  initTrue_p->Print("ALL");
-		  
-		  std::cout << " Print initMeas: " << std::endl;
-		  initMeas_p->Print("ALL");
-		  
-		  std::cout << " Print from rooUnfold: " << std::endl;
-		  rooResSuperClone_p->Print("ALL");
-		  
+		if(highLight){		  
 		  std::cout << " Print from TH2" << std::endl;
 		  for(Int_t bIY = 0; bIY < initRes_p->GetYaxis()->GetNbins(); ++bIY){
 		    std::string firstString = std::to_string(bIY+1);
@@ -695,11 +693,6 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		if(doLocalDebug || doGlobalDebug) std::cout << __FILE__ << ", " <<  __LINE__ << std::endl;
 		
 		if(highLight){
-		  std::cout << "DOING POST-HIGHLIGHT" << std::endl;
-		  std::cout << " Print from roo" << std::endl;
-		  rooResSuperClone_p->Print("ALL");
-		  
-		  std::cout << " Print from TH2" << std::endl;
 		  for(Int_t bIY = 0; bIY < initRes_p->GetYaxis()->GetNbins(); ++bIY){
 		    std::string firstString = std::to_string(bIY+1);
 		    if(firstString.size() == 0) firstString = " " + firstString;
@@ -725,41 +718,14 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		
 		for(Int_t bI = 0; bI < nBayes; ++bI){	    		
 		  RooUnfoldResponse* rooResClone_p = (RooUnfoldResponse*)rooResSuperClone_p->Clone("rooResClone_p");
-
-		  //		  if(jI == 0 && cI == 0 && iI == 2 && mI == 1 && aI == nJtAbsEtaBins-1 && sI == 0 && binsI == 1){
-		  if(jI == 0 && cI == 0 && iI == 0 && mI == 0 && aI == 0 && sI == 0 && binsI == 0 && bI == 4){
-		    std::cout << "PRINT UNFOLDING RAW: " << std::endl;
-		    rawClone_p->Print("ALL");
-		    std::cout << "PRINT UNFOLDING RAW 2: " << std::endl;
-		    jtPtRaw_RecoGenAsymm_h[jI][cI][iI][aI]->Print("ALL");
-		  }
-
-		  if(cI == 0){
-		    std::cout << "PRINTNOW A: " << std::endl;
-		    jtPtRaw_RecoGenAsymm_h[jI][cI][iI][aI]->Print("ALL");
-		    std::cout << "PRINTNOW B: " << std::endl;
-		    rooResClone_p->Print("ALL");
-		  }
 		  
 		  bayes_p[jI][cI][iI][mI][aI][sI][binsI][bI] = new RooUnfoldBayes(rooResClone_p, rawClone_p, bayesVal[bI], false, ("name_" + std::to_string(bI)).c_str());
 		  bayes_p[jI][cI][iI][mI][aI][sI][binsI][bI]->SetVerbose(-1);	    
 		  TH1D* unfold_h = (TH1D*)bayes_p[jI][cI][iI][mI][aI][sI][binsI][bI]->Hreco(RooUnfold::kCovToy);	  
-
-		  if(cI == 0){
-		    std::cout << "PRINTNOW C: " << std::endl;
-		    unfold_h->Print("ALL");
-		  }
 		  
 		  for(Int_t bIX = 0; bIX < unfold_h->GetNbinsX(); ++bIX){
 		    jtPtUnfolded_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI][bI]->SetBinContent(bIX+1, unfold_h->GetBinContent(bIX+1));
 		    jtPtUnfolded_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI][bI]->SetBinError(bIX+1, unfold_h->GetBinError(bIX+1));
-		  }
-
-		  if(jI == 0 && cI == 0 && iI == 0 && mI == 0 && aI == 0 && sI == 0 && binsI == 0 && bI == 4){
-		    std::cout << "PRINT UNFOLDING UNFOLDED 1: " << std::endl;
-		    unfold_h->Print("ALL");
-		    std::cout << "PRINT UNFOLDING UNFOLDED 2: " << std::endl;
-		    jtPtUnfolded_RecoGenAsymm_h[jI][cI][iI][mI][aI][sI][binsI][bI]->Print("ALL");
 		  }
 
 		  delete rooResClone_p;
@@ -1072,6 +1038,9 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		    clones_p[bayesPos]->GetXaxis()->SetTitleOffset(5.);
 		    clones_p[bayesPos]->GetYaxis()->SetTitleOffset(1.5);
 		  		    
+		    //		    clones_p[bayesPos]->GetXaxis()->SetTitle("");
+		    //		    clones_p[bayesPos]->GetYaxis()->SetTitle("");
+
 		    if(bayesPos == 1) clones_p[bayesPos]->DrawCopy("HIST E1 P");
 		    else clones_p[bayesPos]->DrawCopy("HIST E1 P SAME");
 		  }
@@ -1082,7 +1051,19 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		
 		gStyle->SetOptStat(0);
 		if(doLogX) gPad->SetLogx();
+	      
+		canvNDCToXY labelAid(pads[2], clones_p[0]);
+		for(unsigned int xI = 0; xI < nXVals; ++xI){
+		  if(xVals[xI] < clones_p[0]->GetBinLowEdge(1)) continue;
+		  if(xVals[xI] >= clones_p[0]->GetBinLowEdge(clones_p[0]->GetNbinsX()+1)) continue;
+
+		  canv_p->cd();
+		  pads[2]->cd();
+		  label_p->DrawLatex(labelAid.getXRelFromAbs(xVals[xI], pads[2]->GetLogx()), pads[2]->GetBottomMargin(), std::to_string(xVals[xI]).c_str());
+		}
 		
+		  
+
 		for(Int_t bI = 0; bI < nBayes; ++bI){
 		  delete clones_p[bI];
 		  clones_p[bI] = NULL;
@@ -1486,8 +1467,8 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		  gPad->RedrawAxis();
 		  gPad->SetTicks(1, 2);
 		}
-	    
-		const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoGenAsymm_" + debugStr + dateStr + ".pdf";
+	            
+		const std::string saveName = "jtPtUnfolded_" + tempStr + "_" + smallLargeBinsStr[binsI] + "_" + centStr + "_" + idStr[iI] + "_" + resStr + "_" + jtAbsEtaStr + "_" + tempSystStr +  "AllBayes_RecoGenAsymm_" + debugStr + dateStr + ".pdf";
 	   
 			
 		std::string titleStr = tempStr + ", " + centStr2 + ", " + idStr[iI] + ", $" + jtAbsEtaStr2 + "$, " + tempSystStr;
@@ -1495,7 +1476,7 @@ int unfoldRawData(const std::string inDataFileName, const std::string inResponse
 		slideTitlesPerAlgo[jI].push_back(titleStr);
 		pdfPerSlidePerAlgo[jI].push_back({});
 		pdfPerSlidePerAlgo[jI][pdfPerSlidePerAlgo[jI].size()-1].push_back(saveName);
-		
+	      		
 		const std::string finalSaveName = "pdfDir/" + dateStr + "/Unfold_" + tempStr + "/" + saveName;
 		quietSaveAs(canv_p, finalSaveName);
 		++nPDFTotal;
@@ -1702,7 +1683,6 @@ int main(int argc, char* argv[])
   }
 
   int retVal = 0;
-
   if(argc == 3) retVal += unfoldRawData(argv[1], argv[2]);
   else if(argc == 4) retVal += unfoldRawData(argv[1], argv[2], argv[3]);
 

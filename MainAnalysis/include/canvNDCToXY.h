@@ -5,7 +5,7 @@
 #include <iostream>
 
 //ROOT dependencies
-#include "TCanvas.h"
+#include "TPad.h"
 #include "TH1D.h"
 
 //Non-Local dependencies
@@ -16,7 +16,7 @@ class canvNDCToXY
 {
  public:
   canvNDCToXY(double inCanvDimX, double inCanvDimY, double inCanvMargLeft, double inCanvMargRight, double inCanvMargTop, double inCanvMargBottom, double inXMin, double inXMax, double inYMin, double inYMax);
-  canvNDCToXY(TCanvas* canv_p, TH1D* hist_p);
+  canvNDCToXY(TPad* canv_p, TH1D* hist_p);
 
   double getXRelFromAbs(double xAbs, bool isLog);
   double getYRelFromAbs(double yAbs, bool isLog);
@@ -68,7 +68,7 @@ canvNDCToXY::canvNDCToXY(double inCanvDimX, double inCanvDimY, double inCanvMarg
   return;
 }
 
-canvNDCToXY::canvNDCToXY(TCanvas* canv_p, TH1D* hist_p)
+canvNDCToXY::canvNDCToXY(TPad* canv_p, TH1D* hist_p)
 {
   canvDimX_ = canv_p->GetWw();
   canvDimY_ = canv_p->GetWh(); 
