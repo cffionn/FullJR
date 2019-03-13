@@ -100,16 +100,16 @@ bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 =
   std::vector<double> macroBinsX, subsetBinsX, macroBinsY, subsetBinsY;
 
   for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins()+1; ++bIX){
-    macroBinsX.push_back(macroHist_p->GetBinLowEdge(bIX+1));
+    macroBinsX.push_back(macroHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
   }
   for(Int_t bIX = 0; bIX < subsetHist_p->GetXaxis()->GetNbins()+1; ++bIX){
-    subsetBinsX.push_back(subsetHist_p->GetBinLowEdge(bIX+1));
+    subsetBinsX.push_back(subsetHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
   }
   for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins()+1; ++bIY){
-    macroBinsY.push_back(macroHist_p->GetBinLowEdge(bIY+1));
+    macroBinsY.push_back(macroHist_p->GetYaxis()->GetBinLowEdge(bIY+1));
   }
   for(Int_t bIY = 0; bIY < subsetHist_p->GetYaxis()->GetNbins()+1; ++bIY){
-    subsetBinsY.push_back(subsetHist_p->GetBinLowEdge(bIY+1));
+    subsetBinsY.push_back(subsetHist_p->GetYaxis()->GetBinLowEdge(bIY+1));
   }
 
 
