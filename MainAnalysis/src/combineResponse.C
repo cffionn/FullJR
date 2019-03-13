@@ -50,8 +50,8 @@ void constructHist1D(TFile* outFile_p, std::vector<TH1D*>* hists_p, std::map<std
   TIter next(dir_p->GetListOfKeys());
   TKey* key=NULL;
 
-  const Int_t nMaxBins = 100;
-  Double_t binsX[nMaxBins];  
+  const Int_t nMaxBins = 200;
+  Double_t binsX[nMaxBins+1];  
 
   while((key = (TKey*)next())){
     const std::string name = key->GetName();
@@ -70,13 +70,19 @@ void constructHist1D(TFile* outFile_p, std::vector<TH1D*>* hists_p, std::map<std
 
       const Int_t nBinsX = tempHist_p->GetNbinsX();
 
+      if(nBinsX > nMaxBins){
+	std::cout << "WARNING: nBinsX (" << nBinsX << ") less than nMaxBins " << nMaxBins << std::endl;
+      }
+
       for(Int_t bIX = 0; bIX < nBinsX+1; ++bIX){
 	binsX[bIX] = tempHist_p->GetXaxis()->GetBinLowEdge(bIX+1);
       }
 
       std::string title = ";" + std::string(tempHist_p->GetXaxis()->GetTitle()) + ";" + std::string(tempHist_p->GetYaxis()->GetTitle());
+
       outFile_p->cd();
       outFile_p->cd(dirName.c_str());
+
       (*hists_p)[pos] = new TH1D(newName.c_str(), title.c_str(), nBinsX, binsX);
     }
 
@@ -106,9 +112,9 @@ void constructHist2D(TFile* outFile_p, std::vector<TH2D*>* hists_p, std::map<std
   TIter next(dir_p->GetListOfKeys());
   TKey* key=NULL;
 
-  const Int_t nMaxBins = 100;
-  Double_t binsX[nMaxBins];
-  Double_t binsY[nMaxBins];  
+  const Int_t nMaxBins = 200;
+  Double_t binsX[nMaxBins+1];
+  Double_t binsY[nMaxBins+1];  
 
   while((key = (TKey*)next())){
     const std::string name = key->GetName();
@@ -127,6 +133,10 @@ void constructHist2D(TFile* outFile_p, std::vector<TH2D*>* hists_p, std::map<std
       
       const Int_t nBinsX = tempHist_p->GetNbinsX();
       const Int_t nBinsY = tempHist_p->GetNbinsY();
+
+      if(nBinsX > nMaxBins || nBinsY > nMaxBins){
+	std::cout << "WARNING: nBinsX or nBinsY (" << nBinsX << " or " << nBinsY << ") less than nMaxBins " << nMaxBins << std::endl;
+      }
 
       for(Int_t bIX = 0; bIX < nBinsX+1; ++bIX){
 	binsX[bIX] = tempHist_p->GetXaxis()->GetBinLowEdge(bIX+1);
@@ -216,10 +226,10 @@ int combineResponse(std::string inFileNames, std::string tagStr)
   cutPropagator cutProp;
   cutProp.Clean();
   cutProp.GetAllVarFromFile(inFile_p);  
-  
+
   std::vector<std::string> responseNamesTH1 = returnRootFileContentsList(inFile_p, "TH1D", "");
   std::vector<std::string> responseNamesTH2 = returnRootFileContentsList(inFile_p, "TH2D", "");
-  
+
   inFile_p->Close();
   delete inFile_p;
 
@@ -254,14 +264,17 @@ int combineResponse(std::string inFileNames, std::string tagStr)
   for(unsigned int fI = 0; fI < fileNames.size(); ++fI){
     std::cout << "Processing file " << fI << "/" << fileNames.size() << ", \'" << fileNames[fI] << "\'.." << std::endl;
     inFile_p = new TFile(fileNames[fI].c_str(), "READ");
+    
     std::vector<std::string> dirNames = returnRootFileContentsList(inFile_p, "TDirectory", "");
     std::vector<std::string> dirNames2 = returnRootFileContentsList(inFile_p, "TDirectoryFile", "");
     dirNames.insert(std::end(dirNames), std::begin(dirNames2), std::end(dirNames2));
 
     for(auto const& dir : dirNames){
+      if(dir.find("cutDir") != std::string::npos) continue;
+
       if(fI == 0){
 	outDirs_p.push_back(outFile_p->mkdir(dir.c_str()));
-	
+
 	constructHist1D(outFile_p, &hists1D_p, &histNameToPos1D, inFile_p, dir, true);
 	constructHist2D(outFile_p, &hists2D_p, &histNameToPos2D, inFile_p, dir, true);
       }

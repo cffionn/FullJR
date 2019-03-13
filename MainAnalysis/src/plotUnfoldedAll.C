@@ -791,8 +791,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
   const Int_t xVals[nXVals] = {200, 400, 600, 800, 1000};
   
 
+  
   const Int_t nXValsReduced = 3;
-  const Int_t xValsReduced[nXValsReduced] = {270, 430, 600};
+  const Int_t xValsReduced[nXValsReduced] = {300, 400, 500};
   
 
   const Double_t minValSmallR = 200;
@@ -1374,6 +1375,15 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	}
       }
 
+      std::cout << "RVAL " << rValI[jI] << ": " << std::endl;
+      for(Int_t cI = 0; cI < nCentBins; ++cI){
+	std::cout << " RVAL CENT" << centBinsStr[cI] << ": ";
+	for(Int_t gI = 0; gI < nBins[cI]; ++gI){
+	  std::cout << generalPtBins[gI] << ", ";
+	}
+	std::cout << generalPtBins[nBins[cI]] << std::endl;
+      }
+
       for(ULong64_t idI = 0; idI < (ULong64_t)nID; ++idI){
 	if(!goodID[idI]) continue;
 	
@@ -1421,12 +1431,6 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	      }
 	    }
      
-	    std::cout << "R: " << rValI[jI] << std::endl;
-	    if(rValI[jI] == 4){
-	      std::cout << "PRINTING R4" << std::endl;
-	      histVectPbPbClones[0]->Print("ALL");
-	    }
-
 	    //Div by bin widths;
 	    divHistByWidth(histVectPPClones);
 	    divHistByWidth(histVectPbPbClones);
@@ -1575,32 +1579,18 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
    
   std::cout << "End Traditional RAA" << std::endl;
  
+  //  const Double_t reducedBinMin = 270;
+  //  const Double_t reducedBinMax = 600;
+
   std::cout << "Reduced RAA" << std::endl;
   for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
     std::cout << "Jet Algo: " << jtAlgosPbPb[jI] << ", " << jtAlgosPP[jI] << std::endl;
     std::cout << " rVal: " << rValI[jI] << std::endl;
 
+    const Int_t nBinsTemp = 1;
+    Int_t nBins[nMaxCentBins];
+
     for(Int_t binsI = 0; binsI < nSmallLargeBins; ++binsI){
-      const Int_t nBinsTemp = 1;
-      generalPtBins[0] = 270;
-      generalPtBins[1] = 600;
-
-      Int_t nBins[nMaxCentBins];
-      if(isSmallR[jI]){
-	setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtLargeBinsSmallR);
-	nBins[0] = genJtPtLargeBinsSmallR.size()-1;
-	for(Int_t cI = 1; cI < nCentBins; ++cI){
-	  nBins[cI] = nBins[0] - (nGenJtPtLargeBinsSmallR[0] - nGenJtPtLargeBinsSmallR[cI]);
-	}
-      }
-      else{
-	setGeneralPtBins(nGeneralPtBins, generalPtBins, genJtPtLargeBinsLargeR);
-	nBins[0] = genJtPtLargeBinsLargeR.size()-1;
-	for(Int_t cI = 1; cI < nCentBins; ++cI){
-	  nBins[cI] = nBins[0] - (nGenJtPtLargeBinsLargeR[0] - nGenJtPtLargeBinsLargeR[cI]);
-	}
-      }
-
       for(ULong64_t idI = 0; idI < (ULong64_t)nID; ++idI){
 	if(!goodID[idI]) continue;
 	
@@ -1620,7 +1610,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    defineCanv(canv_p);
 	   
 	    std::vector<TH1D*> histVectPbPbClones;
+	    std::vector<bool> hasAllBinsPbPb;
 	    histVectPbPbClones.reserve(nSystTotal*nCentBins);
+	    hasAllBinsPbPb.reserve(nSystTotal*nCentBins);
 	    std::vector<TH1D*> histVectPPClones;	 
 	    histVectPPClones.reserve(nSystTotal*nCentBins);	   
 
@@ -1634,6 +1626,7 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		ULong64_t idKeyBBPP = histKeyToBestBayesKeyPP[idKey];
 		ULong64_t idKeyBBPbPb = histKeyToBestBayesKeyPbPb[idKey];
 		ULong64_t vectPos = keyToVectPos[idKeyBBPP];
+
 		std::string tempName = "raaReduced_" + std::string(histVectPP[vectPos]->GetName()) + "_Clone_" + systStrTotal[sI];
 		histVectPPClones.push_back(new TH1D(tempName.c_str(), ";Jet p_{T} [GeV];R_{AA}", nBinsTemp, generalPtBins));
 		if(!macroHistToSubsetHist(histVectPP[vectPos], histVectPPClones[histVectPPClones.size()-1])) return 1;
@@ -1716,7 +1709,10 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	   
 	    canv_p->cd();
 	    defaultPlotSet(histVectPbPbClones[0], centBinsStr[0]);
-	    histVectPbPbClones[0]->DrawCopy("HIST E1 P");	 
+ 	    histVectPbPbClones[0]->DrawCopy("HIST E1 P");	 
+	    std::cout << "REDUCED PRINT" << std::endl;
+ 	    histVectPbPbClones[0]->Print("ALL");
+
 	    TLine* line_p = new TLine();
 	    line_p->SetLineStyle(2);
 	    line_p->DrawLine(generalPtBins[0], 1., histVectPbPbClones[0]->GetXaxis()->GetBinLowEdge(histVectPbPbClones[0]->GetNbinsX()+1), 1.);
