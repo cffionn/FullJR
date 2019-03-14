@@ -238,6 +238,201 @@ bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 =
 }
 
 
+bool macroHistToSubsetHistX(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 = false)
+{
+  std::vector<double> macroBinsX, subsetBinsX, macroBinsY;
+
+  for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins()+1; ++bIX){
+    macroBinsX.push_back(macroHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
+  }
+  for(Int_t bIX = 0; bIX < subsetHist_p->GetXaxis()->GetNbins()+1; ++bIX){
+    subsetBinsX.push_back(subsetHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
+  }
+  for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins()+1; ++bIY){
+    macroBinsY.push_back(macroHist_p->GetYaxis()->GetBinLowEdge(bIY+1));
+  }
+
+  //Check that subset bins Delta > 1
+  bool allSubsetLargeDelta = true;
+  for(unsigned int sI = 0; sI < subsetBinsX.size()-1; ++sI){
+    if(subsetBinsX[sI+1] - subsetBinsX[sI] < 1){
+      allSubsetLargeDelta = false;
+      break;
+    } 
+  }
+
+  if(!allSubsetLargeDelta){
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << " Subset histX: ";
+    for(auto const & subsetVal : subsetBinsX){
+      std::cout << subsetVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << "return false" << std::endl;
+    return false;
+  }
+
+  //Check that macrobins are well contained by subset bins
+  bool allBinsGood = true;
+  for(auto const & subVal : subsetBinsX){
+    bool binHasMatch = false;
+    for(auto const & macroVal : macroBinsX){
+      if(TMath::Abs(macroVal - subVal) < 0.5){
+	binHasMatch = true;
+	break;
+      }
+    }
+
+    if(!binHasMatch){
+      allBinsGood = false;
+      break;
+    }
+  }
+
+  if(!allBinsGood){
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have macro hist match" << std::endl;
+    std::cout << " Macro name: " << macroHist_p->GetName() << std::endl;
+    std::cout << " subset name: " << subsetHist_p->GetName() << std::endl;
+    std::cout << " Macro histX: ";
+    for(auto const & macroVal : macroBinsX){
+      std::cout << macroVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << " Subset histX: ";
+    for(auto const & subsetVal : subsetBinsX){
+      std::cout << subsetVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << "return false" << std::endl;
+    return false;
+  }
+  else{
+    for(unsigned int sIX = 0; sIX < subsetBinsX.size(); ++sIX){
+      Double_t val = 0;
+      Double_t err = 0;
+
+      std::vector<Int_t> binsX;
+      
+      for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins(); ++bIX){
+	if(subsetBinsX[sIX] <= macroHist_p->GetXaxis()->GetBinCenter(bIX+1) && macroHist_p->GetXaxis()->GetBinCenter(bIX+1) < subsetBinsX[sIX+1]) binsX.push_back(bIX);
+      }
+
+
+      for(unsigned int bIX = 0; bIX < binsX.size(); ++bIX){
+	for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins(); ++bIY){
+	  val += macroHist_p->GetBinContent(binsX[bIX]+1, bIY+1);
+	  err = TMath::Sqrt(err*err + macroHist_p->GetBinError(binsX[bIX]+1, bIY+1)*macroHist_p->GetBinError(binsX[bIX]+1, bIY+1));
+	}
+      }
+
+      subsetHist_p->SetBinContent(sIX+1, val);
+      if(doSumW2) subsetHist_p->SetBinError(sIX+1, err);
+      else subsetHist_p->SetBinError(sIX+1, TMath::Sqrt(val));      
+    }
+  }
+ 
+  return allBinsGood;
+}
+
+
+
+bool macroHistToSubsetHistY(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 = false)
+{
+  std::vector<double> macroBinsX, subsetBinsX, macroBinsY;
+
+  for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins()+1; ++bIX){
+    macroBinsX.push_back(macroHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
+  }
+  for(Int_t bIX = 0; bIX < subsetHist_p->GetXaxis()->GetNbins()+1; ++bIX){
+    subsetBinsX.push_back(subsetHist_p->GetXaxis()->GetBinLowEdge(bIX+1));
+  }
+  for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins()+1; ++bIY){
+    macroBinsY.push_back(macroHist_p->GetYaxis()->GetBinLowEdge(bIY+1));
+  }
+
+  //Check that subset bins Delta > 1
+  bool allSubsetLargeDelta = true;
+  for(unsigned int sI = 0; sI < subsetBinsX.size()-1; ++sI){
+    if(subsetBinsX[sI+1] - subsetBinsX[sI] < 1){
+      allSubsetLargeDelta = false;
+      break;
+    } 
+  }
+
+  if(!allSubsetLargeDelta){
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << " Subset histX: ";
+    for(auto const & subsetVal : subsetBinsX){
+      std::cout << subsetVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << "return false" << std::endl;
+    return false;
+  }
+
+  //Check that macrobins are well contained by subset bins
+  bool allBinsGood = true;
+  for(auto const & subVal : subsetBinsX){
+    bool binHasMatch = false;
+    for(auto const & macroVal : macroBinsY){
+      if(TMath::Abs(macroVal - subVal) < 0.5){
+	binHasMatch = true;
+	break;
+      }
+    }
+
+    if(!binHasMatch){
+      allBinsGood = false;
+      break;
+    }
+  }
+
+  if(!allBinsGood){
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have macro hist match" << std::endl;
+    std::cout << " Macro name: " << macroHist_p->GetName() << std::endl;
+    std::cout << " subset name: " << subsetHist_p->GetName() << std::endl;
+    std::cout << " Macro histY: ";
+    for(auto const & macroVal : macroBinsY){
+      std::cout << macroVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << " Subset histX: ";
+    for(auto const & subsetVal : subsetBinsX){
+      std::cout << subsetVal << ",";
+    }
+    std::cout << std::endl;
+    std::cout << "return false" << std::endl;
+    return false;
+  }
+  else{
+    for(unsigned int sIX = 0; sIX < subsetBinsX.size(); ++sIX){
+      Double_t val = 0;
+      Double_t err = 0;
+
+      std::vector<Int_t> binsY;
+      
+      for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins(); ++bIY){
+	if(subsetBinsX[sIX] <= macroHist_p->GetYaxis()->GetBinCenter(bIY+1) && macroHist_p->GetYaxis()->GetBinCenter(bIY+1) < subsetBinsX[sIX+1]) binsY.push_back(bIY);
+      }
+
+
+      for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins(); ++bIX){
+	for(unsigned int bIY = 0; bIY < binsY.size(); ++bIY){
+	  val += macroHist_p->GetBinContent(bIX+1, binsY[bIY]+1);
+	  err = TMath::Sqrt(err*err + macroHist_p->GetBinError(bIX+1, binsY[bIY]+1)*macroHist_p->GetBinError(bIX+1, binsY[bIY]+1));
+	}
+      }
+
+      subsetHist_p->SetBinContent(sIX+1, val);
+      if(doSumW2) subsetHist_p->SetBinError(sIX+1, err);
+      else subsetHist_p->SetBinError(sIX+1, TMath::Sqrt(val));      
+    }
+  }
+ 
+  return allBinsGood;
+}
+
+
 void test()
 {
   TRandom3* randGen_p = new TRandom3(0);
