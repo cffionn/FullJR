@@ -4,7 +4,8 @@
 //Sources:
 //https://twiki.cern.ch/twiki/bin/viewauth/CMS/GlauberTables
 
-#include "TH1.h"
+#include "TH1D.h"
+#include "TH2D.h"
 #include "TMath.h"
 
 double getLumiFactor()
@@ -134,18 +135,18 @@ void scaleCentralAndErrorValues(TH1* inHist_p, Double_t scaleVal)
   return;
 }
 
-double getMin(TH1* inHist_p)
+double getMin(TH1D* inHist_p)
 {
-  double minVal = inHist_p->GetMaximum();
+  double minVal = inHist_p->GetBinContent(1);
   for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
     if(inHist_p->GetBinContent(bIX+1) < minVal) minVal = inHist_p->GetBinContent(bIX+1);
   }
   return minVal;
 }
 
-double getMinGTZero(TH1* inHist_p)
+double getMinGTZero(TH1D* inHist_p)
 {
-  double minVal = inHist_p->GetMaximum();
+  double minVal = inHist_p->GetBinContent(1);
   for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
     if(inHist_p->GetBinContent(bIX+1) <= 0) continue;
     if(inHist_p->GetBinContent(bIX+1) < minVal) minVal = inHist_p->GetBinContent(bIX+1);
@@ -153,11 +154,46 @@ double getMinGTZero(TH1* inHist_p)
   return minVal;
 }
 
-double getMax(TH1* inHist_p)
+double getMax(TH1D* inHist_p)
 {
-  double maxVal = inHist_p->GetMaximum();
+  double maxVal = inHist_p->GetBinContent(1);
   for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
     if(inHist_p->GetBinContent(bIX+1) > maxVal) maxVal = inHist_p->GetBinContent(bIX+1);
+  }
+  return maxVal;
+}
+
+
+double getMin(TH2D* inHist_p)
+{
+  double minVal = inHist_p->GetBinContent(1, 1);
+  for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
+    for(Int_t bIY = 0; bIY < inHist_p->GetNbinsY(); ++bIY){      
+      if(inHist_p->GetBinContent(bIX+1, bIY+1) < minVal) minVal = inHist_p->GetBinContent(bIX+1, bIY+1);
+    }
+  }
+  return minVal;
+}
+
+double getMinGTZero(TH2D* inHist_p)
+{
+  double minVal = inHist_p->GetBinContent(1, 1);
+  for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
+    for(Int_t bIY = 0; bIY < inHist_p->GetNbinsY(); ++bIY){
+      if(inHist_p->GetBinContent(bIX+1, bIY+1) <= 0) continue;
+      if(inHist_p->GetBinContent(bIX+1, bIY+1) < minVal) minVal = inHist_p->GetBinContent(bIX+1, bIY+1);
+    }
+  }
+  return minVal;
+}
+
+double getMax(TH2D* inHist_p)
+{
+  double maxVal = inHist_p->GetBinContent(1, 1);
+  for(Int_t bIX = 0; bIX < inHist_p->GetNbinsX(); ++bIX){
+    for(Int_t bIY = 0; bIY < inHist_p->GetNbinsY(); ++bIY){
+      if(inHist_p->GetBinContent(bIX+1, bIY+1) > maxVal) maxVal = inHist_p->GetBinContent(bIX+1, bIY+1);
+    }
   }
   return maxVal;
 }
