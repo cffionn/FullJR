@@ -95,7 +95,7 @@ bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 =
 }
 
 
-bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 = false)
+bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 = false, bool doSumLowY = false, bool doSumHighY = false)
 {
   std::vector<double> macroBinsX, subsetBinsX, macroBinsY, subsetBinsY;
 
@@ -111,7 +111,6 @@ bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 =
   for(Int_t bIY = 0; bIY < subsetHist_p->GetYaxis()->GetNbins()+1; ++bIY){
     subsetBinsY.push_back(subsetHist_p->GetYaxis()->GetBinLowEdge(bIY+1));
   }
-
 
   //Check that subset bins Delta > 1
   bool allSubsetLargeDelta = true;
@@ -216,7 +215,15 @@ bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 =
 	}
 
 	for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins(); ++bIY){
-	  if(subsetBinsY[sIY] <= macroHist_p->GetYaxis()->GetBinCenter(bIY+1) && macroHist_p->GetYaxis()->GetBinCenter(bIY+1) < subsetBinsY[sIY+1]) binsY.push_back(bIY);
+	  if(doSumLowY && sIY == 0){
+	    if(macroHist_p->GetYaxis()->GetBinCenter(bIY+1) < subsetBinsY[sIY+1]) binsY.push_back(bIY);
+	  }
+	  else if(doSumHighY && sIY == subsetBinsY.size()-1){
+	    if(subsetBinsY[sIY] <= macroHist_p->GetYaxis()->GetBinCenter(bIY+1)) binsY.push_back(bIY);
+	  }
+	  else{
+	    if(subsetBinsY[sIY] <= macroHist_p->GetYaxis()->GetBinCenter(bIY+1) && macroHist_p->GetYaxis()->GetBinCenter(bIY+1) < subsetBinsY[sIY+1]) binsY.push_back(bIY);
+	  }
 	}
 
 
