@@ -21,7 +21,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe bin/validateSplit.exe bin/extractBins.exe #bin/plotUnfoldedRAA.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/unfoldRawDataTest.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe bin/validateSplit.exe bin/extractBins.exe bin/extractNSigma.exe bin/extractSigmaFit.exe bin/quickHistSum.exe #bin/plotUnfoldedRAA.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -74,6 +74,9 @@ bin/processRawData.exe: src/processRawData.C
 bin/unfoldRawData.exe: src/unfoldRawData.C
 	$(CXX) $(CXXFLAGS) src/unfoldRawData.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldRawData.exe
 
+bin/unfoldRawDataTest.exe: src/unfoldRawDataTest.C
+	$(CXX) $(CXXFLAGS) src/unfoldRawDataTest.C $(ROOT) $(ROOUNF) $(INCLUDE) -o bin/unfoldRawDataTest.exe
+
 bin/deriveDijetWeights.exe: src/deriveDijetWeights.C
 	$(CXX) $(CXXFLAGS) src/deriveDijetWeights.C $(ROOT) $(INCLUDE) -o bin/deriveDijetWeights.exe
 
@@ -118,6 +121,15 @@ bin/validateSplit.exe: src/validateSplit.C
 
 bin/extractBins.exe: src/extractBins.C
 	$(CXX) $(CXXFLAGS) src/extractBins.C $(ROOT) $(INCLUDE) -o bin/extractBins.exe
+
+bin/extractNSigma.exe: src/extractNSigma.C
+	$(CXX) $(CXXFLAGS) src/extractNSigma.C $(ROOT) $(INCLUDE) -o bin/extractNSigma.exe
+
+bin/extractSigmaFit.exe: src/extractSigmaFit.C
+	$(CXX) $(CXXFLAGS) src/extractSigmaFit.C $(ROOT) $(INCLUDE) -o bin/extractSigmaFit.exe
+
+bin/quickHistSum.exe: src/quickHistSum.C
+	$(CXX) $(CXXFLAGS) src/quickHistSum.C $(ROOT) $(INCLUDE) -o bin/quickHistSum.exe
 
 
 clean:
