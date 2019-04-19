@@ -21,7 +21,7 @@ setStudyMultEnv.sh' in top level StudyMult directory to fix.\n\n"
 
 ROOUNF=-I $(ROOUNFPATH) -L $(ROOUNFPATH) -lRooUnfold
 
-all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/unfoldRawDataTest.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe bin/validateSplit.exe bin/extractBins.exe bin/extractNSigma.exe bin/extractSigmaFit.exe bin/quickHistSum.exe #bin/plotUnfoldedRAA.exe
+all: mkdirBin mkdirPdf mkdirOutput checkFullJRDir bin/makeRawRAATree.exe bin/makeJetResponseTree.exe bin/makeDeriveFlatResponse.exe bin/validateJetResponse.exe bin/plotJetResponse.exe bin/makeMuonFakeCheck.exe bin/checkGoodJetBadJetPF.exe bin/processRawData.exe bin/unfoldRawData.exe bin/unfoldRawDataTest.exe bin/deriveDijetWeights.exe bin/checkGenHydSpectra.exe bin/plotUnfoldedSpectra.exe bin/plotUnfoldedAll.exe bin/checkUnfoldTermination.exe bin/combineFiles.exe bin/testRooUnfResUnderflow.exe bin/checkFileNClassContents.exe bin/compareAllHist.exe bin/lumiComp.exe bin/extractNMB.exe bin/checkOverlap.exe bin/comboTest.exe bin/combineResponse.exe bin/splitFiles.exe bin/unfoldTest.exe bin/validateSplit.exe bin/extractBins.exe bin/extractNSigma.exe bin/extractSigmaFit.exe bin/quickHistSum.exe bin/genBins.exe bin/testRes.exe bin/testATLASRes.exe bin/quickResPlot.exe bin/matrixCompare.exe bin/toyATLASCMS.exe bin/toyATLASCMS_Unfold.exe #bin/plotUnfoldedRAA.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -131,6 +131,26 @@ bin/extractSigmaFit.exe: src/extractSigmaFit.C
 bin/quickHistSum.exe: src/quickHistSum.C
 	$(CXX) $(CXXFLAGS) src/quickHistSum.C $(ROOT) $(INCLUDE) -o bin/quickHistSum.exe
 
+bin/genBins.exe: src/genBins.C
+	$(CXX) $(CXXFLAGS) src/genBins.C $(ROOT) $(INCLUDE) -o bin/genBins.exe
+
+bin/testRes.exe: src/testRes.C
+	$(CXX) $(CXXFLAGS) src/testRes.C $(ROOT) $(INCLUDE) -o bin/testRes.exe
+
+bin/testATLASRes.exe: src/testATLASRes.C
+	$(CXX) $(CXXFLAGS) src/testATLASRes.C $(ROOT) $(INCLUDE) -o bin/testATLASRes.exe
+
+bin/quickResPlot.exe: src/quickResPlot.C
+	$(CXX) $(CXXFLAGS) src/quickResPlot.C $(ROOT) $(INCLUDE) -o bin/quickResPlot.exe
+
+bin/matrixCompare.exe: src/matrixCompare.C
+	$(CXX) $(CXXFLAGS) src/matrixCompare.C $(ROOT) $(INCLUDE) -o bin/matrixCompare.exe
+
+bin/toyATLASCMS.exe: src/toyATLASCMS.C
+	$(CXX) $(CXXFLAGS) src/toyATLASCMS.C $(ROOT) $(INCLUDE) $(ROOUNF) -o bin/toyATLASCMS.exe
+
+bin/toyATLASCMS_Unfold.exe: src/toyATLASCMS_Unfold.C
+	$(CXX) $(CXXFLAGS) src/toyATLASCMS_Unfold.C $(ROOT) $(INCLUDE) $(ROOUNF) -o bin/toyATLASCMS_Unfold.exe
 
 clean:
 	rm -f ./*~

@@ -1,0 +1,331 @@
+//cpp
+#include <iostream>
+#include <string>
+
+//ROOT
+#include "TDatime.h"
+#include "TFile.h"
+#include "TF1.h"
+#include "TH1D.h"
+#include "TH2D.h"
+#include "TMath.h"
+#include "TRandom3.h"
+
+//Local dependencies
+#include "MainAnalysis/include/macroHistToSubsetHist.h"
+#include "Utility/include/checkMakeDir.h"
+#include "Utility/include/cppWatch.h"
+#include "Utility/include/histDefUtility.h"
+#include "Utility/include/plotUtilities.h"
+
+//RooUnfoldResponse
+#include "src/RooUnfoldBayes.h"
+#include "src/RooUnfoldResponse.h"
+
+void setPrior(TH2D* res_p, TH1D* prior_p)
+{
+  for(Int_t bIY = 0; bIY < res_p->GetYaxis()->GetNbins(); ++bIY){
+    Double_t total = 0.0;
+    for(Int_t bIX = 0; bIX < res_p->GetXaxis()->GetNbins(); ++bIX){
+      total += res_p->GetBinContent(bIX+1, bIY+1);
+    }
+
+    if(total <= TMath::Power(10, -20)) continue;
+
+    total = prior_p->GetBinContent(bIY+1)/total;
+    for(Int_t bIX = 0; bIX < res_p->GetXaxis()->GetNbins(); ++bIX){
+      Double_t val = res_p->GetBinContent(bIX+1, bIY+1)*total;
+      Double_t err = res_p->GetBinError(bIX+1, bIY+1)*total;
+
+      res_p->SetBinContent(bIX+1, bIY+1, val);
+      res_p->SetBinError(bIX+1, bIY+1, err);
+    }
+  }
+
+  return;
+}
+
+void doUnfold(TH2D* matrix_p, TH1D* prior_p, TH1D* data_p, Int_t nBayes, Int_t bayesVals[], std::string tagStr, TH1D* unfolded_p[], TH2D* newMatrix_p)
+{
+  TH2D* matrixClone_p = (TH2D*)matrix_p->Clone("matrixClone_h");
+
+  const Int_t nMaxBins = 100;
+  Double_t recoBins[nMaxBins+1];
+  Double_t genBins[nMaxBins+1];
+  Int_t nRecoBins = -1;
+  Int_t nGenBins = -1;
+  
+  for(Int_t bIY = 0; bIY < matrixClone_p->GetYaxis()->GetNbins()+1; ++bIY){
+    genBins[bIY] = matrixClone_p->GetYaxis()->GetBinLowEdge(bIY+1);
+    ++nGenBins;
+  }
+
+  for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins()+1; ++bIX){
+    recoBins[bIX] = matrixClone_p->GetXaxis()->GetBinLowEdge(bIX+1);
+    ++nRecoBins;
+  }
+
+  TH1D* gen_p = new TH1D("gen_h", "", nGenBins, genBins);
+  TH1D* reco_p = new TH1D("reco_h", "", nRecoBins, recoBins);
+
+  macroHistToSubsetHistY(matrixClone_p, gen_p, true);
+
+  if((tagStr.find("atlasUnfoldPower2p") != std::string::npos || tagStr.find("atlasUnfoldPower4p") != std::string::npos) && tagStr.find("SpectPower4p") != std::string::npos){
+    std::cout << "CHECKStart: " << std::endl;
+    gen_p->Print("ALL");
+  }
+
+  setPrior(matrixClone_p, prior_p);
+
+  /*
+  for(Int_t bIY = 0; bIY < matrixClone_p->GetYaxis()->GetNbins(); ++bIY){
+    Double_t total = 0.0;
+    
+    for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins(); ++bIX){
+      total += matrixClone_p->GetBinContent(bIX+1, bIY+1);
+    }
+
+    if(total <= TMath::Power(10, -20)) continue;
+
+    Double_t scale = prior_p->GetBinContent(bIY+1)/total;
+
+    for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins(); ++bIX){
+      Double_t val = matrixClone_p->GetBinContent(bIX+1, bIY+1)*scale;
+      Double_t err = matrixClone_p->GetBinError(bIX+1, bIY+1)*scale;
+
+      matrixClone_p->SetBinContent(bIX+1, bIY+1, val);
+      matrixClone_p->SetBinError(bIX+1, bIY+1, err);
+    }
+  }
+  */
+
+  
+  if((tagStr.find("atlasUnfoldPower2p") != std::string::npos || tagStr.find("atlasUnfoldPower4p") != std::string::npos) && tagStr.find("SpectPower4p") != std::string::npos){
+    std::cout << "PRIOR COMPARE: " << std::endl;
+    for(Int_t bIX = 0; bIX < gen_p->GetNbinsX(); ++bIX){
+      std::cout << " " << bIX << ": " << gen_p->GetBinContent(bIX+1) << "/" << prior_p->GetBinContent(bIX+1) << "=" << gen_p->GetBinContent(bIX+1)/prior_p->GetBinContent(bIX+1) << std::endl;
+    }	 
+  }
+
+  for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins(); ++bIX){
+    for(Int_t bIY = 0; bIY < matrixClone_p->GetYaxis()->GetNbins(); ++bIY){
+      newMatrix_p->SetBinContent(bIX+1, bIY+1, matrixClone_p->GetBinContent(bIX+1, bIY+1));
+      newMatrix_p->SetBinError(bIX+1, bIY+1, 0.0);
+    }
+  }
+  
+  macroHistToSubsetHistX(matrixClone_p, reco_p, true);
+  macroHistToSubsetHistY(matrixClone_p, gen_p, true);
+
+  if((tagStr.find("atlasUnfoldPower2p") != std::string::npos || tagStr.find("atlasUnfoldPower4p") != std::string::npos) && tagStr.find("SpectPower4p") != std::string::npos){
+    std::cout << "CHECK: " << std::endl;
+    prior_p->Print("ALL");
+    gen_p->Print("ALL");
+  }
+  
+  RooUnfoldResponse* rooRes_p = NULL;
+  RooUnfoldBayes* rooBayes_p = NULL;
+
+  for(Int_t bI = 0; bI < nBayes; ++bI){   
+    //    std::cout << "Check integrals: " << reco_p->Integral() << ", " << gen_p->Integral() << ", " << matrixClone_p->Integral() << std::endl;
+
+    //super iteration
+    TH2D* matrixClone2_p = (TH2D*)matrixClone_p->Clone("matrixClone2_p");    
+
+    rooRes_p = new RooUnfoldResponse(reco_p, gen_p, matrixClone2_p);
+    rooBayes_p = new RooUnfoldBayes(rooRes_p, data_p, 5, false, "temp");
+    rooBayes_p->SetVerbose(-1);
+    rooBayes_p->SetNToys(1000);
+    TH1D* tempUnfold_h = (TH1D*)rooBayes_p->Hreco(RooUnfold::kCovToy);
+    setPrior(matrixClone2_p, tempUnfold_h);
+
+    if((tagStr.find("atlasUnfoldPower2p") != std::string::npos || tagStr.find("atlasUnfoldPower4p") != std::string::npos) && tagStr.find("SpectPower4p") != std::string::npos){
+      std::cout << "POST UNFOLD bI " << bI << std::endl;
+      tempUnfold_h->Print("ALL");
+    }
+      
+    delete rooRes_p;
+    delete rooBayes_p;
+    delete tempUnfold_h;
+
+    macroHistToSubsetHistX(matrixClone2_p, reco_p, true);
+    macroHistToSubsetHistY(matrixClone2_p, gen_p, true);
+
+    if((tagStr.find("atlasUnfoldPower2p") != std::string::npos || tagStr.find("atlasUnfoldPower4p") != std::string::npos) && tagStr.find("SpectPower4p") != std::string::npos){
+      std::cout << "POST PRIOR bI " << bI << std::endl;
+      gen_p->Print("ALL");
+    }
+    
+    rooRes_p = new RooUnfoldResponse(reco_p, gen_p, matrixClone2_p);
+    rooBayes_p = new RooUnfoldBayes(rooRes_p, data_p, bayesVals[bI], false, "temp");
+    rooBayes_p->SetVerbose(-1);
+    rooBayes_p->SetNToys(1000);
+    tempUnfold_h = (TH1D*)rooBayes_p->Hreco(RooUnfold::kCovToy);
+
+    unfolded_p[bI] = new TH1D((tagStr + "_unfoldedBayes" + std::to_string(bayesVals[bI]) + "_h").c_str(), ";pT;Counts", nGenBins, genBins);
+
+    for(Int_t tI = 0; tI < tempUnfold_h->GetNbinsX(); ++tI){
+      unfolded_p[bI]->SetBinContent(tI+1, tempUnfold_h->GetBinContent(tI+1));
+      unfolded_p[bI]->SetBinError(tI+1, tempUnfold_h->GetBinError(tI+1));
+    }
+
+    delete matrixClone2_p;
+    delete tempUnfold_h;
+    delete rooBayes_p;
+    delete rooRes_p;
+  }   
+
+  delete gen_p;
+  delete reco_p;
+  delete matrixClone_p;
+
+  return;
+}
+
+int toyATLASCMS_Unfold(const std::string inFileName) 
+{
+  TDatime* date = new TDatime();
+  const std::string dateStr = std::to_string(date->GetDate());
+  delete date;
+
+  TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
+  
+  const Int_t nPowers = 4;
+  const Double_t powers[nPowers] = {2.,3.,4.,5.};
+  
+  TH2D* atlasResponse_h[nPowers];
+  TH2D* atlasResponse_NewPrior_h[nPowers][nPowers];
+  TH1D* genSpectraPower_p[nPowers];
+  TH1D* genSpectraATLASTruncPower_p[nPowers];
+  TH1D* recoATLASSpectraPower_p[nPowers];
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    std::string powStr = "Power" + prettyString(powers[pI], 1, true);
+
+    atlasResponse_h[pI] = (TH2D*)inFile_p->Get(("atlasResponse" + powStr + "_h").c_str());      
+    genSpectraPower_p[pI] = (TH1D*)inFile_p->Get(("genSpectra" + powStr + "_h").c_str());
+    genSpectraATLASTruncPower_p[pI] = (TH1D*)inFile_p->Get(("genSpectraATLASTrunc" + powStr + "_h").c_str());
+    recoATLASSpectraPower_p[pI] = (TH1D*)inFile_p->Get(("recoATLASSpectra" + powStr + "_h").c_str());
+  }
+
+  const Int_t nMaxGenBins = 100;
+  const Int_t nGenBins = genSpectraPower_p[0]->GetXaxis()->GetNbins();
+  Double_t genBins[nMaxGenBins];
+  for(Int_t bI = 0; bI < genSpectraPower_p[0]->GetXaxis()->GetNbins()+1; ++bI){
+    genBins[bI] = genSpectraPower_p[0]->GetXaxis()->GetBinLowEdge(bI+1);
+  }
+
+  const Int_t nMaxRecoBins = 100;
+  const Int_t nRecoBins = atlasResponse_h[0]->GetXaxis()->GetNbins();
+  Double_t recoBins[nMaxRecoBins];
+  for(Int_t bI = 0; bI < atlasResponse_h[0]->GetXaxis()->GetNbins()+1; ++bI){
+    recoBins[bI] = atlasResponse_h[0]->GetXaxis()->GetBinLowEdge(bI+1);
+  }
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    std::string powOrigStr = "OrigPower" + prettyString(powers[pI], 1, true);
+
+    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+      std::string powPriorStr = "PriorPower" + prettyString(powers[pI2], 1, true);
+      atlasResponse_NewPrior_h[pI][pI2] = new TH2D(("atlasResponse_NewPrior_" + powOrigStr + "_" + powPriorStr + "_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
+    }
+  }
+  
+  std::cout << "STARTED UNFOLDING" << std::endl;
+  //Unfolding testing
+  const Int_t nBayes = 10;
+  Int_t bayesVals[nBayes] = {1,2,3,4,5,6,7,8,9,100};
+
+  //ONE FOR UNFOLDING MATRIX YADA YADA
+  TH1D* atlasPowerUnfolds[nPowers][nPowers][nBayes];
+  TH1D* atlasPowerUnfoldsGenRats[nPowers][nPowers][nBayes];
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+      doUnfold(atlasResponse_h[pI2], genSpectraATLASTruncPower_p[pI], recoATLASSpectraPower_p[pI2], nBayes, bayesVals, "atlasUnfoldPower" + prettyString(powers[pI], 1, true) + "_SpectPower" + prettyString(powers[pI2], 1, true), atlasPowerUnfolds[pI][pI2], atlasResponse_NewPrior_h[pI][pI2]);    
+      
+      for(Int_t bI = 0; bI < nBayes; ++bI){
+	atlasPowerUnfoldsGenRats[pI][pI2][bI] = new TH1D(("atlasPowerUnfoldsGenRats_UnfoldPow" + prettyString(powers[pI], 1, true) + "_SpectPow" + prettyString(powers[pI2], 1, true) + "_Bayes" + std::to_string(bayesVals[bI]) + "_h").c_str(), "", nGenBins, genBins);
+	
+	for(Int_t gI = 0; gI < nGenBins; ++gI){
+	  Double_t val = 1.0;
+	  if(genSpectraATLASTruncPower_p[pI2]->GetBinContent(gI+1) <= TMath::Power(10,-20)){
+	    if(atlasPowerUnfolds[pI][pI2][bI]->GetBinContent(gI+1) >= TMath::Power(10,-20)){
+	      val = 0.0;
+	    }
+	  }
+	  else{
+	    val = atlasPowerUnfolds[pI][pI2][bI]->GetBinContent(gI+1)/genSpectraATLASTruncPower_p[pI2]->GetBinContent(gI+1);
+	  }
+	  
+	  atlasPowerUnfoldsGenRats[pI][pI2][bI]->SetBinContent(gI+1, val);
+	  atlasPowerUnfoldsGenRats[pI][pI2][bI]->SetBinError(gI+1, 0.0);
+	}
+      }
+    }
+  }
+    
+  checkMakeDir("output");
+  checkMakeDir("output/" + dateStr);
+
+  std::string outFileName = inFileName;
+  outFileName.replace(outFileName.find(".root"), 5, "");
+  outFileName = outFileName + "_Unfold.root";
+
+  while(outFileName.find("/") != std::string::npos){
+    outFileName.replace(0, outFileName.find("/")+1, "");
+  }
+  
+  TFile* outFile_p = new TFile(("output/" + dateStr + "/" + outFileName).c_str(), "RECREATE");
+  
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    atlasResponse_h[pI]->Write("", TObject::kOverwrite);
+    
+    genSpectraPower_p[pI]->Write("", TObject::kOverwrite);
+    genSpectraATLASTruncPower_p[pI]->Write("", TObject::kOverwrite);
+    recoATLASSpectraPower_p[pI]->Write("", TObject::kOverwrite);
+
+    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+      atlasResponse_NewPrior_h[pI][pI2]->Write("", TObject::kOverwrite);
+
+      for(Int_t bI = 0; bI < nBayes; ++bI){
+	atlasPowerUnfolds[pI][pI2][bI]->Write("", TObject::kOverwrite);
+	delete atlasPowerUnfolds[pI][pI2][bI];
+	atlasPowerUnfoldsGenRats[pI][pI2][bI]->Write("", TObject::kOverwrite);
+	delete atlasPowerUnfoldsGenRats[pI][pI2][bI];
+      }
+    }
+  }
+
+  
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    delete atlasResponse_h[pI];
+    delete genSpectraPower_p[pI];
+    delete genSpectraATLASTruncPower_p[pI];
+    delete recoATLASSpectraPower_p[pI];
+
+    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+      delete atlasResponse_NewPrior_h[pI][pI2];
+    }
+  }
+  
+  outFile_p->Close();
+  delete outFile_p;
+
+  return 0;
+}
+
+
+int main(int argc, char* argv[])
+{
+  if(argc != 2){
+    std::cout << "Usage: ./bin/toyATLASCMS_Unfold.exe <inFileName>" << std::endl;
+    return 1;
+  }
+  
+  int retVal = 0;
+  retVal += toyATLASCMS_Unfold(argv[1]);
+  return retVal;
+}
