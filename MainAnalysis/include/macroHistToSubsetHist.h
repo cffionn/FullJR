@@ -22,14 +22,14 @@ bool macroHistToSubsetHist(TH1D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 =
   //Check that subset bins Delta > 1
   bool allSubsetLargeDelta = true;
   for(unsigned int sI = 0; sI < subsetBins.size()-1; ++sI){
-    if(subsetBins[sI+1] - subsetBins[sI] < 1){
+    if(subsetBins[sI+1] - subsetBins[sI] < .001){
       allSubsetLargeDelta = false;
       break;
     } 
   }
 
   if(!allSubsetLargeDelta){
-    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > .001" << std::endl;
     std::cout << " Subset hist: ";
     for(auto const & subsetVal : subsetBins){
       std::cout << subsetVal << ",";
@@ -115,20 +115,20 @@ bool macroHistToSubsetHist(TH2D* macroHist_p, TH2D* subsetHist_p, bool doSumW2 =
   //Check that subset bins Delta > 1
   bool allSubsetLargeDelta = true;
   for(unsigned int sI = 0; sI < subsetBinsX.size()-1; ++sI){
-    if(subsetBinsX[sI+1] - subsetBinsX[sI] < 1){
+    if(subsetBinsX[sI+1] - subsetBinsX[sI] < .001){
       allSubsetLargeDelta = false;
       break;
     } 
   }
   for(unsigned int sI = 0; sI < subsetBinsY.size()-1; ++sI){
-    if(subsetBinsY[sI+1] - subsetBinsY[sI] < 1){
+    if(subsetBinsY[sI+1] - subsetBinsY[sI] < .001){
       allSubsetLargeDelta = false;
       break;
     } 
   }
 
   if(!allSubsetLargeDelta){
-    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > .001" << std::endl;
     std::cout << " Subset histX: ";
     for(auto const & subsetVal : subsetBinsX){
       std::cout << subsetVal << ",";
@@ -262,14 +262,14 @@ bool macroHistToSubsetHistX(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 
   //Check that subset bins Delta > 1
   bool allSubsetLargeDelta = true;
   for(unsigned int sI = 0; sI < subsetBinsX.size()-1; ++sI){
-    if(subsetBinsX[sI+1] - subsetBinsX[sI] < 1){
+    if(subsetBinsX[sI+1] - subsetBinsX[sI] < .001){
       allSubsetLargeDelta = false;
       break;
     } 
   }
 
   if(!allSubsetLargeDelta){
-    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > .001" << std::endl;
     std::cout << " Subset histX: ";
     for(auto const & subsetVal : subsetBinsX){
       std::cout << subsetVal << ",";
@@ -323,8 +323,7 @@ bool macroHistToSubsetHistX(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 
       for(Int_t bIX = 0; bIX < macroHist_p->GetXaxis()->GetNbins(); ++bIX){
 	if(subsetBinsX[sIX] <= macroHist_p->GetXaxis()->GetBinCenter(bIX+1) && macroHist_p->GetXaxis()->GetBinCenter(bIX+1) < subsetBinsX[sIX+1]) binsX.push_back(bIX);
       }
-
-
+      
       for(unsigned int bIX = 0; bIX < binsX.size(); ++bIX){
 	for(Int_t bIY = 0; bIY < macroHist_p->GetYaxis()->GetNbins(); ++bIY){
 	  val += macroHist_p->GetBinContent(binsX[bIX]+1, bIY+1);
@@ -335,9 +334,9 @@ bool macroHistToSubsetHistX(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 
       subsetHist_p->SetBinContent(sIX+1, val);
       if(doSumW2) subsetHist_p->SetBinError(sIX+1, err);
       else subsetHist_p->SetBinError(sIX+1, TMath::Sqrt(val));      
-    }
+    }    
   }
- 
+  
   return allBinsGood;
 }
 
@@ -360,14 +359,14 @@ bool macroHistToSubsetHistY(TH2D* macroHist_p, TH1D* subsetHist_p, bool doSumW2 
   //Check that subset bins Delta > 1
   bool allSubsetLargeDelta = true;
   for(unsigned int sI = 0; sI < subsetBinsX.size()-1; ++sI){
-    if(subsetBinsX[sI+1] - subsetBinsX[sI] < 1){
+    if(subsetBinsX[sI+1] - subsetBinsX[sI] < .001){
       allSubsetLargeDelta = false;
       break;
     } 
   }
 
   if(!allSubsetLargeDelta){
-    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > 1" << std::endl;
+    std::cout << "Error in macroHistToSubsetHist: Not all bin boundaries in subset hist have delta > .001" << std::endl;
     std::cout << " Subset histX: ";
     for(auto const & subsetVal : subsetBinsX){
       std::cout << subsetVal << ",";
