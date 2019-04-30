@@ -29,8 +29,31 @@
 #include "src/RooUnfoldBayes.h"
 #include "src/RooUnfoldResponse.h"
 
+void matrixPrint(TH2D* hist_p, bool doYNorm)
+{
+  std::cout << "PRINTING, " << hist_p->GetName() << std::endl;
+  for(Int_t bIY = 0; bIY < hist_p->GetYaxis()->GetNbins(); ++bIY){
+    Double_t total = 0.0;
+    for(Int_t bIX = 0; bIX < hist_p->GetXaxis()->GetNbins(); ++bIX){
+      total += hist_p->GetBinContent(bIX+1, bIY+1);
+    }
+
+    for(Int_t bIX = 0; bIX < hist_p->GetXaxis()->GetNbins(); ++bIX){
+      if(doYNorm) std::cout << hist_p->GetBinContent(bIX+1, bIY+1)/total << ",";
+      else std::cout << hist_p->GetBinContent(bIX+1, bIY+1)<< ",";
+    }
+    std::cout << std::endl;
+  }
+
+  return;
+}
+
 void setPrior(TH2D* res_p, TH1D* prior_p)
 {
+  //  prior_p->Scale(res_p->Integral()/prior_p->Integral());
+
+  Double_t origScaleFact = res_p->Integral()/prior_p->Integral();
+  
   for(Int_t bIY = 0; bIY < res_p->GetYaxis()->GetNbins(); ++bIY){
     Double_t total = 0.0;
     for(Int_t bIX = 0; bIX < res_p->GetXaxis()->GetNbins(); ++bIX){
@@ -41,14 +64,14 @@ void setPrior(TH2D* res_p, TH1D* prior_p)
 
     total = prior_p->GetBinContent(bIY+1)/total;
     for(Int_t bIX = 0; bIX < res_p->GetXaxis()->GetNbins(); ++bIX){
-      Double_t val = res_p->GetBinContent(bIX+1, bIY+1)*total;
-      Double_t err = res_p->GetBinError(bIX+1, bIY+1)*total;
+      Double_t val = res_p->GetBinContent(bIX+1, bIY+1)*total*origScaleFact;
+      Double_t err = res_p->GetBinError(bIX+1, bIY+1)*total*origScaleFact;
 
       res_p->SetBinContent(bIX+1, bIY+1, val);
       res_p->SetBinError(bIX+1, bIY+1, err);
     }
   }
-
+  
   return;
 }
 
@@ -93,6 +116,17 @@ bool replaceBins(std::vector<double> inBinsVect, Int_t* nBins, Double_t bins[])
   return true;
 }
 
+void histPrint(TH1D* hist_p)
+{
+  std::cout << hist_p->GetName() << ": ";
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    std::cout << hist_p->GetBinContent(bIX+1) << ", ";
+  }
+  std::cout << std::endl;
+  
+  return;
+}
+
 void doUnfold(TH2D* matrix_p, TH1D* prior_p, TH1D* data_p, Int_t nBayes, Int_t bayesVals[], std::string tagStr, TH1D* unfolded_p[], TH2D* newMatrix_p)
 {
   TH2D* matrixClone_p = (TH2D*)matrix_p->Clone("matrixClone_h");
@@ -115,12 +149,22 @@ void doUnfold(TH2D* matrix_p, TH1D* prior_p, TH1D* data_p, Int_t nBayes, Int_t b
 
   TH1D* gen_p = new TH1D("gen_h", "", nGenBins, genBins);
   TH1D* reco_p = new TH1D("reco_h", "", nRecoBins, recoBins);
-  setPrior(matrixClone_p, prior_p);
+  if(newMatrix_p != NULL){
+    histPrint(prior_p);
+    matrixPrint(matrixClone_p, false);
+    std::cout << "Print1 integral: " << matrixClone_p->Integral() << "/" << prior_p->Integral() << std::endl;
+    setPrior(matrixClone_p, prior_p);
+    matrixPrint(matrixClone_p, false);
+    std::cout << "Print2 integral: " << matrixClone_p->Integral() << "/" << prior_p->Integral() << std::endl;
+    histPrint(prior_p);
+  }
   
-  for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins(); ++bIX){
-    for(Int_t bIY = 0; bIY < matrixClone_p->GetYaxis()->GetNbins(); ++bIY){
-      newMatrix_p->SetBinContent(bIX+1, bIY+1, matrixClone_p->GetBinContent(bIX+1, bIY+1));
-      newMatrix_p->SetBinError(bIX+1, bIY+1, 0.0);
+  if(newMatrix_p != NULL){
+    for(Int_t bIX = 0; bIX < matrixClone_p->GetXaxis()->GetNbins(); ++bIX){
+      for(Int_t bIY = 0; bIY < matrixClone_p->GetYaxis()->GetNbins(); ++bIY){
+	newMatrix_p->SetBinContent(bIX+1, bIY+1, matrixClone_p->GetBinContent(bIX+1, bIY+1));
+	newMatrix_p->SetBinError(bIX+1, bIY+1, 0.0);
+      }
     }
   }
   
@@ -247,7 +291,19 @@ std::string lowerToUpper(std::string inStr)
   return inStr;
 }
 
-int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag, bool doClean, const std::string inFileName2 = "", std::string newGenBins = "", std::string newRecoBins = "", std::string newReducedBins = "") 
+
+void divHistByWidth(TH1D* hist_p)
+{
+  for(Int_t bIX = 0; bIX < hist_p->GetNbinsX(); ++bIX){
+    Double_t binWidth = hist_p->GetBinWidth(bIX+1);
+    hist_p->SetBinContent(bIX+1, hist_p->GetBinContent(bIX+1)/binWidth);
+    hist_p->SetBinError(bIX+1, hist_p->GetBinError(bIX+1)/binWidth);
+  }
+  return;
+}
+
+
+int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag, bool doClean, const std::string inFileName2 = "", std::string newGenBins = "", std::string newRecoBins = "", std::string newReducedBins = "", std::string inDataFile = "") 
 {
   kirchnerPalette kPal;
 
@@ -265,6 +321,8 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   std::string nFillStr = inFileName.substr(0, inFileName.find("_Seed"));
   nFillStr.replace(0, nFillStr.find("NFill")+5, "");
   nFill = std::stol(nFillStr);
+
+  std::cout << "LINE: " << __LINE__ << std::endl;
 
 
   std::cout << "LINE: " << __LINE__ << std::endl;
@@ -288,42 +346,55 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
 
   std::cout << "LINE: " << __LINE__ << std::endl;
 
-  const Int_t nPowers = 3;
+  const Int_t nPowers = 3;//3;
   Double_t powers[nPowers] = {7., 8., 9.};
 
+  const Int_t nRandom = 1;
+  const Int_t nTarget = 1;
+  
   //  if(startTag.find("R10") != std::string::npos) ++powers[0];
   
-  TH2D* cmsR10Response_h[nPowers];
-  TH2D* cmsR10Response2_h[nPowers];
-  TH2D* cmsR10Response_NewPrior_h[nPowers][nPowers];
+  TH2D* response_h[nPowers];
+  TH2D* response2_h[nPowers];
+  TH2D* response_NewPrior_h[nPowers][nPowers];
   TH1D* genSpectraPower_p[nPowers];
-  //  TH1D* genSpectraCMSR10TruncPower_p[nPowers];
-  //  TH1D* recoCMSR10SpectraPower_p[nPowers];
-  TH2D* recoGenSpectraCMSR10TruncPower_p[nPowers];
+  //  TH1D* genSpectraTruncPower_p[nPowers];
+  //  TH1D* recoSpectraPower_p[nPowers];
+  TH2D* recoGenSpectraTruncPower_p[nPowers];
+  TH2D* recoGenSpectraTruncPower_Random_p[nPowers][nRandom][nTarget];
 
   
-  TH2D* cmsR10Response_Rebin_h[nPowers];
+  TH2D* response_Rebin_h[nPowers];
   TH1D* genSpectraPower_Rebin_p[nPowers];
-  TH1D* genSpectraCMSR10TruncPower_Rebin_p[nPowers];
-  TH1D* recoCMSR10SpectraPower_Rebin_p[nPowers];
-  TH2D* recoGenSpectraCMSR10TruncPower_Rebin_p[nPowers];
-
+  TH1D* genSpectraTruncPower_Rebin_p[nPowers];
+  TH1D* recoSpectraPower_Rebin_p[nPowers];
+  TH2D* recoGenSpectraTruncPower_Rebin_p[nPowers];
+  TH2D* recoGenSpectraTruncPower_Random_Rebin_p[nPowers][nRandom][nTarget];
+  TH1D* genSpectraTruncPower_Random_Rebin_p[nPowers][nRandom][nTarget];
+  TH1D* recoSpectraPower_Random_Rebin_p[nPowers][nRandom][nTarget];
+    
   std::cout << "LINE: " << __LINE__ << std::endl;
   std::string startTag2 = lowerToUpper(startTag.substr(0, startTag.find("R"))) + startTag.substr(startTag.find("R"), startTag.size());;
   
   for(Int_t pI = 0; pI < nPowers; ++pI){
     std::string powStr = "Power" + prettyString(powers[pI], 1, true);
-    cmsR10Response_h[pI] = (TH2D*)inFile_p->Get((startTag + "Response" + powStr + "_h").c_str());      
+    response_h[pI] = (TH2D*)inFile_p->Get((startTag + "Response" + powStr + "_h").c_str());      
     std::cout << "LINE: " << __LINE__ << std::endl;
     std::cout << startTag + "Response" + powStr + "_h" << ", " << inFileName << std::endl;
-    std::cout << cmsR10Response_h[pI]->GetName() << std::endl;
-    cmsR10Response2_h[pI] = NULL;
-    if(doFile2) cmsR10Response2_h[pI] = (TH2D*)inFile2_p->Get((startTag + "Response" + powStr + "_h").c_str());      
+    std::cout << response_h[pI]->GetName() << std::endl;
+    response2_h[pI] = NULL;
+    if(doFile2) response2_h[pI] = (TH2D*)inFile2_p->Get((startTag + "Response" + powStr + "_h").c_str());      
 
     genSpectraPower_p[pI] = (TH1D*)inFile_p->Get(("genSpectra" + powStr + "_h").c_str());
-    //    genSpectraCMSR10TruncPower_p[pI] = (TH1D*)inFile_p->Get(("genSpectraCMSR10Trunc" + powStr + "_h").c_str());
-    //    recoCMSR10SpectraPower_p[pI] = (TH1D*)inFile_p->Get(("recoCMSR10Spectra" + powStr + "_h").c_str());
-    recoGenSpectraCMSR10TruncPower_p[pI] = (TH2D*)inFile_p->Get(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_h").c_str());
+    //    genSpectraTruncPower_p[pI] = (TH1D*)inFile_p->Get(("genSpectraTrunc" + powStr + "_h").c_str());
+    //    recoSpectraPower_p[pI] = (TH1D*)inFile_p->Get(("recoSpectra" + powStr + "_h").c_str());
+    recoGenSpectraTruncPower_p[pI] = (TH2D*)inFile_p->Get(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_h").c_str());
+
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	recoGenSpectraTruncPower_Random_p[pI][rI][tI] = (TH2D*)inFile_p->Get(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_h").c_str());
+      }
+    }
   }
 
   std::cout << "LINE: " << __LINE__ << std::endl;
@@ -337,10 +408,10 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
 
   std::cout << "LINE: " << __LINE__ << std::endl;
 
-  Int_t nRecoBins = cmsR10Response_h[0]->GetXaxis()->GetNbins();
+  Int_t nRecoBins = response_h[0]->GetXaxis()->GetNbins();
   Double_t recoBins[nMaxBins];
-  for(Int_t bI = 0; bI < cmsR10Response_h[0]->GetXaxis()->GetNbins()+1; ++bI){
-    recoBins[bI] = cmsR10Response_h[0]->GetXaxis()->GetBinLowEdge(bI+1);
+  for(Int_t bI = 0; bI < response_h[0]->GetXaxis()->GetNbins()+1; ++bI){
+    recoBins[bI] = response_h[0]->GetXaxis()->GetBinLowEdge(bI+1);
   }
 
   std::cout << "LINE: " << __LINE__ << std::endl;
@@ -513,25 +584,30 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   for(Int_t rI = 0; rI < nGenBins2+1; ++rI){
     genBins2[rI] = genBins[rI];
   }
-
-  std::cout << "LINE: " << __LINE__ << std::endl;
-  std::cout << "LINE: " << __LINE__ << std::endl;
-  
-  std::cout << "LINE: " << __LINE__ << std::endl;
   
   for(Int_t pI = 0; pI < nPowers; ++pI){
     std::cout << "LINE: " << __LINE__ << std::endl;
     std::string powStr = "Power" + prettyString(powers[pI], 1, true);
-    cmsR10Response_Rebin_h[pI] = new TH2D((startTag + "Response" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);      
+    response_Rebin_h[pI] = new TH2D((startTag + "Response" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);      
     genSpectraPower_Rebin_p[pI] = new TH1D(("genSpectra" + powStr + "_Rebin_h").c_str(), "", nGenBins, genBins);
-    genSpectraCMSR10TruncPower_Rebin_p[pI] = new TH1D(("genSpectra" + startTag2 + "Trunc" + powStr + "_Rebin_h").c_str(), "", nGenBins, genBins);
-    recoGenSpectraCMSR10TruncPower_Rebin_p[pI] = new TH2D(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
-    recoCMSR10SpectraPower_Rebin_p[pI] = new TH1D(("reco" + startTag2 + "Spectra" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins);
+    genSpectraTruncPower_Rebin_p[pI] = new TH1D(("genSpectra" + startTag2 + "Trunc" + powStr + "_Rebin_h").c_str(), "", nGenBins, genBins);
+    recoGenSpectraTruncPower_Rebin_p[pI] = new TH2D(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
+    recoSpectraPower_Rebin_p[pI] = new TH1D(("reco" + startTag2 + "Spectra" + powStr + "_Rebin_h").c_str(), "", nRecoBins, recoBins);
+
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI] = new TH2D(("recoGenSpectra" + startTag2 + "Trunc" + powStr + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_Rebin_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
+	
+	genSpectraTruncPower_Random_Rebin_p[pI][rI][tI] = new TH1D(("genSpectra" + startTag2 + "Trunc" + powStr + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_Rebin_h").c_str(), "", nGenBins, genBins);
+	recoSpectraPower_Random_Rebin_p[pI][rI][tI] = new TH1D(("reco" + startTag2 + "Spectra" + powStr + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_Rebin_h").c_str(), "", nRecoBins, recoBins);
+      }
+    }
+    
 
     std::cout << "LINE: " << __LINE__ << ", " << doFile2 << std::endl;
 
-    if(!doFile2) macroHistToSubsetHist(cmsR10Response_h[pI], cmsR10Response_Rebin_h[pI], true);
-    else macroHistToSubsetHist(cmsR10Response2_h[pI], cmsR10Response_Rebin_h[pI], true);
+    if(!doFile2) macroHistToSubsetHist(response_h[pI], response_Rebin_h[pI], true);
+    else macroHistToSubsetHist(response2_h[pI], response_Rebin_h[pI], true);
 
     std::cout << "LINE: " << __LINE__ << std::endl;
 
@@ -539,73 +615,101 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       
     macroHistToSubsetHist(genSpectraPower_p[pI], genSpectraPower_Rebin_p[pI], true);
     
-    macroHistToSubsetHist(recoGenSpectraCMSR10TruncPower_p[pI], recoGenSpectraCMSR10TruncPower_Rebin_p[pI], true);
+    macroHistToSubsetHist(recoGenSpectraTruncPower_p[pI], recoGenSpectraTruncPower_Rebin_p[pI], true);
+
+    std::cout << "LINE: " << __LINE__ << std::endl;
+
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+
+	std::cout << "LINE, rI, tI: " << __LINE__ << ", " << rI << ", " << tI << std::endl;
+	
+	macroHistToSubsetHist(recoGenSpectraTruncPower_Random_p[pI][rI][tI], recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI], true);
+      }
+    }
+
+    std::cout << "LINE: " << __LINE__ << std::endl;
 
     if(doClean){
       for(Int_t bIX = 0; bIX < nRecoBins; ++bIX){
 	for(Int_t bIY = 0; bIY < nGenBins; ++bIY){
-	  Double_t val = recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetBinContent(bIX+1, bIY+1);
-	  Double_t err = recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetBinError(bIX+1, bIY+1);
+	  Double_t val = recoGenSpectraTruncPower_Rebin_p[pI]->GetBinContent(bIX+1, bIY+1);
+	  Double_t err = recoGenSpectraTruncPower_Rebin_p[pI]->GetBinError(bIX+1, bIY+1);
 	  if(val <= TMath::Power(10, -20)) continue;
 
 	  if(err/val > 1./TMath::Sqrt(10)){
-	    recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->SetBinContent(bIX+1, bIY+1, 0.0);
-	    recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->SetBinError(bIX+1, bIY+1, 0.0);
+	    recoGenSpectraTruncPower_Rebin_p[pI]->SetBinContent(bIX+1, bIY+1, 0.0);
+	    recoGenSpectraTruncPower_Rebin_p[pI]->SetBinError(bIX+1, bIY+1, 0.0);
+	  }
+
+	  for(Int_t rI = 0; rI < nRandom; ++rI){
+	    for(Int_t tI = 0; tI < nTarget; ++tI){
+	      val = recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI]->GetBinContent(bIX+1, bIY+1);
+	      err = recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI]->GetBinError(bIX+1, bIY+1);
+	      if(val <= TMath::Power(10, -20)) continue;
+	      
+	      if(err/val > 1./TMath::Sqrt(10)){
+		recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI]->SetBinContent(bIX+1, bIY+1, 0.0);
+		recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI]->SetBinError(bIX+1, bIY+1, 0.0);
+	      }
+	    }	    
 	  }
 	}
       }
     }
 
-    macroHistToSubsetHistY(recoGenSpectraCMSR10TruncPower_Rebin_p[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);
-    macroHistToSubsetHistX(recoGenSpectraCMSR10TruncPower_Rebin_p[pI], recoCMSR10SpectraPower_Rebin_p[pI], true);
-  
-    //    macroHistToSubsetHist(genSpectraCMSR10TruncPower_p[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);
-    //    macroHistToSubsetHist(recoCMSR10SpectraPower_p[pI], recoCMSR10SpectraPower_Rebin_p[pI], true);
+    std::cout << "LINE: " << __LINE__ << std::endl;
 
-    ratioPrint(cmsR10Response_Rebin_h[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);
-    relErrPrint(genSpectraCMSR10TruncPower_Rebin_p[pI]);
-    genSpectraCMSR10TruncPower_Rebin_p[pI]->Print("ALL");
-
+    macroHistToSubsetHistY(recoGenSpectraTruncPower_Rebin_p[pI], genSpectraTruncPower_Rebin_p[pI], true);
+    macroHistToSubsetHistX(recoGenSpectraTruncPower_Rebin_p[pI], recoSpectraPower_Rebin_p[pI], true);
 
     std::cout << "LINE: " << __LINE__ << std::endl;
+
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	macroHistToSubsetHistY(recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI], genSpectraTruncPower_Random_Rebin_p[pI][rI][tI], true);
+	macroHistToSubsetHistX(recoGenSpectraTruncPower_Random_Rebin_p[pI][rI][tI], recoSpectraPower_Random_Rebin_p[pI][rI][tI], true);
+      }
+    }
+
+        std::cout << "LINE: " << __LINE__ << std::endl;
+
+    //    macroHistToSubsetHist(genSpectraTruncPower_p[pI], genSpectraTruncPower_Rebin_p[pI], true);
+    //    macroHistToSubsetHist(recoSpectraPower_p[pI], recoSpectraPower_Rebin_p[pI], true);
+
     /*
-    macroHistToSubsetHistY(cmsR10Response_Rebin_h[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);       
-    genSpectraCMSR10TruncPower_Rebin_p[pI]->Print("ALL");
+    macroHistToSubsetHistY(response_Rebin_h[pI], genSpectraTruncPower_Rebin_p[pI], true);       
+    genSpectraTruncPower_Rebin_p[pI]->Print("ALL");
 
     std::cout << "LINE: " << __LINE__ << std::endl;
 
-    macroHistToSubsetHist(genSpectraCMSR10TruncPower_p[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);
+    macroHistToSubsetHist(genSpectraTruncPower_p[pI], genSpectraTruncPower_Rebin_p[pI], true);
     
 
     std::cout << "LINE: " << __LINE__ << std::endl;
     */
     /*
-    macroHistToSubsetHistX(cmsR10Response_Rebin_h[pI], recoCMSR10SpectraPower_Rebin_p[pI], true);       
-    macroHistToSubsetHistY(cmsR10Response_Rebin_h[pI], genSpectraCMSR10TruncPower_Rebin_p[pI], true);       
+    macroHistToSubsetHistX(response_Rebin_h[pI], recoSpectraPower_Rebin_p[pI], true);       
+    macroHistToSubsetHistY(response_Rebin_h[pI], genSpectraTruncPower_Rebin_p[pI], true);       
     */
     std::string powOrigStr = "OrigPower" + prettyString(powers[pI], 1, true);
       
-    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+    for(Int_t pI2 = TMath::Max(0, pI-1); pI2 < TMath::Min(nPowers, pI+1); ++pI2){
       std::string powPriorStr = "PriorPower" + prettyString(powers[pI2], 1, true);
-      std::cout << "PRENAME: " << startTag << "Response_NewPrior_" << powOrigStr << "_" << powPriorStr << "_h" << std::endl;
-      cmsR10Response_NewPrior_h[pI][pI2] = new TH2D((startTag + "Response_NewPrior_" + powOrigStr + "_" + powPriorStr + "_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
+      response_NewPrior_h[pI][pI2] = new TH2D((startTag + "Response_NewPrior_" + powOrigStr + "_" + powPriorStr + "_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
     }
   }
 
   
   TH2D* subsetRes_p = new TH2D("subsetRes_h", ";Reco Normalized to Unity;Gen", nRecoBins2, recoBins2, nGenBins2, genBins2);
   TH2D* subsetResErr_p = new TH2D("subsetResErr_h", ";Reco;Gen", nRecoBins2, recoBins2, nGenBins2, genBins2);
-  std::cout << "LINE: " << __LINE__ << std::endl;
-  macroHistToSubsetHist(cmsR10Response_Rebin_h[0], subsetRes_p, true, true, true); 
-  macroHistToSubsetHist(cmsR10Response_Rebin_h[0], subsetResErr_p, true, true, true); 
+  macroHistToSubsetHist(response_Rebin_h[0], subsetRes_p, true, true, true); 
+  macroHistToSubsetHist(response_Rebin_h[0], subsetResErr_p, true, true, true); 
 
   centerTitles(subsetRes_p);
   centerTitles(subsetResErr_p);
   
-  std::cout << "LINE: " << __LINE__ << std::endl;
-
   std::string saveStr = startTag + "_Gen" + prettyString(genBins[0],1,true) + "to" + prettyString(genBins[nGenBins], 1, true) + "_Reco" + prettyString(recoBins[0],1,true) + "to" + prettyString(recoBins[nRecoBins], 1, true) + "_nFill" + std::to_string(nFill) + "_" + file2Str + "_" + cleanStr + "_" + dateStr + ".pdf";
-  std::cout << "LINE: " << __LINE__ << std::endl;
   
   for(Int_t bIX = 0; bIX < nRecoBins2; ++bIX){
     Double_t total = 0.0;
@@ -643,14 +747,14 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       for(Int_t bIX = 0; bIX < nRecoBins; ++bIX){
 	for(Int_t bIY = 0; bIY < nGenBins; ++bIY){
 	  
-	  Double_t val = cmsR10Response_Rebin_h[pI]->GetBinContent(bIX+1, bIY+1);
-	  Double_t err = cmsR10Response_Rebin_h[pI]->GetBinError(bIX+1, bIY+1);
+	  Double_t val = response_Rebin_h[pI]->GetBinContent(bIX+1, bIY+1);
+	  Double_t err = response_Rebin_h[pI]->GetBinError(bIX+1, bIY+1);
 
 	  if(val <= TMath::Power(10, -20)) continue;
 	  
 	  if(err/val > 1./TMath::Sqrt(10)){
-	    cmsR10Response_Rebin_h[pI]->SetBinContent(bIX+1, bIY+1, 0.0);
-	    cmsR10Response_Rebin_h[pI]->SetBinError(bIX+1, bIY+1, 0.0);
+	    response_Rebin_h[pI]->SetBinContent(bIX+1, bIY+1, 0.0);
+	    response_Rebin_h[pI]->SetBinError(bIX+1, bIY+1, 0.0);
 	  }
 	}
       }
@@ -686,18 +790,103 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   delete subsetRes_p;
   delete subsetResErr_p;
 
-  std::cout << "LINE: " << __LINE__ << std::endl;
-
   /*  
   for(Int_t pI = 0; pI < nPowers; ++pI){
     std::string powOrigStr = "OrigPower" + prettyString(powers[pI], 1, true);
 
     for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
       std::string powPriorStr = "PriorPower" + prettyString(powers[pI2], 1, true);
-      cmsR10Response_NewPrior_h[pI][pI2] = new TH2D((startTag + "Response_NewPrior_" + powOrigStr + "_" + powPriorStr + "_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
+      response_NewPrior_h[pI][pI2] = new TH2D((startTag + "Response_NewPrior_" + powOrigStr + "_" + powPriorStr + "_h").c_str(), "", nRecoBins, recoBins, nGenBins, genBins);
     }
   }
   */
+
+  checkMakeDir("pdfDir");
+  checkMakeDir("pdfDir/" + dateStr);
+  checkMakeDir("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill));
+
+  std::cout << "STATS COMPARE" << std::endl;
+
+  for(Int_t pI = 0; pI < nPowers; ++pI){
+    TCanvas* canv_p = new TCanvas("canv_p", "canv_p", 450, 450);
+    canv_p->SetTopMargin(0.01);
+    canv_p->SetRightMargin(0.01);
+    canv_p->SetLeftMargin(0.16);
+    canv_p->SetBottomMargin(0.16);
+    
+    TH1D* tempHist_p = new TH1D("tempHist_h", (";" + std::string(recoSpectraPower_Rebin_p[pI]->GetXaxis()->GetTitle()) + ";" + std::string(recoSpectraPower_Rebin_p[pI]->GetYaxis()->GetTitle())).c_str(), nRecoBins, recoBins);
+    tempHist_p->SetMarkerStyle(styles[0%nStyle]);
+    tempHist_p->SetMarkerColor(kPal.getColor(0%nCol));
+    tempHist_p->SetLineColor(kPal.getColor(0%nCol));
+
+    for(Int_t bIX = 0; bIX < tempHist_p->GetNbinsX(); ++ bIX){
+      double val = recoSpectraPower_Rebin_p[pI]->GetBinContent(bIX+1);
+      double err = recoSpectraPower_Rebin_p[pI]->GetBinError(bIX+1);
+
+      std::cout << "pI, bIX: " << pI << ", " << bIX << ": " << val << ", " << err << std::endl;
+      tempHist_p->SetBinContent(bIX+1, err/val);
+      tempHist_p->SetBinError(bIX+1, 0.0);
+    }
+    tempHist_p->SetMaximum(1.);
+    tempHist_p->SetMinimum(0.00001);
+    tempHist_p->GetYaxis()->SetTitle("Rel. Stat. Error");
+    tempHist_p->GetXaxis()->SetTitle("Jet Reco. p_{T}");
+    centerTitles(tempHist_p);
+    tempHist_p->DrawCopy("HIST E1");
+    
+    for(Int_t rI = 0; rI < 1/*nRandom*/; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	for(Int_t bIX = 0; bIX < tempHist_p->GetNbinsX(); ++ bIX){
+	  double val = recoSpectraPower_Random_Rebin_p[pI][rI][tI]->GetBinContent(bIX+1);
+	  double err = recoSpectraPower_Random_Rebin_p[pI][rI][tI]->GetBinError(bIX+1);
+	  tempHist_p->SetBinContent(bIX+1, err/val);
+	  tempHist_p->SetBinError(bIX+1, 0.0);
+	}
+	
+	tempHist_p->SetMarkerStyle(styles[(rI+1)%nStyle]);
+	tempHist_p->SetMarkerColor(kPal.getColor((rI+1)%nCol));
+	tempHist_p->SetLineColor(kPal.getColor((rI+1)%nCol));
+	
+	tempHist_p->DrawCopy("HIST E1 SAME");
+      }
+    }
+
+    if(inDataFile.size() != 0){
+      std::string histName = "akCs10PU3PFFlowJetAnalyzer/jtPtRaw_General_akCs10PU3PFFlowJetAnalyzer_PbPb_Cent0to10_LightMUAndCHID_AbsEta0p0to2p0_h";
+
+      if(inDataFile.find("Cs4") != std::string::npos){
+	while(histName.find("Cs10") != std::string::npos){
+	  histName.replace(histName.find("Cs10"), 4, "Cs4");
+	}
+      }
+      
+      TFile* dataFile_p = new TFile(inDataFile.c_str(), "READ");
+      TH1D* tempHist2_p = (TH1D*)dataFile_p->Get(histName.c_str());
+      macroHistToSubsetHist(tempHist2_p, tempHist_p);
+
+      tempHist_p->SetMarkerColor(1);
+      tempHist_p->SetMarkerStyle(20);
+      tempHist_p->SetLineColor(1);
+
+      for(Int_t bIX = 0; bIX < tempHist_p->GetNbinsX(); ++ bIX){
+        double val = tempHist_p->GetBinContent(bIX+1);
+        double err = tempHist_p->GetBinError(bIX+1);
+	tempHist_p->SetBinContent(bIX+1, err/val);
+        tempHist_p->SetBinError(bIX+1, 0.0);
+      }
+
+      tempHist_p->DrawCopy("*HIST E1 SAME");
+      
+      dataFile_p->Close();
+      delete dataFile_p;
+    }
+  
+    gPad->SetLogy();
+    canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/statsCompare_Power" + prettyString(powers[pI], 1, true) + "_" + dateStr + ".pdf").c_str());
+    delete canv_p;
+    delete tempHist_p;
+  }
+  
   
   std::cout << "STARTED UNFOLDING" << std::endl;
   //Unfolding testing
@@ -705,21 +894,190 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   Int_t bayesVals[nBayes] = {1,3,10,100};
 
   //ONE FOR UNFOLDING MATRIX YADA YADA
-  TH1D* cmsR10PowerUnfolds[nPowers][nPowers][nBayes];
-  TH1D* cmsR10PowerUnfoldsGenRats[nPowers][nPowers][nBayes];
+  TH1D* powerUnfolds[nPowers][nPowers][nBayes];
+  TH1D* powerUnfoldsGenRats[nPowers][nPowers][nBayes];
+
+  TH1D* powerUnfoldsRandom[nPowers][nPowers][nRandom][nTarget][nBayes];
+  TH1D* powerUnfoldsGenRatsRandom[nPowers][nPowers][nRandom][nTarget][nBayes];
 
   for(Int_t pI = 0; pI < nPowers; ++pI){
-    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
-      doUnfold(cmsR10Response_Rebin_h[pI2], genSpectraCMSR10TruncPower_Rebin_p[pI], recoCMSR10SpectraPower_Rebin_p[pI2], nBayes, bayesVals, startTag + "UnfoldPower" + prettyString(powers[pI], 1, true) + "_SpectPower" + prettyString(powers[pI2], 1, true), cmsR10PowerUnfolds[pI][pI2], cmsR10Response_NewPrior_h[pI][pI2]);    
+    std::cout << " Unfold power " << powers[pI] << std::endl;
+    for(Int_t pI2 = TMath::Max(pI-1, 0); pI2 < TMath::Min(pI+1, nPowers); ++pI2){
+      std::cout << "Prior Check: " << powers[pI] << ", " << powers[pI2] << std::endl;
+      genSpectraTruncPower_Rebin_p[pI]->Print("ALL");
+
+      /*
+      if(powers[pI] == 8 && powers[pI2] == 7){
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(1, 0.031536);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(2, 0.012787);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(3, 0.001233);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(4, 0.000013);
+	
+      	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(1, 0.028333);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(2, 0.016166);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(3, 0.001055);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(4, 0.000015);
+	
+      	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(1, 0.028333/1.113037);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(2, 0.016166/0.790958);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(3, 0.001055/1.169036);
+	genSpectraTruncPower_Rebin_p[pI]->SetBinContent(4, 0.000015/.895351);
+      }
+      */
       
+      doUnfold(response_Rebin_h[pI2], genSpectraTruncPower_Rebin_p[pI], recoSpectraPower_Rebin_p[pI2], nBayes, bayesVals, startTag + "UnfoldPower" + prettyString(powers[pI], 1, true) + "_SpectPower" + prettyString(powers[pI2], 1, true), powerUnfolds[pI][pI2], response_NewPrior_h[pI][pI2]); 
+
+      for(Int_t rI = 0; rI < nRandom; ++rI){
+	for(Int_t tI = 0; tI < nTarget; ++tI){
+	  TH1D* genHighStat_p = new TH1D("genHighStat_h", "", nGenBins, genBins);	
+	  macroHistToSubsetHist(genSpectraTruncPower_Rebin_p[pI], genHighStat_p, true);
+
+	  TH1D* recoHighStat_p = new TH1D("recoHighStat_h", "", nRecoBins, recoBins);	
+	  macroHistToSubsetHist(recoSpectraPower_Rebin_p[pI], recoHighStat_p, true);
+	  
+	  TH1D* genLowerStat_p = new TH1D("genLowerStat_h", "", nGenBins, genBins);	
+	  macroHistToSubsetHist(genSpectraTruncPower_Random_Rebin_p[pI2][rI][tI], genLowerStat_p, true);
+	  
+	  TH1D* recoLowerStat_p = new TH1D("recoLowerStat_h", "", nRecoBins, recoBins);	
+	  macroHistToSubsetHist(recoSpectraPower_Random_Rebin_p[pI2][rI][tI], recoLowerStat_p, true);
+	  
+	  Double_t scaleFactor = recoHighStat_p->Integral()/recoLowerStat_p->Integral();
+	  genLowerStat_p->Scale(scaleFactor);
+	  recoLowerStat_p->Scale(scaleFactor);
+	  
+	  divHistByWidth(recoLowerStat_p);
+	  divHistByWidth(recoHighStat_p);
+	  
+	  divHistByWidth(genLowerStat_p);
+	  divHistByWidth(genHighStat_p);
+	  
+	  Double_t par1Guess = 7;
+	  Double_t par0Guess = recoLowerStat_p->GetBinContent(1)/TMath::Power(1./recoLowerStat_p->GetBinCenter(1), par1Guess);
+		
+	  TF1* fitRecoLowerStat_p = new TF1("fitRecoLowerStat_p", "[0]*TMath::Power(1./x, [1])", recoBins[0], recoBins[nRecoBins]);
+	  fitRecoLowerStat_p->SetParameter(0, par0Guess);
+	  fitRecoLowerStat_p->SetParameter(1, par1Guess);
+
+	  
+	  
+	  recoLowerStat_p->Fit("fitRecoLowerStat_p", "M", "", recoBins[0], recoBins[nRecoBins]);
+	  
+	  TF1* fitRecoHighStat_p = new TF1("fitRecoHighStat_p", "[0]*TMath::Power(1./x, [1])", recoBins[0], recoBins[nRecoBins]);
+	  fitRecoHighStat_p->SetParameter(0, par0Guess);
+	  fitRecoHighStat_p->SetParameter(1, par1Guess);
+	  recoHighStat_p->Fit("fitRecoHighStat_p", "M", "", recoBins[0], recoBins[nRecoBins]);
+	  
+	  Int_t startBinPos = -1;
+	  Int_t endBinPos = -1;
+	  
+	  for(Int_t bI = 0; bI < nGenBins+1; ++bI){
+	    if(TMath::Abs(genBins[bI] - recoBins[0]) < 1.) startBinPos = bI;	 
+	    if(TMath::Abs(genBins[bI] - recoBins[nRecoBins]) < 1.) endBinPos = bI;	 
+	  }
+
+	  TF1* fitGenHighStat_p = new TF1("fitGenHighStat_p", "[0]*TMath::Power(1./x, [1])", genBins[startBinPos+1], genBins[endBinPos]);
+	  fitGenHighStat_p->SetParameter(0, par0Guess);
+	  fitGenHighStat_p->SetParameter(1, par1Guess);      
+	  
+	  genHighStat_p->Fit("fitGenHighStat_p", "M", "", genBins[startBinPos+1], genBins[endBinPos]);
+	  
+	  TF1* fitGenLowerStat_p = new TF1("fitGenLowerStat_p", "[0]*TMath::Power(1./x, [1])", genBins[startBinPos+1], genBins[endBinPos]);
+	  fitGenLowerStat_p->SetParameter(0, par0Guess);
+	  fitGenLowerStat_p->SetParameter(1, par1Guess);      
+	  
+	  genLowerStat_p->Fit("fitGenLowerStat_p", "M", "", genBins[startBinPos+1], genBins[endBinPos]);
+	  
+	  TCanvas* canv_p = new TCanvas("canv_p", "canv_p", 450, 450);
+	  canv_p->SetTopMargin(0.01);
+	  canv_p->SetRightMargin(0.01);
+	  
+	  Double_t min = TMath::Min(getMinGTZero(recoLowerStat_p), getMinGTZero(recoHighStat_p));
+	  min = TMath::Min(min, getMinGTZero(genLowerStat_p));
+	  min = TMath::Min(min, getMinGTZero(genHighStat_p));
+	  
+	  Double_t max = TMath::Max(recoLowerStat_p->GetMaximum(), recoHighStat_p->GetMaximum());
+	  max = TMath::Max(max, genLowerStat_p->GetMaximum());
+	  max = TMath::Max(max, genHighStat_p->GetMaximum());
+	  
+	  std::cout << "MINMAX: " << min << ", " << max << std::endl;
+	  genLowerStat_p->SetMinimum(min/5.);
+	  genLowerStat_p->SetMaximum(max*5.);
+
+	  genLowerStat_p->SetMarkerColor(4);
+	  genLowerStat_p->SetLineColor(4);
+	  genLowerStat_p->SetLineStyle(2);
+	  genLowerStat_p->DrawCopy("HIST E1");
+	  
+	  recoLowerStat_p->SetMarkerColor(2);
+	  recoLowerStat_p->SetLineColor(2);
+	  recoLowerStat_p->SetLineStyle(2);
+	  recoLowerStat_p->DrawCopy("HIST E1 SAME");
+	  	  
+	  genHighStat_p->SetMarkerColor(4);
+	  genHighStat_p->SetLineColor(4);
+	  genHighStat_p->DrawCopy("HIST E1 SAME");
+	  
+	  recoHighStat_p->SetMarkerColor(2);
+	  recoHighStat_p->SetLineColor(2);
+	  recoHighStat_p->DrawCopy("HIST E1 SAME");
+	  
+	  fitRecoLowerStat_p->SetMarkerColor(2);
+	  fitRecoLowerStat_p->SetLineColor(2);
+	  fitRecoLowerStat_p->SetLineStyle(2);
+	  
+	  fitGenLowerStat_p->SetMarkerColor(4);
+	  fitGenLowerStat_p->SetLineColor(4);
+	  fitGenLowerStat_p->SetLineStyle(2);
+	  
+	  fitRecoHighStat_p->SetMarkerColor(2);
+	  fitRecoHighStat_p->SetLineColor(2);
+	  
+	  fitGenHighStat_p->SetMarkerColor(4);
+	  fitGenHighStat_p->SetLineColor(4);
+	  
+	  fitRecoLowerStat_p->Draw("SAME");
+	  fitRecoHighStat_p->Draw("SAME");
+	  fitGenLowerStat_p->Draw("SAME");
+	  fitGenHighStat_p->Draw("SAME");
+	  
+	  TLatex* label_p = new TLatex();
+	  label_p->SetNDC();
+	  label_p->SetTextFont(43);
+	  label_p->SetTextSize(10);
+	  
+	  label_p->DrawLatex(0.7, 0.95, ("GenLower=" + prettyString(fitGenLowerStat_p->GetParameter(1), 2, false)).c_str());
+	  label_p->DrawLatex(0.7, 0.89, ("GenHigh=" + prettyString(fitGenHighStat_p->GetParameter(1), 2, false)).c_str());
+	  
+	  label_p->DrawLatex(0.7, 0.83, ("RecoLower=" + prettyString(fitRecoLowerStat_p->GetParameter(1), 2, false)).c_str());
+	  label_p->DrawLatex(0.7, 0.77, ("RecoHigh=" + prettyString(fitRecoHighStat_p->GetParameter(1), 2, false)).c_str());
+	  
+	  delete label_p;
+      
+	  gPad->SetLogy();
+	  canv_p->SaveAs(("pdfDir/" + dateStr + "/" + "nFill" + std::to_string(nFill) + "/fits_UnfoldPower" + prettyString(powers[pI], 1, true) + "_SpectPower" + prettyString(powers[pI2], 1, true) + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_" + dateStr + ".pdf").c_str());
+	  delete canv_p;
+	  
+	  doUnfold(response_Rebin_h[pI2], genSpectraTruncPower_Rebin_p[pI], recoSpectraPower_Random_Rebin_p[pI2][rI][tI], nBayes, bayesVals, startTag + "UnfoldPower" + prettyString(powers[pI], 1, true) + "_SpectPower" + prettyString(powers[pI2], 1, true) + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI), powerUnfoldsRandom[pI][pI2][rI][tI], NULL);
+	  
+	  delete genHighStat_p;
+	  delete recoHighStat_p;
+	  delete genLowerStat_p;
+	  delete recoLowerStat_p;
+	  delete fitRecoLowerStat_p;	  
+	  delete fitGenHighStat_p;	  
+	  delete fitRecoHighStat_p;	  
+	  delete fitGenLowerStat_p;	  
+	}
+      }
+          
       for(Int_t bI = 0; bI < nBayes; ++bI){
-	cmsR10PowerUnfoldsGenRats[pI][pI2][bI] = new TH1D((startTag + "PowerUnfoldsGenRats_UnfoldPow" + prettyString(powers[pI], 1, true) + "_SpectPow" + prettyString(powers[pI2], 1, true) + "_Bayes" + std::to_string(bayesVals[bI]) + "_h").c_str(), ";Jet pT;Unfolded/Gen", nGeneralBins, generalBins);
-	centerTitles(cmsR10PowerUnfoldsGenRats[pI][pI2][bI]);
+	powerUnfoldsGenRats[pI][pI2][bI] = new TH1D((startTag + "PowerUnfoldsGenRats_UnfoldPow" + prettyString(powers[pI], 1, true) + "_SpectPow" + prettyString(powers[pI2], 1, true) + "_Bayes" + std::to_string(bayesVals[bI]) + "_h").c_str(), ";Jet pT;Unfolded/Gen", nGeneralBins, generalBins);
+	centerTitles(powerUnfoldsGenRats[pI][pI2][bI]);
 	
 	TH1D* tempHist_p = new TH1D("tempHist_p", "", nGeneralBins, generalBins);
 	TH1D* tempHist2_p = new TH1D("tempHist2_p", "", nGeneralBins, generalBins);
-	macroHistToSubsetHist(cmsR10PowerUnfolds[pI][pI2][bI], tempHist_p);
-	macroHistToSubsetHist(genSpectraCMSR10TruncPower_Rebin_p[pI2], tempHist2_p);
+	macroHistToSubsetHist(powerUnfolds[pI][pI2][bI], tempHist_p);
+	macroHistToSubsetHist(genSpectraTruncPower_Rebin_p[pI2], tempHist2_p);
 	
 	for(Int_t gI = 0; gI < nGeneralBins; ++gI){
 	  Double_t val = 1.0;
@@ -732,15 +1090,47 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
 	    val = tempHist_p->GetBinContent(gI+1)/tempHist2_p->GetBinContent(gI+1);
 	  }
 	  
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetBinContent(gI+1, val);
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetBinError(gI+1, 0.0);
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetBinContent(gI+1, val);
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetBinError(gI+1, 0.0);
 	}
 
 	delete tempHist_p;
 	delete tempHist2_p;
       }
+
+      for(Int_t rI = 0; rI < nRandom; ++rI){
+	for(Int_t tI = 0; tI < nTarget; ++tI){
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI] = new TH1D((startTag + "PowerUnfoldsGenRats_UnfoldPow" + prettyString(powers[pI], 1, true) + "_SpectPow" + prettyString(powers[pI2], 1, true) + "_Random" + std::to_string(rI) + "_Target" + std::to_string(tI) + "_Bayes" + std::to_string(bayesVals[bI]) + "_h").c_str(), ";Jet pT;Unfolded/Gen", nGeneralBins, generalBins);
+	    centerTitles(powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]);
+	    
+	    TH1D* tempHist_p = new TH1D("tempHist_p", "", nGeneralBins, generalBins);
+	    TH1D* tempHist2_p = new TH1D("tempHist2_p", "", nGeneralBins, generalBins);
+	    macroHistToSubsetHist(powerUnfoldsRandom[pI][pI2][rI][tI][bI], tempHist_p);
+	    macroHistToSubsetHist(genSpectraTruncPower_Random_Rebin_p[pI2][rI][tI], tempHist2_p);
+	    
+	    for(Int_t gI = 0; gI < nGeneralBins; ++gI){
+	      Double_t val = 1.0;
+	      if(tempHist_p->GetBinContent(gI+1) <= TMath::Power(10,-20)){
+		if(tempHist_p->GetBinContent(gI+1) >= TMath::Power(10,-20)){
+		  val = 0.0;
+		}
+	      }
+	      else{
+		val = tempHist_p->GetBinContent(gI+1)/tempHist2_p->GetBinContent(gI+1);
+	      }
+	      
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetBinContent(gI+1, val);
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetBinError(gI+1, 0.0);
+	    }
+	    
+	    delete tempHist_p;
+	    delete tempHist2_p;
+	  }
+	}      
+      }
     }
-  }
+  }    
     
   checkMakeDir("output");
   checkMakeDir("output/" + dateStr);
@@ -756,21 +1146,18 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   
   TFile* outFile_p = new TFile(("output/" + dateStr + "/" + outFileName).c_str(), "RECREATE");
 
-  checkMakeDir("pdfDir");
-  checkMakeDir("pdfDir/" + dateStr);
-  checkMakeDir("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill));
 
   Double_t max = -1;
   Double_t min = 10;
 
   for(Int_t pI = 0; pI < nPowers; ++pI){
-    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
+    for(Int_t pI2 = TMath::Max(0, pI-1); pI2 < TMath::Min(pI+1, nPowers); ++pI2){
 
       for(Int_t bI = 0; bI < nBayes; ++bI){
 	if(bayesVals[bI] != 100) continue;
 
-	if(max < getMax(cmsR10PowerUnfoldsGenRats[pI][pI2][bI])) max = getMax(cmsR10PowerUnfoldsGenRats[pI][pI2][bI]);
-	if(min >= getMin(cmsR10PowerUnfoldsGenRats[pI][pI2][bI])) min = getMin(cmsR10PowerUnfoldsGenRats[pI][pI2][bI]);
+	if(max < getMax(powerUnfoldsGenRats[pI][pI2][bI])) max = getMax(powerUnfoldsGenRats[pI][pI2][bI]);
+	if(min >= getMin(powerUnfoldsGenRats[pI][pI2][bI])) min = getMin(powerUnfoldsGenRats[pI][pI2][bI]);
       }
     }
   }
@@ -782,12 +1169,19 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
   min = 0.5;
     
   for(Int_t pI = 0; pI < nPowers; ++pI){
-    cmsR10Response_Rebin_h[pI]->Write("", TObject::kOverwrite);
+    response_Rebin_h[pI]->Write("", TObject::kOverwrite);
     
     genSpectraPower_Rebin_p[pI]->Write("", TObject::kOverwrite);
-    genSpectraCMSR10TruncPower_Rebin_p[pI]->Write("", TObject::kOverwrite);
-    recoCMSR10SpectraPower_Rebin_p[pI]->Write("", TObject::kOverwrite);
+    genSpectraTruncPower_Rebin_p[pI]->Write("", TObject::kOverwrite);
+    recoSpectraPower_Rebin_p[pI]->Write("", TObject::kOverwrite);
 
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	genSpectraTruncPower_Random_Rebin_p[pI][rI][tI]->Write("", TObject::kOverwrite);
+	recoSpectraPower_Random_Rebin_p[pI][rI][tI]->Write("", TObject::kOverwrite);      
+      }
+    }
+    
     if(!doFile2){
       canv_p = new TCanvas("canv_p", "canv_p", 450, 450);
       canv_p->SetTopMargin(0.01);
@@ -798,15 +1192,15 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       genSpectraPower_Rebin_p[pI]->SetMarkerColor(1);
       genSpectraPower_Rebin_p[pI]->SetLineColor(1);
       
-      genSpectraCMSR10TruncPower_Rebin_p[pI]->SetMarkerStyle(25);
-      genSpectraCMSR10TruncPower_Rebin_p[pI]->SetMarkerSize(1);
-      genSpectraCMSR10TruncPower_Rebin_p[pI]->SetMarkerColor(4);
-      genSpectraCMSR10TruncPower_Rebin_p[pI]->SetLineColor(4);
+      genSpectraTruncPower_Rebin_p[pI]->SetMarkerStyle(25);
+      genSpectraTruncPower_Rebin_p[pI]->SetMarkerSize(1);
+      genSpectraTruncPower_Rebin_p[pI]->SetMarkerColor(4);
+      genSpectraTruncPower_Rebin_p[pI]->SetLineColor(4);
       
-      recoCMSR10SpectraPower_Rebin_p[pI]->SetMarkerStyle(28);
-      recoCMSR10SpectraPower_Rebin_p[pI]->SetMarkerSize(1);
-      recoCMSR10SpectraPower_Rebin_p[pI]->SetMarkerColor(2);
-      recoCMSR10SpectraPower_Rebin_p[pI]->SetLineColor(2);
+      recoSpectraPower_Rebin_p[pI]->SetMarkerStyle(28);
+      recoSpectraPower_Rebin_p[pI]->SetMarkerSize(1);
+      recoSpectraPower_Rebin_p[pI]->SetMarkerColor(2);
+      recoSpectraPower_Rebin_p[pI]->SetLineColor(2);
 
       TLegend* leg_p = new TLegend(0.45, 0.75, 0.9, 0.95);
       leg_p->SetBorderSize(0);
@@ -817,24 +1211,24 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       TLatex* label_p = new TLatex();
       label_p->SetNDC();
       label_p->SetTextFont(43);
-      label_p->SetTextSize(16);
+      label_p->SetTextSize(10);
 
       Double_t total = 0.0;
-      for(Int_t bIY = 0; bIY < recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetNbinsY(); ++bIY){
-	total += recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetBinContent(1, bIY+1);
+      for(Int_t bIY = 0; bIY < recoGenSpectraTruncPower_Rebin_p[pI]->GetNbinsY(); ++bIY){
+	total += recoGenSpectraTruncPower_Rebin_p[pI]->GetBinContent(1, bIY+1);
       }
       
       Int_t pos = -1;
       Double_t total2 = 0.0;
-      for(Int_t bIY = 0; bIY < recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetNbinsY(); ++bIY){
-	total2 += recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetBinContent(1, bIY+1);
+      for(Int_t bIY = 0; bIY < recoGenSpectraTruncPower_Rebin_p[pI]->GetNbinsY(); ++bIY){
+	total2 += recoGenSpectraTruncPower_Rebin_p[pI]->GetBinContent(1, bIY+1);
 	if(total2/total > 0.01){
 	  pos = bIY;
 	  break;
 	}
       }
       
-      Double_t center = recoGenSpectraCMSR10TruncPower_Rebin_p[pI]->GetYaxis()->GetBinCenter(pos+1);
+      Double_t center = recoGenSpectraTruncPower_Rebin_p[pI]->GetYaxis()->GetBinCenter(pos+1);
       Double_t lineMin = genSpectraPower_Rebin_p[pI]->GetMinimum();
       Double_t lineMax = genSpectraPower_Rebin_p[pI]->GetMaximum();
       
@@ -845,18 +1239,16 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       recoSubsetBins[0] = recoBins[0];
       recoSubsetBins[1] = recoBins[1];
       TH2D* subset2D_p = new TH2D("subset2D_p", "", nRecoSubsetBins, recoSubsetBins, nGenBins, genBins);
-      macroHistToSubsetHist(recoGenSpectraCMSR10TruncPower_Rebin_p[pI], subset2D_p, true);
+      macroHistToSubsetHist(recoGenSpectraTruncPower_Rebin_p[pI], subset2D_p, true);
       TH1D* subset1D_p = new TH1D("subset1D_p", "", nGenBins, genBins);
       macroHistToSubsetHistY(subset2D_p, subset1D_p, true);
       
       subset1D_p->SetMarkerColor(4);
       subset1D_p->SetLineColor(4);
-      
-      subset1D_p->Print("ALL");
-      
+          
       genSpectraPower_Rebin_p[pI]->DrawCopy("HIST E1");
-      genSpectraCMSR10TruncPower_Rebin_p[pI]->DrawCopy("HIST E1 SAME");
-      recoCMSR10SpectraPower_Rebin_p[pI]->DrawCopy("HIST E1 SAME");
+      genSpectraTruncPower_Rebin_p[pI]->DrawCopy("HIST E1 SAME");
+      recoSpectraPower_Rebin_p[pI]->DrawCopy("HIST E1 SAME");
       subset1D_p->DrawCopy("*HIST E1 SAME");
       
       gPad->SetLogy();
@@ -870,14 +1262,14 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       delete line_p;
 
       leg_p->AddEntry(genSpectraPower_Rebin_p[pI], "Gen.", "P L");
-      leg_p->AddEntry(genSpectraCMSR10TruncPower_Rebin_p[pI], "Gen. w/ Reco.", "P L");
-      leg_p->AddEntry(recoCMSR10SpectraPower_Rebin_p[pI], "Reco.", "P L");
+      leg_p->AddEntry(genSpectraTruncPower_Rebin_p[pI], "Gen. w/ Reco.", "P L");
+      leg_p->AddEntry(recoSpectraPower_Rebin_p[pI], "Reco.", "P L");
       leg_p->AddEntry(subset1D_p, "Gen. From 1st Reco. Bin", "P L");
       
       leg_p->Draw("SAME");
       label_p->DrawLatex(0.5, 0.65, ("Reco pT > " + prettyString(recoBins[0],1,false)).c_str());
 
-      canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/" + genSpectraCMSR10TruncPower_Rebin_p[pI]->GetName() + "_" + saveStr).c_str());
+      canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/" + genSpectraTruncPower_Rebin_p[pI]->GetName() + "_" + saveStr).c_str());
       delete canv_p;
 
       delete leg_p;
@@ -885,10 +1277,10 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       delete subset2D_p;
       delete subset1D_p;
     }
-    
-    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
-      cmsR10Response_NewPrior_h[pI][pI2]->Write("", TObject::kOverwrite);
-        
+
+    for(Int_t pI2 = TMath::Max(pI-1,0); pI2 < TMath::Min(pI+1, nPowers); ++pI2){
+      response_NewPrior_h[pI][pI2]->Write("", TObject::kOverwrite);
+
       canv_p = new TCanvas("canv_p", "canv_p", 450, 450);
       canv_p->SetTopMargin(0.01);
       canv_p->SetRightMargin(0.01);
@@ -898,86 +1290,208 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
       leg_p->SetFillStyle(0);
       
       for(Int_t bI = 0; bI < nBayes; ++bI){
-	cmsR10PowerUnfolds[pI][pI2][bI]->Write("", TObject::kOverwrite);
-	delete cmsR10PowerUnfolds[pI][pI2][bI];
+	powerUnfolds[pI][pI2][bI]->Write("", TObject::kOverwrite);
 
-	
 	if(true/*bayesVals[bI] == 100*/){
 
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetMaximum(max);
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetMinimum(min);
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetMaximum(max);
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetMinimum(min);
 
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetMarkerStyle(styles[bI%nStyle]);
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetMarkerColor(kPal.getColor(bI%nCol));
-	  cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->SetLineColor(kPal.getColor(bI%nCol));
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetMarkerStyle(styles[bI%nStyle]);
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetMarkerColor(kPal.getColor(bI%nCol));
+	  powerUnfoldsGenRats[pI][pI2][bI]->SetLineColor(kPal.getColor(bI%nCol));
 								 
-	  if(bI != 0) cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->DrawCopy("HIST E1 P SAME");
-	  else cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->DrawCopy("HIST E1 P");
+	  if(bI != 0) powerUnfoldsGenRats[pI][pI2][bI]->DrawCopy("HIST E1 P SAME");
+	  else powerUnfoldsGenRats[pI][pI2][bI]->DrawCopy("HIST E1 P");
 
 	  if(bayesVals[bI] == 100){
 	    Double_t mean = 0.0;
 	    
-	    for(Int_t bIX = 0; bIX < cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX(); ++bIX){
-	      mean += cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetBinContent(bIX+1);
+	    for(Int_t bIX = 0; bIX < powerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX(); ++bIX){
+	      mean += powerUnfoldsGenRats[pI][pI2][bI]->GetBinContent(bIX+1);
 	    }
-	    mean /= (Double_t)cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX();
+	    mean /= (Double_t)powerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX();
 	    
 	    Double_t sigma = 0.0;
 	    
-	    for(Int_t bIX = 0; bIX < cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX(); ++bIX){
-	      Double_t val = cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetBinContent(bIX+1) - mean;
+	    for(Int_t bIX = 0; bIX < powerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX(); ++bIX){
+	      Double_t val = powerUnfoldsGenRats[pI][pI2][bI]->GetBinContent(bIX+1) - mean;
 	      sigma += val*val;
 	    }
 	    
-	    sigma /= (Double_t)(cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX() - 1);
+	    sigma /= (Double_t)(powerUnfoldsGenRats[pI][pI2][bI]->GetNbinsX() - 1);
 	    sigma = TMath::Sqrt(sigma);
 	    
 	    TLatex* label_p = new TLatex();
 	    label_p->SetNDC();
 	    label_p->SetTextFont(43);
-	    label_p->SetTextSize(14);
+	    label_p->SetTextSize(10);
 	    label_p->DrawLatex(0.6, 0.95, ("#mu=" + prettyString(mean, 3, false)).c_str());
-	    label_p->DrawLatex(0.6, 0.87, ("#sigma=" + prettyString(sigma, 3, false)).c_str());
-	    Double_t statsRes = cmsR10Response_Rebin_h[pI2]->Integral()*100;
-	    Double_t statsReco = recoCMSR10SpectraPower_Rebin_p[pI2]->Integral()*100;
+	    label_p->DrawLatex(0.6, 0.89, ("#sigma=" + prettyString(sigma, 3, false)).c_str());
+	    Double_t statsRes = response_Rebin_h[pI2]->Integral()*100;
+	    Double_t statsReco = recoSpectraPower_Rebin_p[pI2]->Integral()*100;
 	    
-	    label_p->DrawLatex(0.6, 0.79, ("IntRes=" + prettyStringE(statsRes, 3, false)).c_str());
-	    label_p->DrawLatex(0.6, 0.71, ("IntReco=" + prettyStringE(statsReco, 3, false)).c_str());
-	    label_p->DrawLatex(0.6, 0.63, ("Reco pT > " + prettyString(recoBins[0], 1, false)).c_str());
-	  
+	    label_p->DrawLatex(0.6, 0.83, ("IntRes=" + prettyStringE(statsRes, 3, false)).c_str());
+	    label_p->DrawLatex(0.6, 0.77, ("IntReco=" + prettyStringE(statsReco, 3, false)).c_str());
+	    label_p->DrawLatex(0.6, 0.71, ("Reco pT > " + prettyString(recoBins[0], 1, false)).c_str());
+
+
+	    Double_t startVal = 0.95;
+	    Double_t sum1 = 0.0;
+	    Double_t sum2 = 0.0;
+	    
+	    for(Int_t bIX = 0; bIX < powerUnfolds[pI][pI2][bI]->GetNbinsX(); ++bIX){
+	      Double_t val1 = powerUnfolds[pI][pI2][bI]->GetBinContent(bIX+1);
+	      Double_t val2 = genSpectraTruncPower_Rebin_p[pI2]->GetBinContent(bIX+1);
+	      sum1 += val1;
+	      sum2 += val2;
+	      
+	      label_p->DrawLatex(0.16, startVal, (std::to_string(bIX) + ": " + prettyString(val1, 6, false) +  "/" + prettyString(val2, 6, false) + "=" + prettyString(val1/val2, 6, false)).c_str());		  
+	      startVal -= 0.03;
+	    }
+	    
+	    label_p->DrawLatex(0.16, startVal, ("SUM: " + prettyString(sum1, 6, false) +  "/" + prettyString(sum2, 6, false) + "=" + prettyString(sum1/sum2, 6, false)).c_str());		  	    
 	    delete label_p;
 	  }
 	}
-
-	leg_p->AddEntry(cmsR10PowerUnfoldsGenRats[pI][pI2][bI], ("Bayes=" + std::to_string(bayesVals[bI])).c_str(), "P L");
-	cmsR10PowerUnfoldsGenRats[pI][pI2][bI]->Write("", TObject::kOverwrite);
+      
+	leg_p->AddEntry(powerUnfoldsGenRats[pI][pI2][bI], ("Bayes=" + std::to_string(bayesVals[bI])).c_str(), "P L");
+	powerUnfoldsGenRats[pI][pI2][bI]->Write("", TObject::kOverwrite);
       }
 
-      std::cout << "LINE: " << __LINE__ << std::endl;
       gStyle->SetOptStat(0);
-      std::cout << "LINE: " << __LINE__ << std::endl;
       leg_p->Draw("SAME");
       
-      canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/" + cmsR10PowerUnfoldsGenRats[pI][pI2][nBayes-1]->GetName() + "_" + saveStr).c_str());	  
+      canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/" + powerUnfoldsGenRats[pI][pI2][nBayes-1]->GetName() + "_" + saveStr).c_str());	  
       std::cout << "LINE: " << __LINE__ << std::endl;
       delete canv_p;
       delete leg_p;
-      
-      for(Int_t bI = 0; bI < nBayes; ++bI){
-	delete cmsR10PowerUnfoldsGenRats[pI][pI2][bI];
+    }
+
+    for(Int_t pI2 = TMath::Max(pI-1,0); pI2 < TMath::Min(pI+1, nPowers); ++pI2){
+      for(Int_t rI = 0; rI < nRandom; ++rI){
+	for(Int_t tI = 0; tI < nTarget; ++tI){
+	  canv_p = new TCanvas("canv_p", "canv_p", 450, 450);
+	  canv_p->SetTopMargin(0.01);
+	  canv_p->SetRightMargin(0.01);
+	
+	  TLegend* leg_p = new TLegend(0.7, 0.15, 0.9, 0.35);
+	  leg_p->SetBorderSize(0);
+	  leg_p->SetFillStyle(0);
+	  
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    powerUnfoldsRandom[pI][pI2][rI][tI][bI]->Write("", TObject::kOverwrite);
+	    
+	    if(true/*bayesVals[bI] == 100*/){
+	      
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetMaximum(max);
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetMinimum(min);
+	      
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetMarkerStyle(styles[bI%nStyle]);
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetMarkerColor(kPal.getColor(bI%nCol));
+	      powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->SetLineColor(kPal.getColor(bI%nCol));
+	      
+	      if(bI != 0) powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->DrawCopy("HIST E1 P SAME");
+	      else powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->DrawCopy("HIST E1 P");
+	      
+	      if(bayesVals[bI] == 100){
+		Double_t mean = 0.0;
+		
+		for(Int_t bIX = 0; bIX < powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetNbinsX(); ++bIX){
+		  mean += powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetBinContent(bIX+1);
+		}
+		mean /= (Double_t)powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetNbinsX();
+		
+		Double_t sigma = 0.0;
+		
+		for(Int_t bIX = 0; bIX < powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetNbinsX(); ++bIX){
+		  Double_t val = powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetBinContent(bIX+1) - mean;
+		  sigma += val*val;
+		}
+		
+		sigma /= (Double_t)(powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->GetNbinsX() - 1);
+		sigma = TMath::Sqrt(sigma);
+		
+		TLatex* label_p = new TLatex();
+		label_p->SetNDC();
+		label_p->SetTextFont(43);
+		label_p->SetTextSize(10);
+		label_p->DrawLatex(0.6, 0.95, ("#mu=" + prettyString(mean, 3, false)).c_str());
+		label_p->DrawLatex(0.6, 0.89, ("#sigma=" + prettyString(sigma, 3, false)).c_str());
+		Double_t statsRes = response_Rebin_h[pI2]->Integral()*100;
+		Double_t statsReco = recoSpectraPower_Rebin_p[pI2]->Integral()*100;
+		
+		label_p->DrawLatex(0.6, 0.83, ("IntRes=" + prettyStringE(statsRes, 3, false)).c_str());
+		label_p->DrawLatex(0.6, 0.77, ("IntReco=" + prettyStringE(statsReco, 3, false)).c_str());
+		label_p->DrawLatex(0.6, 0.71, ("Reco pT > " + prettyString(recoBins[0], 1, false)).c_str());
+	  
+		Double_t startVal = 0.95;
+		Double_t sum1 = 0.0;
+		Double_t sum2 = 0.0;
+
+		for(Int_t bIX = 0; bIX < powerUnfoldsRandom[pI][pI2][rI][tI][bI]->GetNbinsX(); ++bIX){
+		  Double_t val1 = powerUnfoldsRandom[pI][pI2][rI][tI][bI]->GetBinContent(bIX+1);
+		  Double_t val2 = genSpectraTruncPower_Random_Rebin_p[pI2][rI][tI]->GetBinContent(bIX+1);
+		  sum1 += val1;
+		  sum2 += val2;
+		  
+		  label_p->DrawLatex(0.16, startVal, (std::to_string(bIX) + ": " + prettyString(val1, 6, false) +  "/" + prettyString(val2, 6, false) + "=" + prettyString(val1/val2, 6, false)).c_str());		  
+		  startVal -= 0.03;
+		}
+		
+		label_p->DrawLatex(0.16, startVal, ("SUM: " + prettyString(sum1, 6, false) +  "/" + prettyString(sum2, 6, false) + "=" + prettyString(sum1/sum2, 6, false)).c_str());		  
+
+		delete label_p;
+	      }
+	    }
+	    
+	    leg_p->AddEntry(powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI], ("Bayes=" + std::to_string(bayesVals[bI])).c_str(), "P L");
+	    powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI]->Write("", TObject::kOverwrite);
+	  }
+
+	  std::cout << "LINE: " << __LINE__ << std::endl;
+	  gStyle->SetOptStat(0);
+	  std::cout << "LINE: " << __LINE__ << std::endl;
+	  leg_p->Draw("SAME");
+	  
+	  canv_p->SaveAs(("pdfDir/" + dateStr + "/nFill" + std::to_string(nFill) + "/" + powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][nBayes-1]->GetName() + "_" + saveStr).c_str());	  
+	  std::cout << "LINE: " << __LINE__ << std::endl;
+	  delete canv_p;
+	  delete leg_p;
+	}
       }
-      std::cout << "LINE: " << __LINE__ << std::endl;
     }
   }
  
   for(Int_t pI = 0; pI < nPowers; ++pI){
-    delete cmsR10Response_Rebin_h[pI];
+    delete response_Rebin_h[pI];
     delete genSpectraPower_Rebin_p[pI];
-    delete genSpectraCMSR10TruncPower_Rebin_p[pI];
-    delete recoCMSR10SpectraPower_Rebin_p[pI];
+    delete genSpectraTruncPower_Rebin_p[pI];
+    delete recoSpectraPower_Rebin_p[pI];
 
-    for(Int_t pI2 = 0; pI2 < nPowers; ++pI2){
-      delete cmsR10Response_NewPrior_h[pI][pI2];
+    for(Int_t rI = 0; rI < nRandom; ++rI){
+      for(Int_t tI = 0; tI < nTarget; ++tI){
+	delete genSpectraTruncPower_Random_Rebin_p[pI][rI][tI];
+	delete recoSpectraPower_Random_Rebin_p[pI][rI][tI];
+      }
+    }
+    
+    for(Int_t pI2 = TMath::Max(pI-1,0); pI2 < TMath::Min(pI+1, nPowers); ++pI2){
+      delete response_NewPrior_h[pI][pI2];
+
+      for(Int_t bI = 0; bI < nBayes; ++bI){
+	delete powerUnfolds[pI][pI2][bI];
+	delete powerUnfoldsGenRats[pI][pI2][bI];
+      }	
+
+      for(Int_t rI = 0; rI < nRandom; ++rI){
+	for(Int_t tI = 0; tI < nTarget; ++tI){
+	  for(Int_t bI = 0; bI < nBayes; ++bI){
+	    delete powerUnfoldsRandom[pI][pI2][rI][tI][bI];
+	    delete powerUnfoldsGenRatsRandom[pI][pI2][rI][tI][bI];
+	  }
+	}
+      }
     }
   }
   
@@ -998,8 +1512,8 @@ int toyATLASCMS_Unfold(const std::string inFileName, const std::string startTag,
 
 int main(int argc, char* argv[])
 {
-  if(argc < 4 || argc > 8){
-    std::cout << "Usage: ./bin/toyATLASCMS_Unfold.exe <inFileName> <startTag> <doClean> <inFileName2> <newGenBins> <newRecoBins> <newReducedBins>" << std::endl;
+  if(argc < 4 || argc > 9){
+    std::cout << "Usage: ./bin/toyATLASCMS_Unfold.exe <inFileName> <startTag> <doClean> <inFileName2> <newGenBins> <newRecoBins> <newReducedBins> <inDataFile>" << std::endl;
     return 1;
   }
 
@@ -1013,6 +1527,7 @@ int main(int argc, char* argv[])
   else if(argc == 6) retVal += toyATLASCMS_Unfold(argv[1], argv[2], std::stoi(argv[3]), argv[4], argv[5]);
   else if(argc == 7) retVal += toyATLASCMS_Unfold(argv[1], argv[2], std::stoi(argv[3]), argv[4], argv[5], argv[6]);
   else if(argc == 8) retVal += toyATLASCMS_Unfold(argv[1], argv[2], std::stoi(argv[3]), argv[4], argv[5], argv[6], argv[7]);
+  else if(argc == 9) retVal += toyATLASCMS_Unfold(argv[1], argv[2], std::stoi(argv[3]), argv[4], argv[5], argv[6], argv[7], argv[8]);
 
   return retVal;
 }
