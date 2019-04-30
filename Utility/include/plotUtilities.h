@@ -18,6 +18,27 @@ std::string prettyString(const double inVal, const int prec, const bool doDot)
   return retStr;
 }
 
+std::string prettyStringE(const double inVal, const int prec, const bool doDot)
+{
+  std::string retStr = prettyString(inVal, prec, false);
+  int tenScale = retStr.find(".") - 1;
+  while(retStr.find(".") != std::string::npos){
+    retStr.replace(retStr.find("."), 1, "");
+  }
+  if(!doDot) retStr = retStr.substr(0,1) + "." + retStr.substr(1,retStr.size());
+  else retStr = retStr.substr(0,1) + "p" + retStr.substr(1,retStr.size());
+
+  while(retStr.find(".")+prec+1 < retStr.size()){
+    retStr = retStr.substr(0, retStr.size()-1);
+  }
+  
+  retStr = retStr + "E";
+  if(tenScale >= 0) retStr = retStr + "+" + std::to_string(std::abs(tenScale));
+  else retStr = retStr + "-" + std::to_string(std::abs(tenScale));
+  
+  return retStr;
+}
+
 
 void prettyCanv(TCanvas* canv_p)
 {
