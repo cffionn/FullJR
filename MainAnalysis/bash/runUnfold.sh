@@ -19,28 +19,28 @@ else
     exit 1
 fi
 
-
-dateStrPPMC=20190311
-dateStrPbPbMC=20190311
-dateStrPPData=20190311
-dateStrPbPbData=20190311
+dateStrPPMC=20190604
+dateStrPbPbMC=20190604
+dateStrPPData=20190604
+dateStrPbPbData=20190604
 
 DATE=`date +%Y%m%d`
 
-mkdir -p logs
-mkdir -p logs/$DATE
+mkdir -p /data/cmcginn/logs
+mkdir -p /data/cmcginn/logs/$DATE
 
-ppVals=(ak3PF ak4PF ak6PF ak8PF ak10PF)
-#ppVals=(ak4PF)
-#pbpbVals=()
-pbpbVals=(akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
+ppVals=(ak2PF ak3PF ak4PF ak6PF ak8PF ak10PF)
+pbpbVals=(akCs2PU3PFFlow akCs3PU3PFFlow akCs4PU3PFFlow akCs6PU3PFFlow akCs8PU3PFFlow akCs10PU3PFFlow)
 
-PPDataFilePre=output/"$dateStrPPData"/HiForestAOD_HighPtJet80_HLTJet80_LargeROR_PtCut110_AbsEta5_20190220_11Lumi_190220_221659_561_OutOf561_MERGED_ProcessRawData_
+#ppVals=(ak10PF)
+#pbpbVals=(akCs10PU3PFFlow)
+
+PPDataFilePre=output/"$dateStrPPData"/dataPP_ProcessRawData_
 PPDataFilePost=JetAnalyzer_"$dateStrPPData".root
 PPResFilePre=output/"$dateStrPPMC"/combinedResponse_
 PPResFilePost=_"$dateStrPPMC".root
 
-PbPbDataFilePre=output/"$dateStrPbPbData"/HiForestAOD_HIHardProbes_HLTJet100_AllR_PtCut140_AbsEta3_20180626_21LumiPer_180626_152510_1050_OutOf1050_MERGED_ProcessRawData_
+PbPbDataFilePre=output/"$dateStrPbPbData"/dataPbPb_ProcessRawData_
 PbPbDataFilePost=JetAnalyzer_"$dateStrPbPbData".root
 PbPbResFilePre=output/"$dateStrPbPbMC"/combinedResponse_
 PbPbResFilePost=_"$dateStrPbPbMC".root
@@ -57,7 +57,11 @@ do
     then
 	if [[ -f $fileNameMC ]]
 	then
-	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i >& logs/$DATE/unfoldPP_$i.log &
+	    dummy=0
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBinsPP.txt 0 100 >& /data/cmcginn/logs/$DATE/unfoldPP_NoClean_100_$i.log &
+	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBinsPP.txt 0 1000 >& /data/cmcginn/logs/$DATE/unfoldPP_NoClean_1000_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBinsPP.txt 1 1000 >& /data/cmcginn/logs/$DATE/unfoldPP_NoClean_1000_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBinsPP.txt 0 1000 >& /data/cmcginn/logs/$DATE/unfoldPP_NoClean_1000_$i.log &
 	else
 	    echo " Missing $fileNameMC, continue on $i"
 	fi
@@ -80,7 +84,12 @@ do
     then
         if [[ -f $fileNameMC ]]
         then
-	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i >& logs/$DATE/unfoldPbPb_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins.txt 0 100 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_100_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins_NOSPLIT.txt 0 100 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_100_NOSPLIT_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins_SPLIT.txt 0 100 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_100_SPLIT_$i.log &
+	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins.txt 0 1000 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_1000_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins.txt 1 100 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_100_$i.log &
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins_SPLIT.txt 0 100 >& /data/cmcginn/logs/$DATE/unfoldPbPb_NoClean_100_SPLIT_$i.log &
 	else
             echo " Missing $fileNameMC, continue on $i"
         fi
@@ -88,6 +97,52 @@ do
         echo " Missing $fileNameData, continue on $i"
     fi
 done
+
+wait
+
+#for i in "${ppVals[@]}"
+#do
+#    echo "Processing $i..."
+#    jetTrunc=${i%PF*}
+#
+#    fileNameData=$PPDataFilePre$i$PPDataFilePost
+#    fileNameMC=$PPResFilePre$jetTrunc$PPResFilePost
+#
+#    if [[ -f $fileNameData ]]
+#    then
+#	if [[ -f $fileNameMC ]]
+#	then
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBinsPP.txt 1 >& logs/$DATE/unfoldPP_Clean_$i.log &
+#	else
+#	    echo " Missing $fileNameMC, continue on $i"
+#	fi
+#    else
+#	echo " Missing $fileNameData, continue on $i"
+#    fi
+#done
+#
+#for i in "${pbpbVals[@]}"
+#do
+#    echo "Processing $i..."
+#    jetTrunc=${i%PU*}
+#
+#    echo $jetTrunc
+#
+#    fileNameData=$PbPbDataFilePre$i$PbPbDataFilePost
+#    fileNameMC=$PbPbResFilePre$jetTrunc$PbPbResFilePost
+#
+#    if [[ -f $fileNameData ]]
+#    then
+#        if [[ -f $fileNameMC ]]
+#        then
+#	    ./bin/unfoldRawData.exe $fileNameData $fileNameMC $i tables/overrideBins.txt 1 >& logs/$DATE/unfoldPbPb_Clean_$i.log &
+#	else
+#            echo " Missing $fileNameMC, continue on $i"
+#        fi
+#    else
+#        echo " Missing $fileNameData, continue on $i"
+#    fi
+#done
 
 wait
 

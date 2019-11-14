@@ -28,8 +28,11 @@ mkdir -p logs/$DATE
 jetsPP=(ak3PFJetAnalyzer ak4PFJetAnalyzer ak6PFJetAnalyzer ak8PFJetAnalyzer ak10PFJetAnalyzer)
 jetsPbPb=(akCs3PU3PFFlowJetAnalyzer akCs4PU3PFFlowJetAnalyzer akCs6PU3PFFlowJetAnalyzer akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
 
-#jetsPP=(ak3PFJetAnalyzer)
-#jetsPbPb=(akCs3PU3PFFlowJetAnalyzer)
+#jetsPP=(ak8PFJetAnalyzer ak10PFJetAnalyzer)
+#jetsPbPb=(akCs8PU3PFFlowJetAnalyzer akCs10PU3PFFlowJetAnalyzer)
+
+#jetsPP=(ak3PFJetAnalyzer ak4PFJetAnalyzer ak6PFJetAnalyzer)
+#jetsPbPb=(akCs3PU3PFFlowJetAnalyzer akCs4PU3PFFlowJetAnalyzer akCs6PU3PFFlowJetAnalyzer)
 
 for i in "${jetsPP[@]}"
 do
@@ -42,6 +45,8 @@ do
     echo "Processing $i..."
     ./bin/makeJetResponseTree.exe paths/Pythia6_Dijet_pp502_Hydjet_Cymbal_MB_PbPb_MCDijet_20180521_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_20180608_SVM_$i.txt 0 1.0 >& logs/$DATE/responsePbPb_$i.log &
 done
+
+
 
 wait
 echo "bash/runResponse.sh Complete!"

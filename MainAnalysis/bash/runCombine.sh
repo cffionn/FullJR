@@ -19,8 +19,8 @@ else
     exit 1
 fi
 
-dateStrPP=20190212
-dateStrPbPb=20190212
+dateStrPP=20190314
+dateStrPbPb=20190314
 
 DATE=`date +%Y%m%d`
 

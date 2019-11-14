@@ -746,6 +746,7 @@ void plotSyst(TH1D* hist_p, std::vector<std::vector<std::vector<Double_t> > > sy
   checkMakeDir("pdfDir");
   checkMakeDir("pdfDir/" + dateStr);
   quietSaveAs(canv_p, "pdfDir/" + dateStr + "/syst_" + saveStr + "_" + dateStr + ".pdf");
+  quietSaveAs(canv_p, "pdfDir/" + dateStr + "/syst_" + saveStr + "_" + dateStr + ".C");
   delete canv_p;
 
   std::cout << "LINE: " << __LINE__ <<  std::endl;
@@ -2232,8 +2233,10 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    gPad->RedrawAxis();
 
 	    const std::string saveName = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + dateStr+ ".pdf";
+	    const std::string saveName2 = "pdfDir/" + dateStr + "/spectra_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + dateStr+ ".C";
 	    std::cout << "SAVE: " << saveName << std::endl;	    
 	    quietSaveAs(canv_p, saveName);
+	    quietSaveAs(canv_p, saveName2);
 	    delete canv_p;
 	    delete leg_p;
 	    
@@ -2607,7 +2610,9 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 	    leg3_p->Draw("SAME");
 	    gPad->RedrawAxis();
 	    const std::string saveName = "pdfDir/" + dateStr + "/raa_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + dateStr+ ".pdf";
+	    const std::string saveName2 = "pdfDir/" + dateStr + "/raa_" + dirListPbPb[jI] + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + dateStr+ ".C";
 	    quietSaveAs(canv_p, saveName);
+	    quietSaveAs(canv_p, saveName2);
 	    delete canv_p;
 	    delete leg_p;
 	    delete leg2_p;
@@ -3186,7 +3191,10 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		  
 		  const std::string saveName = "pdfDir/" + dateStr + "/spectraRat_PP_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + redStatStr[redI] + "_" + ratioStr[ratI] + "_" + dateStr+ ".pdf";
 		  
+		  const std::string saveName2 = "pdfDir/" + dateStr + "/spectraRat_PP_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + redStatStr[redI] + "_" + ratioStr[ratI] + "_" + dateStr+ ".C";
+		  
 		  quietSaveAs(canv_p, saveName);
+		  quietSaveAs(canv_p, saveName2);
 		  std::cout << "LINE: " << __LINE__ << ", " << ratI << std::endl;
 		  
 		  for(unsigned int tI = 0; tI < theoryCompPYT6.size(); ++tI){
@@ -3736,8 +3744,10 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		checkMakeDir("pdfDir/" + dateStr);
 		
 		const std::string saveName = "pdfDir/" + dateStr + "/rraa_" + globalBinsStr + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + redStatStr[redI] + "_" + dateStr+ ".pdf";
+		const std::string saveName2 = "pdfDir/" + dateStr + "/rraa_" + globalBinsStr + "_" + idStr[idI] + "_" + responseModStr[rI] + "_" + jtAbsEtaBinsStr[aI] + "_" + smoothStr[smoothI] + "_" + redStatStr[redI] + "_" + dateStr+ ".C";
 		
 		quietSaveAs(canv_p, saveName);
+		quietSaveAs(canv_p, saveName2);
 		
 		for(ULong64_t cI = 0; cI < (ULong64_t)nCentBins; ++cI){
 		  for(ULong64_t sI = 0; sI < (ULong64_t)nSystTotal; ++sI){

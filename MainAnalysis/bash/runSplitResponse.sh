@@ -19,7 +19,7 @@ else
     exit 1
 fi
 
-jobNumber=16
+jobNumber=20
 if [[ -d /home/cfmcginn ]]
 then
     jobNumber=10
@@ -32,23 +32,38 @@ mkdir -p logs
 mkdir -p logs/$DATE
 
 filesToProcess=()
-counts=$(ls paths/*SPLIT*.txt | wc -l)
-if [[ $counts -ge 1 ]]
-then
-    for i in paths/*SPLIT*.txt
-    do
-	filesToProcess+=($i)
-    done
-fi    
 
-counts=$(ls paths/*/*SPLIT*.txt | wc -l)
+#counts=$(ls paths/*SPLIT*.txt | wc -l)
+#if [[ $counts -ge 1 ]]
+#then
+#    for i in paths/*SPLIT*.txt
+#    do
+#	filesToProcess+=($i)
+#    done
+#fi    
+
+counts=$(ls paths/20190501/*.txt | wc -l)
 if [[ $counts -ge 1 ]]
 then
-    for i in paths/*/*SPLIT*.txt
+    for i in paths/20190501/*.txt
     do
-	filesToProcess+=($i)
+	if [[ $i == paths/20190501/HiForestAOD_PbPb_MCDijet80_20190417_ExcludeTop4_ExcludeToFrac_Frac0p7_Full_5Sigma_190417_161803_2OutOf2_604FilesOutOf1208_MERGED_TTreeSkim_nEvtAll_nEvtStart0_NoRLESkim_NoCut_20190430_akCs8PU3PFFlowJetAnalyzer.txt ]]
+	then
+	    filesToProcess+=($i)
+	fi
     done
 fi
+
+#counts=$(ls paths/Pythia8/PYTHIA8_Dije*.txt | wc -l)
+#if [[ $counts -ge 1 ]]
+#then
+#    for i in paths/Pythia8/PYTHIA8_Dije*.txt
+#    do     
+#	filesToProcess+=($i)
+#    done
+#fi
+
+
 
 
 for i in "${filesToProcess[@]}"
@@ -57,6 +72,9 @@ do
     if [[ $i == *"akCs"* ]]
     then
 	pbpbBool=0
+    else
+	dummyVal=0
+#	continue
     fi
 
     logName=${i%.txt}
@@ -73,13 +91,15 @@ do
 	sleep 10
 	counts=$(ps | grep makeJet | wc -l)
     done
+    sleep 2
 done
 
 wait
+exit 1
 
 DATEEND=`date +%Y%m%d`
 
-rVals=(ak3 ak4 ak6 ak8 ak10 akCs3 akCs4 akCs6 akCs8 akCs10)
+rVals=(ak2 ak3 ak4 ak6 ak8 ak10 akCs2 akCs3 akCs4 akCs6 akCs8 akCs10)
 #rVals=(ak3 ak4 ak6 akCs3 akCs4 akCs6)
 #rVals=(ak8 akCs8 ak10 akCs10)
 rPaths=()
@@ -117,7 +137,7 @@ do
     countLocalDate=0
     if [[ -d output/$DATE ]]
     then
-	countLocalDate=$(ls output/$DATE/*$r*SPLIT*.root | wc -l)
+	countLocalDate=$(ls output/$DATE/*$r*JetResponse*.root | wc -l)
     fi
 
     countLocalDateEnd=0
@@ -125,14 +145,14 @@ do
     then
 	if [[ -d output/$DATEEND ]]
 	then
-	    countLocalDateEnd=$(ls output/$DATEEND/*$r*SPLIT*.root | wc -l)
+	    countLocalDateEnd=$(ls output/$DATEEND/*$r*JetResponse*.root | wc -l)
 	fi
     fi
     
     countGlobalDate=0
     if [[ -d ${rPaths[$pos]}/output/$DATE ]]
     then
-	countGlobalDate=$(ls ${rPaths[$pos]}/output/$DATE/*$r*SPLIT*.root | wc -l)
+	countGlobalDate=$(ls ${rPaths[$pos]}/output/$DATE/*$r*JetResponse*.root | wc -l)
     fi
 
     countGlobalDateEnd=0
@@ -140,7 +160,7 @@ do
     then
 	if [[ -d ${rPaths[$pos]}/output/$DATEEND ]]
 	then
-	    countGlobalDateEnd=$(ls ${rPaths[$pos]}/output/$DATEEND/*$r*SPLIT*.root | wc -l)
+	    countGlobalDateEnd=$(ls ${rPaths[$pos]}/output/$DATEEND/*$r*JetResponse*.root | wc -l)
 	fi
     fi
     count=$((countLocalDate + $countLocalDateEnd + $countGlobalDate + $countGlobalDateEnd))
@@ -154,7 +174,7 @@ do
 
     if [[ $countLocalDate -ne 0 ]]
     then
-	for i in output/$DATE/*$r*SPLIT*.root
+	for i in output/$DATE/*$r*JetResponse*.root
 	do
 	    files=$files$i,
 	done
@@ -162,7 +182,7 @@ do
     
     if [[ $countLocalDateEnd -ne 0 ]]
     then
-	for i in output/$DATEEND/*$r*SPLIT*.root
+	for i in output/$DATEEND/*$r*JetResponse*.root
 	do
 	    files=$files$i,
 	done	
@@ -170,7 +190,7 @@ do
 
     if [[ $countGlobalDate -ne 0 ]]
     then
-	for i in ${rPaths[$pos]}/output/$DATE/*$r*SPLIT*.root
+	for i in ${rPaths[$pos]}/output/$DATE/*$r*JetResponse*.root
 	do
 	    files=$files$i,
 	done
@@ -178,7 +198,7 @@ do
     
     if [[ $countGlobalDateEnd -ne 0 ]]
     then
-	for i in ${rPaths[$pos]}/output/$DATEEND/*$r*SPLIT*.root
+	for i in ${rPaths[$pos]}/output/$DATEEND/*$r*JetResponse*.root
 	do
 	    files=$files$i,
 	done	
@@ -191,7 +211,8 @@ do
 	sleep 10
 	jobCounts=$(ps | grep combineR | wc -l)
     fi
-
+    sleep 2
+    
     pos=$((pos + 1))
 done
 
