@@ -163,20 +163,36 @@ Double_t getHistMinGTZero(TH1D* hist_p)
   return min;
 }
 
-void createRAA(TH1D* pbpbHist_p, TH1D* ppHist_p)
+bool createRAA(TH1D* pbpbHist_p, TH1D* ppHist_p)
 {
+  bool retVal = true;
   for(Int_t bIX = 0; bIX < pbpbHist_p->GetNbinsX(); ++bIX){
-    Double_t val = pbpbHist_p->GetBinContent(bIX+1)/ppHist_p->GetBinContent(bIX+1);
-    Double_t relErr1 = pbpbHist_p->GetBinError(bIX+1)/pbpbHist_p->GetBinContent(bIX+1);
-    Double_t relErr2 = ppHist_p->GetBinError(bIX+1)/ppHist_p->GetBinContent(bIX+1);
-    Double_t relErr = TMath::Sqrt(relErr1*relErr1 + relErr2*relErr2);
-    Double_t err = val*relErr;
+    bool binIsFound = false;
+    bool binIsFoundTwice = false;
+    for(Int_t bIX2 = 0; bIX2 < ppHist_p->GetNbinsX(); ++bIX2){
+      if(TMath::Abs(pbpbHist_p->GetXaxis()->GetBinLowEdge(bIX+1) - ppHist_p->GetXaxis()->GetBinLowEdge(bIX2+1)) < 0.5){
+	if(TMath::Abs(pbpbHist_p->GetXaxis()->GetBinLowEdge(bIX+2) - ppHist_p->GetXaxis()->GetBinLowEdge(bIX2+2)) < 0.5){
+	  Double_t val = pbpbHist_p->GetBinContent(bIX+1)/ppHist_p->GetBinContent(bIX2+1);
+	  Double_t relErr1 = pbpbHist_p->GetBinError(bIX+1)/pbpbHist_p->GetBinContent(bIX+1);
+	  Double_t relErr2 = ppHist_p->GetBinError(bIX2+1)/ppHist_p->GetBinContent(bIX2+1);
+	  Double_t relErr = TMath::Sqrt(relErr1*relErr1 + relErr2*relErr2);
+	  Double_t err = val*relErr;
+	  
+	  pbpbHist_p->SetBinContent(bIX+1, val);
+	  pbpbHist_p->SetBinError(bIX+1, err);
+	  if(binIsFound) binIsFoundTwice = true;
+	  binIsFound = true;
+	}
+      }
+    }
 
-    pbpbHist_p->SetBinContent(bIX+1, val);
-    pbpbHist_p->SetBinError(bIX+1, err);
+    if(!binIsFound) std::cout << "ERROR: BIN NOT FOUND IN CREATERAA" << std::endl;
+    if(binIsFoundTwice) std::cout << "ERROR: BIN FOUND TWICE IN CREATERAA" << std::endl;
+
+    if(!binIsFound || binIsFoundTwice) retVal = false;
   }
  
-  return;
+  return retVal;
 }
 
 template <class T>
@@ -2437,11 +2453,13 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		    break;
 		  }
 		}
+
+		bool createBool = true;
+		if(isSystCorr) createBool = createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI + sI*nCentBins]);
+		else if(systStrTotal[sI].find("Lumi") != std::string::npos) createBool = createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI + sI*nCentBins]);
+		else createBool = createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI]);
 		
-		if(isSystCorr) createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI + sI*nCentBins]);
-		else if(systStrTotal[sI].find("Lumi") != std::string::npos) createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI + sI*nCentBins]);
-		else createRAA(histVectPbPbClones[cI + sI*nCentBins], histVectPPClones[cI]);
-		
+		if(!createBool) return 1;
 	      }
 	    }
 	    
@@ -2797,8 +2815,11 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 			
 			std::cout << "DOUBLE CORR: " << systStrTotal[sI] << ", " << isSystDoubleCorr << std::endl;
 			
-			if(isSystDoubleCorr) createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[r10Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
-			else createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[r10Pos + cI*nJtAlgos]);
+			bool createBool = true;
+			if(isSystDoubleCorr) createBool = createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[r10Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
+			else createBool = createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[r10Pos + cI*nJtAlgos]);
+			if(!createBool) return 1;
+
 			
 			if(isStrSame(redStatStr[redI], "RedStat")){
 			  for(Int_t bIX = 0; bIX < histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos]->GetXaxis()->GetNbins(); ++bIX){
@@ -3046,11 +3067,14 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		  for(ULong64_t jI = 0; jI < (ULong64_t)nJtAlgos; ++jI){
 		    if(jI == (ULong64_t)r10Pos) continue;
 		    
-		    createRAA(theoryCompPYT6[jI], theoryCompPYT6[r10Pos]);
+		    
+		    bool createBool = createRAA(theoryCompPYT6[jI], theoryCompPYT6[r10Pos]);
 		    defaultPlotSetR(theoryCompPYT6[jI], jtAlgosPP[jI]);		
 		    theoryCompPYT6[jI]->SetLineStyle(2);
 		    theoryCompPYT6[jI]->SetLineWidth(3);
 		    theoryCompPYT6[jI]->DrawCopy("HIST C SAME");
+		    if(!createBool) return 1;
+
 		  }
 	       
 			  
@@ -3100,11 +3124,13 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		    if(jI == (ULong64_t)r10Pos) continue;
 		    //		    if(jI != (ULong64_t)r4Pos && jI != (ULong64_t)r8Pos) continue;
 		    
-		    createRAA(theoryCompPYT8[jI], theoryCompPYT8[r10Pos]);
+		    bool createBool = createRAA(theoryCompPYT8[jI], theoryCompPYT8[r10Pos]);
 		    defaultPlotSetR(theoryCompPYT8[jI], jtAlgosPP[jI]);		
 		    theoryCompPYT8[jI]->SetLineStyle(1);
 		    theoryCompPYT8[jI]->SetLineWidth(3);
 		    theoryCompPYT8[jI]->DrawCopy("HIST C SAME");
+		    
+		    if(!createBool) return 1;
 		  }
 
 		  if(ratioBool[ratI]){
@@ -3420,16 +3446,17 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 			break;
 		      }
 		    }
-		    
+
+		    bool createBool = true;
 		    if(isSystDoubleCorr){
-		      createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbDenomClones[cI + sI*nCentBins]);
-		      createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPDenomClones[cI + sI*nCentBins]);
+		      createBool = createBool && createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbDenomClones[cI + sI*nCentBins]);
+		      createBool = createBool && createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPDenomClones[cI + sI*nCentBins]);
 		    }
 		    else{
-		      createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbDenomClones[cI]);		  
-		      createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPDenomClones[cI]);		  
+		      createBool = createBool && createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbDenomClones[cI]);		  
+		      createBool = createBool && createRAA(histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPDenomClones[cI]);		  
 		    }
-
+		    if(!createBool) return 1;
 
 		    if(isStrSame(redStatStr[redI], "RedStat")){
 		      for(Int_t bIX = 0; bIX < histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos]->GetXaxis()->GetNbins(); ++bIX){
@@ -3473,8 +3500,10 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		      }
 		    }
 		    
-		    if(isSystCorr) createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
-		    else createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[jI + cI*nJtAlgos]);		  
+		    bool createBool = true;
+		    if(isSystCorr) createBool = createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
+		    else createBool = createRAA(histVectPbPbClones[jI + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPPClones[jI + cI*nJtAlgos]);		  
+		    if(!createBool) return 1;
 		  }
 		}
 	      }	   
@@ -3494,8 +3523,12 @@ int plotUnfoldedAll(const std::string inFileNamePP, const std::string inFileName
 		    }
 		  }
 		  
-		  if(isSystCorr) createRAA(histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
-		  else createRAA(histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos], temp_p);
+		    
+		  bool createBool = true;
+		  if(isSystCorr) createBool = createRAA(histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos], histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos]);
+		  else createBool = createRAA(histVectPbPbClones[r2Pos + cI*nJtAlgos + sI*nCentBins*nJtAlgos], temp_p);
+
+		  if(!createBool) return 1;
 		}
 		delete temp_p;
 	      }
